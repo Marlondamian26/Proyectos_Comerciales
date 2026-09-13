@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import * as React from "react";
 
 export interface CardProps {
   title?: string;
@@ -10,14 +13,35 @@ export interface CardProps {
   onClick?: () => void;
   className?: string;
   image?: { src: string; alt: string };
-  badge?: { text: string; variant?: "default" | "success" | "warning" | "error" };
+  badge?: { text: string; variant?: "default" | "success" | "warning" | "error" | "info" };
+  hoverLift?: boolean;
+  gradientBorder?: boolean;
+  shadow?: "sm" | "md" | "lg" | "xl" | "2xl";
+  imageOverlay?: boolean;
+  variant?: "default" | "elevated" | "outlined" | "ghost";
 }
 
 const badgeClasses = {
-  default: "bg-neutral-100 text-neutral-800",
+  default: "bg-muted text-muted-foreground",
   success: "bg-success/10 text-success",
   warning: "bg-warning/10 text-warning",
-  error: "bg-error/10 text-error",
+  error: "bg-destructive/10 text-destructive",
+  info: "bg-info/10 text-info",
+};
+
+const variantClasses = {
+  default: "bg-surface text-foreground border border-border",
+  elevated: "bg-surface-elevated text-foreground border border-border shadow-theme-lg",
+  outlined: "bg-background text-foreground border-2 border-border",
+  ghost: "bg-transparent text-foreground border-none",
+};
+
+const shadowClasses = {
+  sm: "shadow-theme-sm",
+  md: "shadow-theme-md",
+  lg: "shadow-theme-lg",
+  xl: "shadow-theme-xl",
+  "2xl": "shadow-theme-2xl",
 };
 
 export function Card({
@@ -30,14 +54,23 @@ export function Card({
   className,
   image,
   badge,
+  hoverLift = true,
+  gradientBorder = false,
+  shadow = "md",
+  imageOverlay = true,
+  variant = "default",
 }: CardProps) {
   const Wrapper = onClick ? "button" : "div";
 
   return (
     <Wrapper
       className={cn(
-        "flex flex-col rounded-xl border bg-card text-card-foreground",
-        "transition-shadow duration-200 hover:shadow-md",
+        "flex flex-col rounded-xl transition-all duration-300",
+        variantClasses[variant],
+        shadowClasses[shadow],
+        hoverLift && onClick && "hover-lift hover:shadow-theme-xl",
+        hoverLift && !onClick && "group hover:shadow-theme-lg",
+        gradientBorder && "relative before:absolute before:inset-0 before:rounded-xl before:bg-gradient-primary before:p-[1px] before:-z-10",
         onClick && "cursor-pointer text-left",
         className
       )}
@@ -46,17 +79,19 @@ export function Card({
     >
       {image && (
         <div className="relative aspect-video w-full overflow-hidden rounded-t-xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image.src}
             alt={image.alt}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
+          {imageOverlay && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+          )}
           {badge && (
             <span
               className={cn(
-                "absolute top-2 right-2 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                "absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-bold shadow-theme-md backdrop-blur-sm",
                 badgeClasses[badge.variant ?? "default"]
               )}
             >
@@ -65,19 +100,27 @@ export function Card({
           )}
         </div>
       )}
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-col flex-1 p-5">
         {(title || icon) && (
-          <div className="mb-2 flex items-center gap-2">
-            {icon}
-            {title && <h3 className="text-lg font-semibold">{title}</h3>}
+          <div className="mb-3 flex items-center gap-3">
+            {icon && (
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                {icon}
+              </span>
+            )}
+            {title && <h3 className="text-lg font-bold tracking-tight text-foreground">{title}</h3>}
           </div>
         )}
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
         )}
-        <div className="mt-3 flex-1">{children}</div>
+        <div className="mt-4 flex-1">{children}</div>
       </div>
-      {footer && <div className="border-t px-4 py-3">{footer}</div>}
+      {footer && (
+        <div className="border-t border-border/50 px-5 py-3 bg-muted/30 rounded-b-xl">
+          {footer}
+        </div>
+      )}
     </Wrapper>
   );
 }

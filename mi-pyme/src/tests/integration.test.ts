@@ -138,7 +138,8 @@ describe("Backend API Integration Tests", () => {
       expect(pedido.items.length).toBe(1);
       expect(pedido.total).toBe(testData.producto.precio);
 
-      const pedidos = await listarPedidos(testData.usuario.id);
+      const pedidosResult = await listarPedidos(testData.usuario.id);
+      const pedidos = pedidosResult.data;
       expect(pedidos.length).toBeGreaterThan(0);
       expect(pedidos.some((p) => p.id === pedido.id)).toBe(true);
     });
@@ -166,7 +167,8 @@ describe("Backend API Integration Tests", () => {
       );
       expect(factura.items.length).toBe(1);
 
-      const facturas = await listarFacturas(testData.usuario.id);
+      const facturasResult = await listarFacturas(testData.usuario.id);
+      const facturas = facturasResult.data;
       expect(facturas.length).toBeGreaterThan(0);
       expect(facturas.some((f) => f.id === factura.id)).toBe(true);
     });
@@ -251,7 +253,8 @@ describe("Backend API Integration Tests", () => {
       const factura = await emitirFactura(pedido.id);
       expect(factura.numero).toMatch(/^FAC-\d{8}-[A-Z0-9]{4}$/);
 
-      const facturas = await listarFacturas(testData.usuario.id);
+      const facturasResult = await listarFacturas(testData.usuario.id);
+      const facturas = facturasResult.data;
       expect(facturas.some((f) => f.id === factura.id)).toBe(true);
     });
   });

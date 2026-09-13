@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth.config";
+import { auth } from "@/lib/auth";
 import { Rol } from "@/lib/auth/roles";
 
 export async function requireRole(
   roles: Rol[]
 ): Promise<{ id: string; email?: string | null; rol?: Rol }> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     throw new Error("No autorizado");
   }

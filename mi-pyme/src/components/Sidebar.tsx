@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,6 +14,7 @@ import {
   BuildingIcon,
   TruckIcon,
   CogIcon,
+  UserIcon,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -22,12 +25,6 @@ export interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: <HomeIcon className="h-5 w-5" />,
-    allowedRoles: [],
-  },
   {
     label: "Productos",
     href: "/negocio",
@@ -88,6 +85,12 @@ const sidebarItems: SidebarItem[] = [
     icon: <CogIcon className="h-5 w-5" />,
     allowedRoles: [Rol.ADMIN],
   },
+  {
+    label: "Mi perfil",
+    href: "/perfil",
+    icon: <UserIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN],
+  },
 ];
 
 export interface SidebarProps {
@@ -99,7 +102,11 @@ export function Sidebar({ userRol }: SidebarProps) {
 
   return (
     <aside
-      className="flex h-screen min-w-[240px] flex-col gap-y-2 overflow-y-auto border-r bg-background p-4"
+      className={cn(
+        "flex h-screen min-w-[240px] flex-col gap-y-2 overflow-y-auto border-r bg-background p-4",
+        "transition-colors duration-200"
+      )}
+      role="complementary"
       aria-label="Navegación lateral"
     >
       <nav className="space-y-1" aria-label="Menú de panel">
@@ -109,26 +116,29 @@ export function Sidebar({ userRol }: SidebarProps) {
               item.allowedRoles.length === 0 ||
               (userRol && item.allowedRoles.includes(userRol))
           )
-          .map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                "hover:bg-muted hover:text-muted-foreground",
-                pathname === item.href ||
-                  pathname.startsWith(item.href.split("?")[0])
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground"
-              )}
-              aria-current={
-                pathname === item.href.split("?")[0] ? "page" : undefined
-              }
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          .map((item) => {
+            const href = item.href.split("?")[0];
+            const isActive = pathname === href || pathname.startsWith(href + "?");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+                  "hover:bg-muted hover:text-foreground",
+                  isActive
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span className="flex-shrink-0" aria-hidden="true">
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
     </aside>
   );

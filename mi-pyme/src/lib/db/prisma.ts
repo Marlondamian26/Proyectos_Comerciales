@@ -1,12 +1,14 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { getCache, setCache } from "@/lib/cache";
+import { getCache } from "@/infrastructure";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 declare global {
   var __prisma: PrismaClient | undefined;
 }
 
-const dbPath = path.join(process.cwd(), "data", "mipyme.db");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbPath = path.resolve(__dirname, "..", "..", "..", "data", "mipyme.db");
 
 function createPrismaClient() {
   return new PrismaClient({
@@ -30,11 +32,12 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export async function cachedQuery<T = unknown>(key: string, queryFn: () => Promise<T>): Promise<T> {
-  const cached = getCache<T>(key);
+  const cache = getCache();
+  const cached = cache.get<T>(key);
   if (cached !== undefined) return cached;
 
   const result = await queryFn();
-  setCache(key, result);
+  cache.set(key, result);
   return result;
 }
 

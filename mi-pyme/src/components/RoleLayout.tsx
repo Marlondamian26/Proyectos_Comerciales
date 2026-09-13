@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth.config";
+import { auth } from "@/lib/auth";
 import { Rol } from "@/lib/auth/roles";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
@@ -14,7 +13,7 @@ export async function RoleLayout({
   children,
   requiredRoles,
 }: RoleLayoutProps) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const userRol = session?.user?.rol;
 
   if (!session || !userRol) {
