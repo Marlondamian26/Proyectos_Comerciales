@@ -11,6 +11,7 @@ datasource db {
 model User {
   id                    String               @id @default(cuid())
   name                  String?
+  username              String?              @unique
   email                 String               @unique
   emailVerified         DateTime?
   image                 String?
@@ -19,6 +20,12 @@ model User {
   rol                   Rol                  @default(CLIENTE)
   provincia             String?
   municipio             String?
+  isGenericAdmin        Boolean              @default(false)
+  mustChangePassword    Boolean              @default(false)
+  isActive              Boolean              @default(true)
+  deletedAt             DateTime?
+  deletedBy             String?
+  deletedReason         String?
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   accounts              Account[]
@@ -29,6 +36,11 @@ model User {
   proveedoresLogisticos ProveedorLogistico[]
   reservas              Reserva[]
   sessions              Session[]
+  auditLogs             AuditLog[]
+
+  @@index([rol])
+  @@index([isGenericAdmin])
+  @@index([isActive])
 }
 
 model Account {
@@ -73,6 +85,8 @@ model Negocio {
   activo             Boolean           @default(true)
   areaId             String?
   userId             String?
+  permiteReservas    Boolean           @default(true)
+  permiteEnvio       Boolean           @default(false)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   facturas           Factura[]
@@ -154,6 +168,7 @@ model Servicio {
   capacidad           Int
   imagenUrl           String
   activo              Boolean       @default(true)
+  permiteReservas     Boolean       @default(true)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
   carritoItems        CarritoItem[]
@@ -321,4 +336,19 @@ enum Rol {
   CLIENTE
   NEGOCIO
   LOGISTICA
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  eventType   String
+  actorId     String?
+  targetId    String?
+  timestamp   DateTime @default(now())
+  meta        Json?
+  user        User?    @relation(fields: [actorId], references: [id])
+
+  @@index([eventType])
+  @@index([actorId])
+  @@index([targetId])
+  @@index([timestamp])
 }

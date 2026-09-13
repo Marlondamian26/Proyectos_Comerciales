@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Home } from "lucide-react";
+import { DashboardBackLink } from "@/components/DashboardBackLink";
 
 type FacturaItem = {
   id: string;
@@ -36,8 +40,8 @@ export default function FacturasPage() {
       try {
         const res = await fetch("/api/facturas");
         if (!res.ok) throw new Error("error");
-        const data = await res.json();
-        if (!cancelled) setFacturas(data);
+        const result = await res.json();
+        if (!cancelled) setFacturas(result.data);
       } catch {
         if (!cancelled) setError("No se pudieron cargar las facturas");
       } finally {
@@ -66,6 +70,9 @@ export default function FacturasPage() {
 
   return (
     <main className="max-w-4xl mx-auto py-12 px-6">
+      <div className="flex items-center gap-3 mb-4">
+        <DashboardBackLink />
+      </div>
       <h1 className="text-3xl font-bold mb-8">Mis Facturas</h1>
 
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}

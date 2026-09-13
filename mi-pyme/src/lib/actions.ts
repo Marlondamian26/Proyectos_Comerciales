@@ -1,13 +1,32 @@
 "use server";
 
+import { Prisma } from "@/generated/prisma/client";
+
 import prisma from "@/lib/db/prisma";
 import { cachedQuery } from "@/lib/db/prisma";
 import { delCache } from "@/lib/cache";
 import { revalidatePath } from "next/cache";
 import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
+import bcrypt from "bcryptjs";
 
 const RESERVA_TTL_MS = 15 * 60 * 1000;
+
+async function logAudit(
+  eventType: string,
+  actorId: string | null,
+  targetId: string | null,
+  meta?: Prisma.InputJsonValue
+) {
+  await prisma.auditLog.create({
+    data: {
+      eventType,
+      actorId,
+      targetId,
+      meta,
+    },
+  });
+}
 
 export async function listarAreas() {
   return cachedQuery("areas", async () => {
@@ -39,8 +58,21 @@ export async function listarSubareas(areaId?: string) {
   });
 }
 
-export async function listarNegocios() {
-  return cachedQuery("negocios", async () => {
+export async function listarNegocios(options?: {
+  sort?: { campo?: string; orden?: "asc" | "desc" };
+}) {
+  const cacheKey = options?.sort
+    ? `negocios:sort:${JSON.stringify(options.sort)}`
+    : "negocios";
+
+  const orderBy: Record<string, "asc" | "desc"> = {};
+  if (options?.sort?.campo === "nombre") {
+    orderBy.nombre = options.sort.orden ?? "asc";
+  } else {
+    orderBy.createdAt = "desc";
+  }
+
+  return cachedQuery(cacheKey, async () => {
     return prisma.negocio.findMany({
       where: { activo: true },
       include: {
@@ -51,7 +83,30 @@ export async function listarNegocios() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
+    });
+  });
+}
+
+export async function listarProductosOrdenados(sort?: { campo?: string; orden?: "asc" | "desc" }) {
+  const cacheKey = sort
+    ? `productos:sort:${JSON.stringify(sort)}`
+    : "productos";
+
+  return cachedQuery(cacheKey, async () => {
+  const orderBy: Record<string, "asc" | "desc"> = {};
+    if (sort?.campo === "nombre") {
+      orderBy.nombre = sort.orden ?? "asc";
+    } else {
+      orderBy.nombre = "asc";
+    }
+    return prisma.producto.findMany({
+      where: { activo: true },
+      include: {
+        negocio: true,
+        subarea: true,
+      },
+      orderBy,
     });
   });
 }
@@ -95,29 +150,39 @@ export async function listarProductos(filtros?: {
   });
 }
 
-export async function listarServicios(filtros?: {
+export async function listarServicios(options?: {
+  sort?: { campo?: string; orden?: "asc" | "desc" };
   areaId?: string;
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
 }) {
-  const cacheKey = `servicios:${JSON.stringify(filtros || {})}`;
+  const cacheKey = options
+    ? `servicios:${JSON.stringify(options)}`
+    : "servicios";
+
+  const orderBy: Record<string, "asc" | "desc"> = {};
+  if (options?.sort?.campo === "nombre") {
+    orderBy.nombre = options.sort.orden ?? "asc";
+  } else {
+    orderBy.nombre = "asc";
+  }
 
   return cachedQuery(cacheKey, async () => {
     return prisma.servicio.findMany({
       where: {
-        ...(filtros?.activo !== undefined
-          ? { activo: filtros.activo }
+        ...(options?.activo !== undefined
+          ? { activo: options.activo }
           : { activo: true }),
-        ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
-        ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
-        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(options?.negocioId && { negocioId: options.negocioId }),
+        ...(options?.subareaId && { subareaId: options.subareaId }),
+        ...(options?.areaId && { negocio: { areaId: options.areaId } }),
       },
       include: {
         negocio: true,
         subarea: true,
       },
-      orderBy: { nombre: "asc" },
+      orderBy,
     });
   });
 }
@@ -372,25 +437,54 @@ export async function crearReserva(
   return reserva;
 }
 
-export async function listarPedidos(usuarioId: string) {
+export async function listarPedidos(usuarioId: string, options?: { page?: number; limit?: number; search?: string; estado?: string }) {
   await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `pedidos:${usuarioId}`;
+  const cacheKey = options ? `pedidos:${usuarioId}:${JSON.stringify(options)}` : `pedidos:${usuarioId}`;
 
   return cachedQuery(cacheKey, async () => {
-    return prisma.pedido.findMany({
-      where: { usuarioId },
-      include: {
-        items: {
-          include: {
-            producto: true,
-            servicio: true,
-            negocio: true,
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 10;
+    const skip = (page - 1) * limit;
+    const where: Record<string, unknown> = { usuarioId };
+    if (options?.search) {
+      where.OR = [
+        { id: { contains: options.search } },
+        { estado: { contains: options.search } },
+      ];
+    }
+    if (options?.estado) {
+      where.estado = options.estado;
+    }
+
+    const [pedidos, total] = await Promise.all([
+      prisma.pedido.findMany({
+        where,
+        include: {
+          items: {
+            include: {
+              producto: true,
+              servicio: true,
+              negocio: true,
+            },
           },
+          logistica: true,
         },
-        logistica: true,
+        orderBy: { fechaCreacion: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.pedido.count({ where }),
+    ]);
+
+    return {
+      data: pedidos,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { fechaCreacion: "desc" },
-    });
+    };
   });
 }
 
@@ -664,29 +758,56 @@ export async function asignarLogisticaForm(
 
 const TASA_IMPUESTO = 0.21;
 
-export async function listarFacturas(usuarioId?: string, negocioId?: string) {
+export async function listarFacturas(usuarioId?: string, negocioId?: string, options?: { page?: number; limit?: number }) {
   await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = negocioId
-    ? `facturas:negocio:${negocioId}`
-    : `facturas:usuario:${usuarioId}`;
+  const cacheKey = options
+    ? negocioId
+      ? `facturas:negocio:${negocioId}:${JSON.stringify(options)}`
+      : `facturas:usuario:${usuarioId}:${JSON.stringify(options)}`
+    : negocioId
+      ? `facturas:negocio:${negocioId}`
+      : `facturas:usuario:${usuarioId}`;
 
   return cachedQuery(cacheKey, async () => {
-    return prisma.factura.findMany({
-      where: {
-        ...(usuarioId && !negocioId && { usuarioId }),
-        ...(negocioId && { negocioId }),
-      },
-      include: {
-        pedido: true,
-        items: {
-          include: {
-            producto: true,
-            servicio: true,
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 10;
+    const skip = (page - 1) * limit;
+    const where: Record<string, unknown> = {
+      ...(usuarioId && !negocioId && { usuarioId }),
+      ...(negocioId && { negocioId }),
+    };
+
+    const [facturas, total] = await Promise.all([
+      prisma.factura.findMany({
+        where,
+        include: {
+          pedido: {
+            include: {
+              items: {
+                include: {
+                  producto: true,
+                  servicio: true,
+                },
+              },
+            },
           },
         },
+        orderBy: { fecha: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.factura.count({ where }),
+    ]);
+
+    return {
+      data: facturas,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { fecha: "desc" },
-    });
+    };
   });
 }
 
@@ -991,6 +1112,9 @@ export async function listarUsuarios() {
         email: true,
         nombre: true,
         rol: true,
+        isGenericAdmin: true,
+        mustChangePassword: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -1096,6 +1220,34 @@ export async function cambiarEstadoNegocio(negocioId: string, activo: boolean) {
   return prisma.negocio.findUnique({
     where: { id: negocioId },
   });
+}
+
+export async function togglePermiteReservas(negocioId: string) {
+  await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const negocio = await prisma.negocio.findUnique({ where: { id: negocioId } });
+  if (!negocio) throw new Error("Negocio no encontrado");
+
+  await prisma.negocio.update({
+    where: { id: negocioId },
+    data: { permiteReservas: !negocio.permiteReservas },
+  });
+  delCache("negocios");
+  delCache(`negocio:${negocioId}`);
+  return prisma.negocio.findUnique({ where: { id: negocioId } });
+}
+
+export async function togglePermiteEnvio(negocioId: string) {
+  await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const negocio = await prisma.negocio.findUnique({ where: { id: negocioId } });
+  if (!negocio) throw new Error("Negocio no encontrado");
+
+  await prisma.negocio.update({
+    where: { id: negocioId },
+    data: { permiteEnvio: !negocio.permiteEnvio },
+  });
+  delCache("negocios");
+  delCache(`negocio:${negocioId}`);
+  return prisma.negocio.findUnique({ where: { id: negocioId } });
 }
 
 export async function crearArea(nombre: string, slug: string) {
@@ -1211,3 +1363,413 @@ export async function actualizarNegocio(
   });
 }
 
+
+export async function registrarUsuario(
+  datos: {
+    nombre: string;
+    username: string;
+    email: string;
+    password: string;
+    rol: string;
+    provincia?: string;
+    municipio?: string;
+  }
+): Promise<{ success: boolean; userId?: string; error?: string }> {
+  try {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(datos.email)) {
+      return { success: false, error: "Email invalido" };
+    }
+
+    if (!datos.username || datos.username.trim().length < 3) {
+      return { success: false, error: "El nombre de usuario debe tener al menos 3 caracteres" };
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(datos.username)) {
+      return { success: false, error: "El nombre de usuario solo puede contener letras, numeros y guiones bajos" };
+    }
+
+    if (datos.password.length < 8) {
+      return { success: false, error: "La contraseña debe tener al menos 8 caracteres" };
+    }
+
+    const rolesValidos = ["CLIENTE", "NEGOCIO", "LOGISTICA"];
+    if (!rolesValidos.includes(datos.rol)) {
+      return { success: false, error: "Rol invalido. No se puede registrar como administrador." };
+    }
+
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: datos.email },
+    });
+    if (existingEmail) {
+      return { success: false, error: "Ya existe un usuario con ese email" };
+    }
+
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: datos.username },
+    });
+    if (existingUsername) {
+      return { success: false, error: "Ya existe un usuario con ese nombre de usuario" };
+    }
+
+    const hashedPassword = await bcrypt.hash(datos.password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        email: datos.email,
+        username: datos.username,
+        password: hashedPassword,
+        nombre: datos.nombre,
+        rol: datos.rol as Rol,
+        provincia: datos.provincia,
+        municipio: datos.municipio,
+      },
+    });
+
+    return { success: true, userId: user.id };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Error registering user:", message, err);
+    return { success: false, error: `Error al registrar usuario: ${message}` };
+  }
+}
+
+export async function obtenerPerfil(usuarioId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: {
+      id: true,
+      email: true,
+      nombre: true,
+      username: true,
+      rol: true,
+      provincia: true,
+      municipio: true,
+      image: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  if (!user) throw new Error("Usuario no encontrado");
+  return user;
+}
+
+export async function actualizarPerfil(
+  usuarioId: string,
+  datos: { nombre?: string; username?: string; email?: string; provincia?: string; municipio?: string }
+) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN]);
+
+  if (datos.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(datos.email)) {
+      throw new Error("Email invalido");
+    }
+    const existing = await prisma.user.findUnique({
+      where: { email: datos.email },
+    });
+    if (existing && existing.id !== usuarioId) {
+      throw new Error("Ya existe un usuario con ese email");
+    }
+  }
+
+  if (datos.username) {
+    const existing = await prisma.user.findUnique({
+      where: { username: datos.username },
+    });
+    if (existing && existing.id !== usuarioId) {
+      throw new Error("Ya existe un usuario con ese nombre de usuario");
+    }
+  }
+
+  const user = await prisma.user.update({
+    where: { id: usuarioId },
+    data: datos,
+    select: {
+      id: true,
+      email: true,
+      nombre: true,
+      username: true,
+      rol: true,
+      provincia: true,
+      municipio: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  delCache(`usuario:${usuarioId}`);
+  delCache("usuarios");
+
+  return user;
+}
+
+export async function cambiarPassword(
+  usuarioId: string,
+  datos: { passwordActual: string; passwordNuevo: string }
+) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN]);
+
+  if (datos.passwordNuevo.length < 8) {
+    throw new Error("La nueva contraseña debe tener al menos 8 caracteres");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: { password: true },
+  });
+
+  if (!user || !user.password) {
+    throw new Error("Usuario no encontrado o sin contraseña");
+  }
+
+  const isValid = await bcrypt.compare(datos.passwordActual, user.password);
+  if (!isValid) {
+    throw new Error("La contraseña actual es incorrecta");
+  }
+
+  const hashedPassword = await bcrypt.hash(datos.passwordNuevo, 10);
+
+  await prisma.user.update({
+    where: { id: usuarioId },
+    data: { password: hashedPassword },
+  });
+
+  return { success: true };
+}
+
+async function getActiveAdminCount(): Promise<number> {
+  return prisma.user.count({
+    where: {
+      rol: "ADMIN",
+      isActive: true,
+    },
+  });
+}
+
+export async function ensureGenericAdminExists(actorId?: string) {
+  const adminCount = await getActiveAdminCount();
+  if (adminCount > 0) return;
+
+  const genericAdmin = await prisma.user.findFirst({
+    where: { email: "admin@mi-pyme.local" },
+  });
+
+  const GENERIC_ADMIN_PASSWORD = process.env.GENERIC_ADMIN_PASSWORD || "12345678";
+  const hashedPassword = await bcrypt.hash(GENERIC_ADMIN_PASSWORD, 12);
+
+  if (genericAdmin) {
+    await prisma.user.update({
+      where: { id: genericAdmin.id },
+      data: {
+        isGenericAdmin: true,
+        mustChangePassword: true,
+        isActive: true,
+        rol: "ADMIN",
+        password: hashedPassword,
+        deletedAt: null,
+        deletedBy: null,
+        deletedReason: null,
+      },
+    });
+    await logAudit("GENERIC_ADMIN_RECREATED", actorId ?? null, genericAdmin.id, {
+      reason: "No active admins found",
+    });
+  } else {
+    const newAdmin = await prisma.user.create({
+      data: {
+        email: "admin@mi-pyme.local",
+        username: "admin",
+        password: hashedPassword,
+        nombre: "Administrador Genérico",
+        rol: "ADMIN",
+        isGenericAdmin: true,
+        mustChangePassword: true,
+        isActive: true,
+      },
+    });
+    await logAudit("GENERIC_ADMIN_CREATED", actorId ?? null, newAdmin.id, {
+      reason: "No active admins found",
+    });
+  }
+
+  delCache("usuarios");
+}
+
+async function deactivateGenericAdmin(actorId: string) {
+  const genericAdmin = await prisma.user.findFirst({
+    where: { isGenericAdmin: true, isActive: true },
+  });
+
+  if (genericAdmin) {
+    await prisma.user.update({
+      where: { id: genericAdmin.id },
+      data: { isActive: false, isGenericAdmin: false },
+    });
+    await logAudit("GENERIC_ADMIN_DEACTIVATED_BY_ADMIN", actorId, genericAdmin.id, {
+      reason: "New admin created",
+    });
+    delCache("usuarios");
+  }
+}
+
+export async function eliminarCuenta(
+  usuarioId: string,
+  datos: { password: string }
+) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN]);
+
+  const user = await prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: { id: true, password: true, rol: true, isGenericAdmin: true },
+  });
+
+  if (!user || !user.password) {
+    throw new Error("Usuario no encontrado o sin contraseña");
+  }
+
+  const isValid = await bcrypt.compare(datos.password, user.password);
+  if (!isValid) {
+    await logAudit("FAILED_DELETE_ATTEMPT", usuarioId, usuarioId, {
+      reason: "Invalid password",
+    });
+    throw new Error("La contraseña es incorrecta");
+  }
+
+  const isAdmin = user.rol === "ADMIN";
+  const isLastAdmin = isAdmin && (await getActiveAdminCount()) === 1;
+
+  if (isLastAdmin) {
+    throw new Error(
+      "No se puede eliminar la última cuenta de administrador directamente. Use la función de eliminación de último administrador."
+    );
+  }
+
+  await prisma.user.update({
+    where: { id: usuarioId },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+      deletedBy: usuarioId,
+      deletedReason: "Eliminación voluntaria de cuenta",
+    },
+  });
+
+  await logAudit("ACCOUNT_DELETED", usuarioId, usuarioId, {
+    rol: user.rol,
+    wasGenericAdmin: user.isGenericAdmin,
+  });
+
+  delCache("usuarios");
+  delCache(`usuario:${usuarioId}`);
+
+  await ensureGenericAdminExists(usuarioId);
+
+  return { success: true };
+}
+
+export async function eliminarUltimoAdmin(
+  usuarioId: string,
+  datos: { adminPassword: string; genericAdminPassword: string }
+) {
+  await requireRole([Rol.ADMIN]);
+
+  const user = await prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: { id: true, password: true, rol: true, isGenericAdmin: true },
+  });
+
+  if (!user || !user.password) {
+    throw new Error("Usuario no encontrado o sin contraseña");
+  }
+
+  if (user.rol !== "ADMIN") {
+    throw new Error("Solo los administradores pueden usar esta función");
+  }
+
+  const adminCount = await getActiveAdminCount();
+  if (adminCount !== 1) {
+    throw new Error("Esta función solo está disponible cuando eres el único administrador activo");
+  }
+
+  const isAdminPasswordValid = await bcrypt.compare(datos.adminPassword, user.password);
+  if (!isAdminPasswordValid) {
+    await logAudit("FAILED_DELETE_ATTEMPT", usuarioId, usuarioId, {
+      reason: "Invalid admin password for last admin deletion",
+    });
+    throw new Error("La contraseña de administrador es incorrecta");
+  }
+
+  const GENERIC_ADMIN_PASSWORD = process.env.GENERIC_ADMIN_PASSWORD || "12345678";
+  const isGenericPasswordValid = await bcrypt.compare(datos.genericAdminPassword, user.password);
+  if (!isGenericPasswordValid) {
+    await logAudit("FAILED_DELETE_ATTEMPT", usuarioId, usuarioId, {
+      reason: "Invalid generic admin password for last admin deletion",
+    });
+    throw new Error("La contraseña genérica es incorrecta");
+  }
+
+  await prisma.user.update({
+    where: { id: usuarioId },
+    data: {
+      isActive: false,
+      deletedAt: new Date(),
+      deletedBy: usuarioId,
+      deletedReason: "Eliminación del último administrador con doble confirmación",
+    },
+  });
+
+  await logAudit("LAST_ADMIN_DELETED_BY_SELF", usuarioId, usuarioId, {
+    reason: "Last admin deleted with dual password confirmation",
+  });
+
+  delCache("usuarios");
+  delCache(`usuario:${usuarioId}`);
+
+  await ensureGenericAdminExists(usuarioId);
+
+  return { success: true };
+}
+
+export async function asignarRolAdmin(usuarioId: string, actorId: string) {
+  await requireRole([Rol.ADMIN]);
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: { id: true, rol: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("Usuario no encontrado");
+  }
+
+  if (targetUser.rol === "ADMIN") {
+    throw new Error("El usuario ya es administrador");
+  }
+
+  await deactivateGenericAdmin(actorId);
+
+  await prisma.user.update({
+    where: { id: usuarioId },
+    data: { rol: "ADMIN" },
+  });
+
+  delCache("usuarios");
+  delCache(`usuario:${usuarioId}`);
+
+  return prisma.user.findUnique({
+    where: { id: usuarioId },
+    select: {
+      id: true,
+      email: true,
+      nombre: true,
+      rol: true,
+      isGenericAdmin: true,
+      mustChangePassword: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}

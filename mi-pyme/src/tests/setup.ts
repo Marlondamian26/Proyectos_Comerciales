@@ -1,6 +1,21 @@
 import { PrismaClient, Rol } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import path from "path";
+import { vi } from "vitest";
+
+// matchMedia polyfill for jsdom
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = (query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
+}
 
 const dbPath = path.join(process.cwd(), "data", "mipyme.db");
 

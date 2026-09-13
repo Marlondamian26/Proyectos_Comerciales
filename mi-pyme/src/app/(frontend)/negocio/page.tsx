@@ -1,192 +1,317 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth.config";
+import { auth } from "@/lib/auth";
 import {
   listarProductos,
   listarServicios,
   estadoInventario,
   listarPedidosPorNegocio,
   reporteVentasPorDia,
-  productosMasVendidos,
   obtenerNegocioDelUsuario,
 } from "@/lib/actions";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { EmptyStatePreset } from "@/components/ui/EmptyState";
+import { LogoutButton } from "@/components/LogoutButton";
+import { RegistroNotification } from "@/components/RegistroNotification";
+import { DashboardBackLink } from "@/components/DashboardBackLink";
+import {
+  Package,
+  Calendar,
+  ClipboardList,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  MoreVertical,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const userRol = session?.user?.rol;
   const userId = session?.user?.id ?? "";
 
   const negocio = userId ? await obtenerNegocioDelUsuario(userId) : null;
   const negocioId = negocio?.id ?? "";
 
-  const [productos, servicios, inventario, pedidos, ventas, masVendidos] =
+  const [productos, servicios, inventario, pedidos, ventas] =
     await Promise.all([
       listarProductos({ negocioId }),
       listarServicios({ negocioId }),
       estadoInventario(negocioId),
       listarPedidosPorNegocio(negocioId),
       reporteVentasPorDia(negocioId),
-      productosMasVendidos(negocioId),
     ]);
 
+  const totalInventario = inventario.length;
+  const inventarioBajo = inventario.filter((inv) => inv.cantidadActual <= inv.puntoReorden).length;
+  const totalVentas = ventas.reduce((sum, v) => sum + v.totalVentas, 0);
+
   return (
-    <main className="max-w-5xl mx-auto py-12 px-6">
-      <h1 className="text-3xl font-bold mb-2">Panel de Negocio</h1>
-      <p className="text-sm text-gray-500 mb-8">
-        Rol: <span className="font-medium">{userRol ?? "NEGOCIO"}</span>
-      </p>
-
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Catálogo de Productos</h2>
-        {productos.length === 0 ? (
-          <p className="text-sm text-gray-500">No hay productos.</p>
-        ) : (
-          <ul className="space-y-2">
-            {productos.map((p) => (
-              <li key={p.id} className="border-b pb-1">
-                <span className="font-medium">{p.nombre}</span>
-                <span className="text-sm text-gray-500 ml-2">
-                  ${p.precio.toFixed(2)} · {p.unidadMedida}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+    <main className="min-h-screen">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                Panel de Negocio
+              </h1>
+              <p className="text-muted-foreground mt-2 text-lg">
+                Gestiona productos, servicios, inventario y ventas
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <DashboardBackLink />
+              <LogoutButton />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
+                {userRol ?? "NEGOCIO"}
+              </span>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Catálogo de Servicios</h2>
-        {servicios.length === 0 ? (
-          <p className="text-sm text-gray-500">No hay servicios.</p>
-        ) : (
-          <ul className="space-y-2">
-            {servicios.map((s) => (
-              <li key={s.id} className="border-b pb-1">
-                <span className="font-medium">{s.nombre}</span>
-                <span className="text-sm text-gray-500 ml-2">
-                  {s.duracionMinutos} min · Capacidad: {s.capacidad}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
+                <Package className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">
+                {productos.length} productos
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">Productos</p>
+            <p className="text-2xl font-bold">{productos.length}</p>
+          </Card>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Inventario</h2>
-        {inventario.length === 0 ? (
-          <p className="text-sm text-gray-500">No hay inventario.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="text-left pb-2">Producto</th>
-                <th className="text-right pb-2">Cantidad</th>
-                <th className="text-right pb-2">Punto Reorden</th>
-                <th className="text-left pb-2">Ubicación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventario.map((inv) => (
-                <tr key={inv.id} className="border-b">
-                  <td>{inv.producto}</td>
-                  <td className="text-right">{inv.cantidadActual}</td>
-                  <td className="text-right">{inv.puntoReorden}</td>
-                  <td>{inv.ubicacion}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">
+                {servicios.length} servicios
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">Servicios</p>
+            <p className="text-2xl font-bold">{servicios.length}</p>
+          </Card>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Pedidos Recibidos</h2>
-        {pedidos.length === 0 ? (
-          <p className="text-sm text-gray-500">No hay pedidos.</p>
-        ) : (
-          <ul className="space-y-3">
-            {pedidos.map((pedido) => (
-              <li key={pedido.id} className="border rounded p-3">
-                <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">
-                    {new Date(pedido.fechaCreacion).toLocaleDateString()}
-                  </span>
-                  <span className="font-bold">${pedido.total.toFixed(2)}</span>
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-medium text-warning">
+                {inventarioBajo} bajos
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">Inventario</p>
+            <p className="text-2xl font-bold">{totalInventario}</p>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet/10 text-violet">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <span className="text-xs font-medium text-success flex items-center gap-0.5">
+                <ArrowUpRight className="h-3 w-3" />
+                {pedidos.length}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-1">Ventas Totales</p>
+            <p className="text-2xl font-bold">${totalVentas.toFixed(2)}</p>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
+                  <Package className="h-5 w-5" />
                 </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded ml-2 ${
-                    pedido.estado === "completado"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {pedido.estado}
-                </span>
-                {pedido.logistica && (
-                  <p className="text-xs text-gray-500">
-                    Logística: {pedido.logistica.nombre}
+                <div>
+                  <h2 className="text-lg font-semibold">Catálogo de Productos</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {productos.length} producto{productos.length !== 1 ? "s" : ""} activo{productos.length !== 1 ? "s" : ""}
                   </p>
-                )}
-                {pedido.usuario && (
-                  <p className="text-xs text-gray-500">
-                    Cliente: {pedido.usuario.nombre ?? pedido.usuario.email}
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
+            {productos.length === 0 ? (
+              <EmptyStatePreset preset="products" />
+            ) : (
+              <div className="space-y-3">
+                {productos.slice(0, 5).map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-background">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{p.nombre}</p>
+                        <p className="text-xs text-muted-foreground">
+                          ${p.precio.toFixed(2)} · {p.unidadMedida}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        p.disponibleHoy
+                          ? "bg-success/10 text-success border border-success/20"
+                          : "bg-warning/10 text-warning border border-warning/20"
+                      }`}
+                    >
+                      {p.disponibleHoy ? "Disponible" : "Agotado"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Catálogo de Servicios</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {servicios.length} servicio{servicios.length !== 1 ? "s" : ""} activo{servicios.length !== 1 ? "s" : ""}
                   </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
+            {servicios.length === 0 ? (
+              <EmptyStatePreset preset="products" />
+            ) : (
+              <div className="space-y-3">
+                {servicios.slice(0, 5).map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-background">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{s.nombre}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.duracionMinutos} min · Capacidad: {s.capacidad}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        s.activo
+                          ? "bg-success/10 text-success border border-success/20"
+                          : "bg-warning/10 text-warning border border-warning/20"
+                      }`}
+                    >
+                      {s.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">
-          Reporte de Ventas por Día
-        </h2>
-        {ventas.length === 0 ? (
-          <p className="text-sm text-gray-500">Sin ventas registradas.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="text-left pb-2">Fecha</th>
-                <th className="text-right pb-2">Total Ventas</th>
-                <th className="text-right pb-2">Cantidad</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ventas.slice(0, 10).map((v) => (
-                <tr key={v.fecha} className="border-b">
-                  <td>{v.fecha}</td>
-                  <td className="text-right">${v.totalVentas.toFixed(2)}</td>
-                  <td className="text-right">{v.cantidad}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-xl font-semibold mb-4">
-          Productos Más Vendidos
-        </h2>
-        {masVendidos.length === 0 ? (
-          <p className="text-sm text-gray-500">Sin ventas registradas.</p>
-        ) : (
-          <ul className="space-y-2">
-            {masVendidos.slice(0, 10).map((p) => (
-              <li key={p.id} className="border-b pb-1 flex justify-between">
-                <span>{p.nombre}</span>
-                <span className="text-sm text-gray-500">
-                  x{p.cantidad} · ${p.totalVentas.toFixed(2)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Reporte de Ventas por Día</h2>
+                <p className="text-sm text-muted-foreground">
+                  Resumen de ventas diarias
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </div>
+          {ventas.length === 0 ? (
+            <EmptyStatePreset preset="search" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="text-right py-3 px-4 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                      Total Ventas
+                    </th>
+                    <th className="text-right py-3 px-4 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                      Cantidad
+                    </th>
+                    <th className="text-right py-3 px-4 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                      Tendencia
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {ventas.slice(0, 10).map((v, idx) => {
+                    const prev = ventas[idx + 1];
+                    const trend = prev ? ((v.totalVentas - prev.totalVentas) / prev.totalVentas) * 100 : 0;
+                    return (
+                      <tr key={v.fecha} className="hover:bg-muted/30 transition-colors duration-200">
+                        <td className="py-3.5 px-4">
+                          <span className="font-medium">{v.fecha}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="font-semibold">${v.totalVentas.toFixed(2)}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-muted-foreground">
+                          {v.cantidad}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          {trend !== 0 && (
+                            <span
+                              className={`inline-flex items-center gap-0.5 text-xs font-medium ${
+                                trend > 0 ? "text-success" : "text-destructive"
+                              }`}
+                            >
+                              {trend > 0 ? (
+                                <ArrowUpRight className="h-3 w-3" />
+                              ) : (
+                                <ArrowDownRight className="h-3 w-3" />
+                              )}
+                              {Math.abs(trend).toFixed(1)}%
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+      <RegistroNotification />
     </main>
   );
 }

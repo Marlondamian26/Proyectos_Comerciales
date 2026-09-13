@@ -8,12 +8,16 @@ export async function GET(request: Request) {
     const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
 
     const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") ?? "1");
+    const limit = parseInt(searchParams.get("limit") ?? "10");
     const negocioId = searchParams.get("negocioId") ?? undefined;
 
-    const facturas = negocioId
-      ? await listarFacturas(undefined, negocioId)
-      : await listarFacturas(session.id);
-    return NextResponse.json(facturas);
+    const result = await listarFacturas(
+      negocioId ? undefined : session.id,
+      negocioId,
+      { page, limit }
+    );
+    return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     const status = message.includes("denegado") || message.includes("autorizado")

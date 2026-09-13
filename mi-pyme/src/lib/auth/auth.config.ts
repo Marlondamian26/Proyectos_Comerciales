@@ -1,8 +1,9 @@
-import { AuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db/prisma";
 import { Rol } from "@/lib/auth/roles";
+import type { NextAuthConfig } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
@@ -21,24 +22,29 @@ declare module "next-auth" {
   }
 }
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     Credentials({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email o Usuario", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: credentials.email as string },
+              { username: credentials.email as string },
+            ],
+          },
         });
 
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+        const isValid = await bcrypt.compare(credentials.password as string, user.password);
         if (!isValid) return null;
 
         return {
@@ -56,8 +62,10 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+      if (user && user.id) {
+        token.id = user.id as string;
+      }
+      if (user && (user as { rol?: Rol }).rol) {
         token.rol = (user as { rol?: Rol }).rol;
       }
       return token;
@@ -71,3 +79,5 @@ export const authOptions: AuthOptions = {
     },
   },
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);

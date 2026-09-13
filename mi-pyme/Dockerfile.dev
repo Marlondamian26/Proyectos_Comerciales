@@ -1,0 +1,32 @@
+# Development Dockerfile for Mi-Pyme
+# Includes hot reload via Next.js fast refresh
+
+FROM node:24-alpine AS base
+
+RUN apk add --no-cache libc musl
+
+WORKDIR /app
+
+# Install all dependencies (including dev)
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
+CMD ["npm", "run", "dev"]
