@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { asignarRolAdmin } from "@/lib/actions";
+import { logAudit } from "@/services/utils/audit";
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     }
 
     const result = await asignarRolAdmin(userId, session.user.id);
+
+    await logAudit("ROL_CAMBIADO", session.user.id, userId, {});
+
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

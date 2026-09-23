@@ -14,6 +14,7 @@ export interface NavItem {
   href: string;
   icon?: React.ReactNode;
   allowedRoles?: Rol[];
+  requiresNegocioOwnership?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -45,11 +46,12 @@ const navItems: NavItem[] = [
     icon: "👤",
     allowedRoles: [Rol.CLIENTE],
   },
-  {
+   {
     label: "Negocio",
     href: "/negocio",
     icon: "🏢",
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
+    requiresNegocioOwnership: true,
   },
   {
     label: "Logística",
@@ -67,9 +69,10 @@ const navItems: NavItem[] = [
 
 export interface NavbarProps {
   userRol?: Rol;
+  esDuenoDeNegocio?: boolean;
 }
 
-export function Navbar({ userRol }: NavbarProps) {
+export function Navbar({ userRol, esDuenoDeNegocio }: NavbarProps) {
   const pathname = usePathname();
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
 
@@ -96,7 +99,8 @@ export function Navbar({ userRol }: NavbarProps) {
                 (item) =>
                   !item.allowedRoles ||
                   item.allowedRoles.length === 0 ||
-                  (userRol && item.allowedRoles.includes(userRol))
+                  (userRol && item.allowedRoles.includes(userRol)) ||
+                  (item.requiresNegocioOwnership && esDuenoDeNegocio)
               )
               .map((item) => (
                 <li key={item.href} role="none">

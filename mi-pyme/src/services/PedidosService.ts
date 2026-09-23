@@ -231,7 +231,7 @@ export class PedidosService extends Service {
     return pedido;
   }
 
-   async actualizarEstado(
+  async actualizarEstado(
     pedidoId: string,
     estado: string
   ): Promise<Pedido> {

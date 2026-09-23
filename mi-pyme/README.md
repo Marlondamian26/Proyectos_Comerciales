@@ -119,3 +119,43 @@ Mi-Pyme implementa el cálculo de IVA según la normativa cubana (10%):
 - Las facturas usan el formato `PR-AAAA-NNNNNN` (prefijo configurable).
 - El checkout muestra el desglose fiscal por grupo de negocio.
 - La facturación se emite mediante `emitirFactura(pedidoId)`, recalculando IVA cuando el pedido no tiene snapshots fiscales.
+
+### Arquitectura
+
+Los servicios de negocio en `src/services/` son **framework-agnostic**: no
+importan Next.js ni `@nestjs/*`. La migración a Nest.js microservicios está
+planeada para Fase 4 y se documenta en detail en `SERVICE_ARCHITECTURE.md`.
+
+La prueba de arquitectura (`src/tests/architecture.test.ts`) verifica
+automáticamente que los servicios mantienen esta separación.
+
+## Migraciones de datos (Etapa 3 — Cubo 1)
+
+Después de mergear las correcciones de coherencia (B1–B8), ejecutar las
+migraciones manuales siguientes:
+
+### B1: Migración de usuarios NEGOCIO autoregistrados
+
+El registro ahora solo crea usuarios `CLIENTE`. Los usuarios existentes con
+rol `NEGOCIO` que no tienen un negocio asociado deben degradarse a `CLIENTE`:
+
+```bash
+npx tsx scripts/migrar-negocios-autoregistrados.ts
+```
+
+- Usuarios NEGOCIO con negocio ACTIVO asociado → mantienen rol NEGOCIO.
+- Usuarios NEGOCIO sin negocio asociado → degradados a CLIENTE.
+- Usuarios NEGOCIO con negocio PENDIENTE/RECHAZADO → degradados a CLIENTE.
+- Cada cambio se registra en `AuditLog` con evento `ROL_MIGRADO_AUTOREGISTRO`.
+
+### B2: Invalidar tokens de reset existentes
+
+Los tokens de reset existentes en texto plano deben invalidarse (se
+hashean ahora con SHA-256). Borrar todos los registros `VerificationToken`:
+
+```bash
+npx tsx -e "import { PrismaClient } from './src/generated/prisma/client'; const p = new PrismaClient(); p.verificationToken.deleteMany({}); console.log('Tokens borrados:', p.verificationToken);"
+```
+
+Los usuarios con tokens válidos deben solicitar uno nuevo.
+

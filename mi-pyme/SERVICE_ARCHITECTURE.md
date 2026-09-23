@@ -621,3 +621,353 @@ que el CLIENTE muestra al negocio para confirmar la recepción del pago en efect
 ```
 npx tsx scripts/generar-codigos-entrega-pendientes.ts
 ```
+
+---
+
+# Correcciones de typos (Fase 2, Punto 7)
+
+## Resumen
+
+Durante la auditoría de calidad se detectaron y corrigieron **typos silenciosos** en
+dos servicios críticos. Estos errores no rompían la compilación de TypeScript pero
+causaban comportamientos incorrectos en runtime.
+
+## Typos corregidos
+
+| Archivo | Línea | Typo | Tipo | Impacto | Corrección |
+|---------|-------|------|------|---------|------------|
+| `ReservaService.ts` | ~20 | `fechaHoraFincio` (en `CrearReservaParams`) | typo en interfaz pública | medio — propaga a todos los consumidores | Renombrado a `fechaHoraInicio` |
+| `ReservaService.ts` | ~56 | `const fechaIni = new Date` (sin `()`) | runtime bug | alto — `fechaIni` era la función constructora `Date`, no una instancia | Corregido a `new Date(datos.fechaHoraInicio)` |
+| `ReservaService.ts` | ~106 | `fechaHoraFin: fechaIni` en `prisma.reserva.create()` | wrong field mapping | alto — la fecha de inicio se guardaba en `fechaHoraFin` | Corregido a `fechaHoraInicio: fechaIni, fechaHoraFin: fechaFin` |
+| `PedidosService.ts` | — | `fechaIni` sin `new Date()` | runtime bug | alto | No presente en la versión actual (ya corregido) |
+| `PedidosService.ts` | — | `pedidos` usado para singular | nomenclatura | bajo — confusión en lectura | Verificado: `pedidos` (array) y `pedido` (singular) usados consistentemente |
+
+## Decisión: migración directa (sin alias deprecado)
+
+El typo `fechaHoraFincio` estaba en la interfaz `CrearReservaParams`, que es una
+interfaz **interna del proyecto** (no expuesta a clientes externos). Todos los
+consumidores fueron identificados y actualizados:
+
+- `src/services/ReservaService.ts` — definición de la interfaz
+- `src/lib/actions.ts` — función `crearReserva`
+- `src/app/api/reservas/route.ts` — endpoint API
+- `src/tests/integration.test.ts` — tests existentes
+- `src/tests/disponibilidad.test.ts` — tests de disponibilidad
+
+No se añadió un alias `@deprecated` porque el alcance es interno y el riesgo de
+romper consumidores externos es nulo.
+
+## Tests de regresión añadidos
+
+Archivo: `src/tests/regresion-typos.test.ts` (21 tests)
+
+- **Type-level**: `@ts-expect-error` verifica en compilación (`tsc --noEmit`) que
+  `fechaHoraFincio` no existe en `CrearReservaParams`. Si se reintroduce,
+  `tsc` falla con "Unused '@ts-expect-error' directive".
+- **Runtime**: `toBeInstanceOf(Date)` y `typeof getTime === "function"` verifican
+  que `fechaIni` es una instancia de `Date`, no la función constructora.
+- **Integración**: flujo completo `crearReserva → listarReservas` y
+  `crearPedido → getPedido → listPedidosDeUsuario`, verificando fechas como
+  instancias de `Date` en la base de datos.
+- **Nomenclatura**: test funcional que verifica `pedidos` (plural) es un array
+  y cada elemento es un `pedido` (singular) con propiedades correctas.
+
+## Cobertura
+
+| Archivo | Cobertura |
+|---------|-----------|
+| `ReservaService.ts` | 98.1% statements, 100% funciones |
+| `PedidosService.ts` | 84.2% statements, 87.5% funciones |
+
+> `crearDesdeCarrito` en `PedidosService` no está cubierto por estos tests porque
+> delega toda la lógica a `CheckoutService` (cubierto en `checkout.test.ts`).
+> No modifica fechas ni nombres afectados por los typos.
+
+---
+
+# Capa de autenticación
+
+> Ver también: `docs/SERVICE_ARCHITECTURE.md` (sección "Capa de autenticación" —
+> versión detallada) y `docs/admin-generic.md` (políticas de admin genérico).
+
+## Visión general
+
+- **NextAuth.js 5.0.0-beta.32** (Credentials provider, strategy: JWT)
+- `maxAge` global: 30 días
+- `rememberMe`: true → 30 días; false → 24h (JWT `exp` override)
+- `updateAge: 1h` — el `session` callback valida `sessionVersion` contra BD
+- `NEXTAUTH_SECRET` validado en build (`src/lib/auth/validate-env.ts`)
+- bcrypt 12 rounds (`BCRYPT_ROUNDS` en `src/lib/auth/constants.ts`)
+
+### Roles
+
+| Rol | Descripción |
+|-----|-------------|
+| `ADMIN` | Acceso completo al panel admin |
+| `CLIENTE` | Rol por defecto en registro público |
+| `NEGOCIO` | Propietario/gestor de negocio (solo via solicitud + aprobación) |
+| `LOGISTICA` | Proveedor logístico |
+
+**Workaround C8 (Etapa 3):** un usuario con rol `CLIENTE` que es dueño de un
+`Negocio` (`Negocio.userId === user.id`) puede acceder a rutas `/negocio`
+mediante `esPropietarioDeAlgunNegocio()` en `NegocioService`. Multi-rol real N:N
+diferido a **Fase 4**.
+
+### Flujos
+
+#### Registro
+
+- Endpoint: `POST /api/auth/registro` → `src/app/api/auth/registro/route.ts`
+- Siempre crea `CLIENTE` (forzado server-side; el campo `rol` en el body es ignorado)
+- Normaliza email y username a lowercase
+- Política de contraseña: 10+ chars, letra, número, lista negra (~50 entries)
+- bcrypt 12 rounds (`BCRYPT_ROUNDS`)
+- Evento: `REGISTRO_USUARIO`
+- Para obtener `NEGOCIO`: solicitud via `/negocios/solicitar` + aprobación admin
+
+#### Login
+
+- Credentials provider → `src/lib/auth/credentials-authorize.ts`
+- Normaliza identifier (email/username) a lowercase
+- Query busca por `email` o `username` con `isActive: true`
+- `isActive: false` → login falla con "Credenciales inválidas" (anti-enumeración)
+- `mustChangePassword: true` → login permitido pero middleware redirige a `/perfil/cambiar-password`
+- bcrypt compare (12 rounds)
+- Eventos: `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `LOGIN_FALLIDO_USUARIO_INACTIVO`
+- Mensajes de error genéricos (anti-enumeración)
+
+#### Reset de contraseña
+
+1. `POST /api/auth/recuperar` → `src/app/api/auth/recuperar/route.ts`
+   - Genera token UUID (alta entropía)
+   - **Hashea** con SHA-256 (`hashToken` de `src/lib/auth/token-hash.ts`) antes de guardar
+   - Expiración: 1 hora, single-use
+   - No loggea el token
+   - Evento: `PASSWORD_RESET_SOLICITADO`
+2. `POST /api/auth/resetear` → `src/app/api/auth/resetear/route.ts`
+   - Token recibido en POST body (nunca en query string)
+   - `verifyToken` (SHA-256 + `timingSafeEqual`) valida el hash
+   - Actualiza password con bcrypt 12 rounds
+   - Incrementa `sessionVersion`
+   - Evento: `PASSWORD_RESET_COMPLETADO`
+
+#### Cambio de password
+
+- `POST /api/perfil` (action: `cambiarPassword`) → `src/lib/actions.ts`
+- Valida password actual con `bcrypt.compare`
+- Aplica `validarPassword` (política centralizada)
+- bcrypt 12 rounds para el nuevo hash
+- Incrementa `sessionVersion: { increment: 1 }`
+- Si era `mustChangePassword: true`, lo pone a `false` y registra `PASSWORD_CAMBIADO_OBLIGATORIO`
+- Evento: `PASSWORD_CAMBIADO`
+- Fuerza re-login (el JWT anterior es invalidado en el próximo `updateAge`)
+
+#### Logout
+
+- Client-side (limpia cookies de sesión)
+- `sessionVersion` no se incrementa en logout (solo en cambios de estado)
+- La próxima vez que el JWT expirado intente refresh, el `session` callback
+  detecta el mismatch de `sessionVersion` y invalida
+
+## Seguridad implementada
+
+| Medida | Implementación | Archivo |
+|--------|---------------|---------|
+| bcrypt 12 rounds | `BCRYPT_ROUNDS = 12` constante | `src/lib/auth/constants.ts` |
+| Password policy | 10 chars + letra + número + lista negra | `src/lib/auth/password-policy.ts` |
+| `isActive` bloquea login | Filtrado en `credentialsAuthorize` | `src/lib/auth/` |
+| `mustChangePassword` | Middleware redirige a cambio obligado | `src/middleware.ts` |
+| `NEXTAUTH_SECRET` validado | Build fails en prod si < 32 chars | `src/lib/auth/validate-env.ts` |
+| Token reset hasheado | SHA-256 + `timingSafeEqual` | `src/lib/auth/token-hash.ts` |
+| Anti-enumeración | Mensajes genéricos en login y recuperación | todos los endpoints |
+| Auditoría de auth | 10+ eventos en `AuditLog` | `src/services/utils/audit.ts` |
+| `sessionVersion` | Invalida JWT tras cambio de password/rol | `src/lib/actions.ts` |
+| Normalización | lowercase en email/username | todos los endpoints |
+
+### Eventos de auditoría de auth
+
+| Evento | Trigger |
+|--------|---------|
+| `LOGIN_EXITOSO` | Login exitoso |
+| `LOGIN_FALLIDO` | Credenciales inválidas / usuario no existe |
+| `LOGIN_FALLIDO_USUARIO_INACTIVO` | Usuario con `isActive: false` |
+| `LOGOUT` | Cierre de sesión |
+| `REGISTRO_USUARIO` | Registro exitoso |
+| `PASSWORD_RESET_SOLICITADO` | Solicitud de reset |
+| `PASSWORD_RESET_COMPLETADO` | Reset completado |
+| `PASSWORD_CAMBIADO` | Cambio de password vía API |
+| `PASSWORD_CAMBIADO_OBLIGATORIO` | Password cambiada con `mustChangePassword: true` |
+| `ROL_CAMBIADO` | Asignación de rol ADMIN |
+| `ROL_MIGRADO_AUTOREGISTRO` | Migración B1 (degradado NEGOCIO → CLIENTE) |
+| `ACCOUNT_DELETED` | Eliminación de cuenta |
+| `SESSION_INVALIDATED` | `sessionVersion` mismatch detectado |
+
+### Tests de arquitectura
+
+`src/tests/architecture-auth.test.ts` — 10 tests de análisis estático que verifican:
+
+1. Registro solo permite `CLIENTE`
+2. Formulario de registro sin selector de rol
+3. Todo `/api/admin/*` valida rol `ADMIN`
+4. Mutaciones usan `assertPertenencia`
+5. Tokens de reset se hashean
+6. No hay `console.log` con tokens/passwords/secrets
+7. Servicios no importan Next.js
+8. Helpers de auth no importan Next.js
+9. `sessionVersion` se incrementa al cambiar password
+10. bcrypt usa 12 rounds en producción
+
+## Matriz rutas ↔ roles
+
+| Ruta | Rol | Notas |
+|------|-----|-------|
+| `/auth/login` | público | Credentials provider |
+| `/auth/registro` | público | Siempre `CLIENTE` |
+| `/auth/recuperar` | público | POST, token en body |
+| `/auth/resetear/[token]` | público | Token en POST body, no en query string |
+| `/perfil/cambiar-password` | auth requerido | Si `mustChangePassword`, es la única ruta accesible |
+| `/cliente/*` | CLIENTE | Catálogo, carrito, pedidos, pagos |
+| `/negocio/*` | NEGOCIO, ADMIN | También CLIENTE si dueño de negocio (workaround C8) |
+| `/negocios/solicitar` | CLIENTE | Solicitud de alta de negocio |
+| `/admin/*` | ADMIN | Panel de administración |
+| `/api/admin/*` | ADMIN | Endpoints protegidos con `requireRole` |
+| `/logistica/*` | LOGISTICA, ADMIN | Asignación y seguimiento de pedidos |
+
+## Pendientes (Fase 3/4)
+
+- ⏳ **Rate limiting** — login, registro, recuperación (`[TODO Fase 3]`)
+- ⏳ **Lockout** por intentos fallidos (`failedLoginAttempts`, `lockedUntil` — campos ya en schema)
+- ⏳ **2FA** para admin (TOTP)
+- ⏳ **Email verification** real (requiere proveedor SMTP)
+- ⏳ **Multi-rol N:N** (`NegocioUsuario` — workaround actual: dueño accede a `/negocio`)
+- ⏳ **Structured logging** (winston/pino)
+- ⏳ **Logout revocation** server-side (base: `sessionVersion`)
+
+Cada uno con `TODO` en el código correspondiente.
+
+---
+
+# Migración a Nest.js (Fase 4)
+
+## Estado actual (auditoría: Fase 2, Punto 8)
+
+### `nest-compat.ts` — NO EXISTE
+
+El archivo `src/services/nest-compat.ts`, mencionado en esta documentación como
+"adaptadores para Nest.js DI", **no existe en el repositorio**. No está en disco,
+no aparece en la historia de git, y **ningún archivo lo importa**.
+
+**Decisión (Estrategia B):** No se crea código preparativo para Nest.js ahora,
+porque sería código muerto. La migración real se implementará en Fase 4 con
+providers Nest.js que consuman los servicios directamente.
+
+> **TODO (Fase 4):** Crear `src/infrastructure/nestjs/` con:
+> - `tokens.ts` — tokens de inyección (`Symbol()` para cada servicio y abstracción).
+> - `providers.ts` — array de providers Nest.js que instancien los servicios con
+>   sus dependencias inyectadas.
+> - `nestjs.module.ts` — módulo Nest.js que exporte los providers.
+>
+> Los servicios ya son framework-agnostic (verificado por
+> `src/tests/architecture.test.ts`), así que el adaptador de DI será el único
+> código nuevo necesario.
+
+### `ServiceRegistry.ts` — NO EXISTE
+
+Tampoco existe `ServiceRegistry.ts` en `src/services/`. No hay registro de
+servicios ni resolución de dependencias vía patrón Registry. La documentación
+mencionaba este archivo pero **nunca fue creado**.
+
+Los servicios se instancian **directamente con `new`** en:
+- `src/lib/actions.ts` (module-level singletons)
+- Algunas Server Actions y API Routes
+
+**Decisión (Estrategia B):** No se crea un ServiceRegistry ahora. En Fase 4,
+Nest.js provee su propio contenedor DI, que reemplazará las instancias
+manuales de `new Service()`.
+
+### `InMemoryEventBus` — PREPARADO, NO USADO
+
+`src/infrastructure/eventBus/InMemoryEventBus.ts` existe y está exportado desde
+`src/infrastructure/index.ts`. Sin embargo, **ningún servicio publica eventos ni
+se suscribe a handlers**.
+
+- `IEventBus.ts` documenta: "Not currently used in production but part of the
+  infrastructure layer for future microservices migration."
+- `getEventBus()` / `resetEventBus()` existen como singleton factory.
+- **Estado:** scaffolding preparado para Fase 4. No se elimina porque el
+  archivo `IEventBus` y `InMemoryEventBus` son interfaces/literatura válidas
+  que no causan código muerto confuso (están claramente documentados).
+
+> **TODO (Fase 4):** Conectar `IEventBus` a servicios que emitan eventos de
+> dominio (p.ej. `PedidoCreado`, `PagoConfirmado`) y reemplazar `InMemoryEventBus`
+> por RabbitMQ/Kafka.
+
+### Verificación de framework-agnostic
+
+**VERIFICADO POR TEST:** `src/tests/architecture.test.ts` verifica que
+`src/services/` no importa `next/` ni `@nestjs/*`. El test pasa.
+
+**Servicios importan de:**
+- `@/lib/db/prisma` — Prisma client singleton
+- `@/generated/prisma/client` — tipos Prisma
+- `@/infrastructure` — `ICache`, `getCache`, `cacheKeys`, `cacheTTL`
+- `@/shared/*` — tipos y utilidades compartidas
+- Imports relativos entre servicios (`@/services/DisponibilidadService`, etc.)
+
+### Riesgos identificados para la migración
+
+Estos son los obstáculos que habría que abordar al migrar a Nest.js en Fase 4:
+
+1. **Acoplamiento interno de dependencias:** Algunos servicios crean sus
+   dependencias internamente con `new` (p.ej. `CartService` crea
+   `DisponibilidadService` internamente, `CheckoutService` crea `CartService`,
+   `LogisticaService`, `PagoService`, `IVAService`). Para Nest.js DI, estos
+   constructores deberían aceptar las dependencias inyectadas en lugar de
+   crearlas internamente.
+
+2. **Prisma importado directamente:** Todos los servicios importan
+   `prisma` de `@/lib/db/prisma` (singleton). No hay una abstracción
+   `IDatabase`. Para Nest.js, se podría inyectar `PrismaService` (extendiendo
+   `PrismaClient`) como provider.
+
+3. **Cache injectable pero opcional:** Algunos servicios aceptan `cache?: ICache`
+   en el constructor, pero por defecto usan `getCache()` (singleton). En Nest.js,
+   el cache se inyectaría siempre vía DI.
+
+4. **Server Actions como punto de entrada:** El acceso principal a servicios es
+   a través de `src/lib/actions.ts`. En Nest.js, esto se reemplazaría con
+   controllers + routers.
+
+### Estrategia real de migración (Fase 4)
+
+**Fase 4:** Se migrarán los servicios de `src/services/` a microservicios
+Nest.js. Los pasos serían:
+
+1. **Crear providers Nest.js** — Para cada servicio en `src/services/`, definir
+   un provider con token `Symbol` que instancie el servicio inyectando
+   `ICache`, `IEventBus`, y `PrismaClient`.
+
+2. **Refactorizar constructores** — Convertir dependencias creadas internamente
+   (`new DisponibilidadService()`) a inyección de constructor. Esto NO cambia
+   el comportamiento, solo el cómo se pasan las dependencias.
+
+3. **Crear módulos Nest.js** — Un módulo por bounded context (Catalog, Checkout,
+   Pagos, Negocio, etc.) que declare sus providers y exporte los servicios
+   necesarios.
+
+4. **Mover Server Actions a Controllers** — `src/lib/actions.ts` se reemplaza
+   por controllers REST o gRPC en los módulos correspondientes.
+
+5. **Migrar DB a PostgreSQL** — Cambiar `DATABASE_URL` a PostgreSQL. El código
+   Prisma es idéntico; solo cambia la cadena de conexión.
+
+6. **Reemplazar InMemoryEventBus** — Por RabbitMQ/Kafka según el bounded
+   context. Los eventos de dominio definidos en Fase 4 usarán `IEventBus`.
+
+7. **Server Actions → API** — Los endpoints REST se exponen directamente desde
+   los controllers Nest.js, eliminando `src/lib/actions.ts`.
+
+**No hay código preparativo ahora** — la migración requiere decisiones de
+arquitectura (microservicios vs monolito Nest.js, boundaries, eventos de
+dominio) que se tomarán en Fase 4. Mantener providers sin usar sería código
+muerto.

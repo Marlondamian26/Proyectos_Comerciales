@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
+import { hashToken } from "@/lib/auth/token-hash";
+import { logAudit } from "@/services/utils/audit";
 
 export async function POST(request: Request) {
   try {
@@ -17,21 +19,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const token = crypto.randomUUID();
+    const tokenPlano = crypto.randomUUID();
+    const tokenHash = hashToken(tokenPlano);
 
     await prisma.verificationToken.create({
       data: {
         identifier: email,
-        token,
+        token: tokenHash,
         expires: new Date(Date.now() + 3600000),
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/resetear/${token}`;
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[RECUPERAR] Solicitud de reset recibida para: ${email}`);
+    }
 
-    console.log(`[RECUPERAR] Reset URL para ${email}: ${resetUrl}`);
+    await logAudit("PASSWORD_RESET_SOLICITADO", null, user.id, { email });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, token: tokenPlano });
   } catch {
     return NextResponse.json({ error: "Error al procesar la solicitud" }, { status: 500 });
   }

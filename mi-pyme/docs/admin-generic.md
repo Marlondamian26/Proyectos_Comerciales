@@ -59,6 +59,10 @@ model User {
   isGenericAdmin        Boolean      @default(false)
   mustChangePassword    Boolean      @default(false)
   isActive              Boolean      @default(true)
+  lastLoginAt           DateTime?
+  failedLoginAttempts   Int          @default(0)
+  lockedUntil           DateTime?
+  sessionVersion        Int          @default(0)
   deletedAt             DateTime?
   deletedBy             String?
   deletedReason         String?
@@ -68,6 +72,7 @@ model User {
   @@index([rol])
   @@index([isGenericAdmin])
   @@index([isActive])
+  @@index([lockedUntil])
 }
 
 model AuditLog {
@@ -112,6 +117,16 @@ model AuditLog {
 | `LAST_ADMIN_DELETED_BY_SELF` | Eliminación de último admin con doble confirmación |
 | `ACCOUNT_DELETED` | Eliminación de cuenta estándar |
 | `FAILED_DELETE_ATTEMPT` | Intento fallido de eliminación |
+| `LOGIN_EXITOSO` | Login exitoso (incluye `rememberMe` en meta) |
+| `LOGIN_FALLIDO` | Credenciales inválidas (usuario no existe o password incorrecto) |
+| `LOGIN_FALLIDO_USUARIO_INACTIVO` | Login fallido para usuario con `isActive: false` |
+| `PASSWORD_CAMBIADO_OBLIGATORIO` | Password cambiada por usuario con `mustChangePassword: true` |
+| `PASSWORD_CAMBIADO` | Password cambiada voluntariamente vía `/api/perfil` |
+| `PASSWORD_RESET_SOLICITADO` | Solicitud de recuperación de contraseña |
+| `PASSWORD_RESET_COMPLETADO` | Contraseña restablecida exitosamente |
+| `REGISTRO_USUARIO` | Nuevo usuario registrado vía `/api/auth/registro` |
+| `ROL_CAMBIADO` | Asignación de rol ADMIN a usuario |
+| `LOGOUT` | Cierre de sesión del usuario |
 
 ## Configuración de Producción
 
@@ -143,6 +158,8 @@ NEXTAUTH_URL="https://tu-dominio.com"
 - [ ] Probar eliminación de último admin con doble confirmación
 - [ ] Verificar logs de auditoría en base de datos
 - [ ] Configurar alertas para eventos `GENERIC_ADMIN_CREATED` y `LAST_ADMIN_DELETED_BY_SELF`
+- [ ] Verificar que `NEXTAUTH_SECRET` es ≥32 caracteres (build falla si no)
+- [ ] Verificar que usuarios inactivos no pueden loguearse
 
 ## Flujos de Usuario
 
@@ -178,19 +195,93 @@ Ingresa su contraseña → Cuenta desactivada (soft delete)
 
 ## Seguridad
 
+### Estado actual de seguridad
+
+- ✅ **Implementado**: bcrypt 12 rounds (uniforme en todos los endpoints de password),
+  `isActive` bloquea login, `mustChangePassword` fuerza cambio, `NEXTAUTH_SECRET`
+  validado, auditoría de eventos (login, reset, cambio password, rol, eliminación),
+  `sessionVersion` invalida JWT tras cambio de password/rol, password policy fuerte
+  (10+ chars, letra, número, lista negra), token de reset hasheado con SHA-256.
+- ⏳ **Pendiente (Fase 3/4)**: rate limiting, lockout con lógica, 2FA, email
+  verification, multi-rol real.
+
 ### Medidas Implementadas
-- **bcrypt con salt ≥ 12** para hashing de contraseñas
-- **Rate limiting** en endpoints sensibles (eliminación, login)
-- **Logging de intentos fallidos** con auditoría
+- **bcrypt 12 rounds** para todas las contraseñas de usuarios (registro, reset,
+  cambio de password). Passwords existentes con 10 rounds siguen funcionando;
+  al próximo cambio se re-hashean a 12.
+- **isActive filter**: usuarios con `isActive: false` no pueden loguearse
+- **mustChangePassword enforcement**: admin genérico forzado a cambiar contraseña
+- **Middleware**: navegación restringida durante mustChangePassword
+- **Política de contraseña**: 10 caracteres mínimo + al menos una letra + al menos
+  un número + lista negra de contraseñas comunes
+- **Token de reset hasheado**: SHA-256 (no bcrypt) + `timingSafeEqual` para
+  prevenir timing attacks
+- **sessionVersion**: incrementado en cambio de password, rol o eliminación de cuenta;
+  validado en el `session` callback con ventana de gracia de hasta 1h
+- **Validación de NEXTAUTH_SECRET**: build falla en producción si el secret es default o <32 chars
 - **Revocation de sesiones** tras eliminación de cuenta
 - **Middleware** verifica `countAdmins` en cambios de roles
 - **Validación de permisos**: solo ADMIN puede asignar rol ADMIN
+- **No token en logs**: el URL de reseteo nunca se loggea con el token incluido
+- [TODO Fase 3] **Rate limiting** en endpoints sensibles (login, recuperar, resetear)
+- [TODO Fase 3] **Logging de intentos fallidos** con auditoría (eventos LOGIN_FALLIDO ya implementados)
+- [TODO Fase 4] **2FA** y **email verification**
 
 ### Consideraciones
 - La contraseña genérica por defecto (`12345678`) **NO debe usarse en producción**
 - Forzar `mustChangePassword=true` garantiza rotación inmediata
 - Auditoría completa permite trazabilidad forense
 - Soft delete preserva integridad referencial y datos históricos
+
+### Forzamiento de Cambio de Contraseña (mustChangePassword)
+
+El admin genérico se crea con `mustChangePassword: true`. Al primer login, el
+usuario es autenticado pero **no puede navegar** a ninguna ruta protegida hasta
+que cambie su contraseña.
+
+#### Flujo
+
+```
+Login con admin genérico (12345678) → Session con mustChangePassword: true
+  → Middleware redirige a /perfil/cambiar-password
+  → Usuario cambia contraseña (debe tener 10+ caracteres, letra y número)
+  → Server Action pone mustChangePassword: false en BD
+  → AuditLog registra PASSWORD_CAMBIADO_OBLIGATORIO
+  → signOut forzado → redirect a /auth/login?message=password-changed
+  → Re-login con nueva contraseña → acceso normal
+```
+
+#### Restricciones de navegación (Middleware)
+
+Mientras `mustChangePassword === true`, el middleware permite **únicamente**:
+
+| Ruta | Descripción |
+|------|-------------|
+| `/perfil/cambiar-password` | Página de cambio obligatorio |
+| `/api/perfil` | Server Action de cambio de password |
+| `/auth/*` | Login, logout, recuperar (para cerrar sesión) |
+| `/_next/*` | Assets estáticos |
+| `/favicon.ico` | Favicon |
+
+**Cualquier otra ruta** redirige a `/perfil/cambiar-password`. Esto incluye `/`,
+`/admin`, `/cliente`, `/catalogo`, etc.
+
+#### Página `/perfil/cambiar-password`
+
+- No muestra Navbar ni Sidebar (evita tentar navegación)
+- Título: "Debes cambiar tu contraseña"
+- Mensaje: "Por seguridad, debes establecer una nueva contraseña antes de continuar."
+- Formulario: contraseña actual + nueva + confirmación
+- Accesibilidad: labels, `aria-describedby`, `autocomplete`
+- Al éxito: `signOut` + redirect a `/auth/login?message=password-changed`
+
+### Bloqueo de Usuarios Inactivos (isActive)
+
+Los usuarios con `isActive: false` (soft-delete) **no pueden loguearse**. La
+query de `authorize` filtra por `isActive: true`. Si el usuario existe pero está
+inactivo, el login falla con el mismo mensaje que una contraseña incorrecta
+("Credenciales inválidas") para prevenir enumeración de cuentas. El evento de
+auditoría `LOGIN_FALLIDO_USUARIO_INACTIVO` se registra en el servidor.
 
 ## Testing
 
@@ -204,6 +295,10 @@ Cubre:
 - Reaparecer admin genérico si no hay admins
 - Eliminación último admin requiere doble contraseña
 - Usuarios normales eliminan cuenta con su contraseña
+- Usuarios inactivos no pueden loguearse (`auth-isactive.test.ts`)
+- Admin genérico forzado a cambiar contraseña (`auth-must-change-password.test.ts`)
+- Validación de NEXTAUTH_SECRET en producción (`auth-env-validation.test.ts`)
+- No token de reset en logs (`auth-s4-no-token-logs.test.ts`)
 
 ### Tests de Integración (Playwright)
 ```bash
@@ -255,7 +350,7 @@ SELECT * FROM "User" WHERE isGenericAdmin = true;
 
 ### Eliminación Último Admin Falla
 1. Verificar que `GENERIC_ADMIN_PASSWORD` coincide en .env y BD
-2. Revisar que bcrypt compara correctamente (salt ≥ 12)
+2. Revisar que bcrypt compara correctamente (12 rounds para nuevas contraseñas)
 3. Comprobar que `eliminarUltimoAdmin` se llama (no `eliminarCuenta`)
 
 ## Referencias

@@ -73,6 +73,26 @@ export class NegocioService extends Service {
   }
 
   /**
+   * Indica si el usuario es propietario de al menos un negocio (activa o no).
+   * Usado por el middleware para el workaround C8: un cliente que es dueño de
+   * un negocio puede acceder a /negocio sin necesidad de tener rol NEGOCIO.
+   */
+  async esPropietarioDeAlgunNegocio(userId: string): Promise<boolean> {
+    const cacheKey = cacheKeys.negocio.porUsuario(userId);
+    const cached = await this.cache.get<boolean>(cacheKey);
+    if (cached !== undefined) return cached;
+
+    const negocio = await prisma.negocio.findFirst({
+      where: { userId },
+      select: { id: true },
+    });
+
+    const result = !!negocio;
+    await this.cache.set(cacheKey, result, cacheTTL.negocioUsuario);
+    return result;
+  }
+
+  /**
     * Actualiza datos generales del negocio (valida permisos).
     */
   async actualizarNegocio(id: string, datos: Partial<NegocioDTO>, userId: string, rolActual?: string): Promise<Negocio> {
@@ -392,7 +412,7 @@ export class NegocioService extends Service {
       },
     });
 
-    if (negocio.userId) {
+     if (negocio.userId) {
       const user = await prisma.user.findUnique({
         where: { id: negocio.userId },
         select: { rol: true },
@@ -400,15 +420,20 @@ export class NegocioService extends Service {
       if (user && user.rol !== "NEGOCIO" && user.rol !== "ADMIN") {
         await prisma.user.update({
           where: { id: negocio.userId },
-          data: { rol: "NEGOCIO" },
+          data: {
+            rol: "NEGOCIO",
+            sessionVersion: { increment: 1 },
+          },
         });
         await this.cache.del(cacheKeys.usuario.detalle(negocio.userId));
+        await this.cache.del(cacheKeys.negocio.porUsuario(negocio.userId));
       }
     }
 
     await logAudit("NEGOCIO_APROBADO", adminId, negocioId, {
       estadoAnterior: negocio.estado,
       estadoNuevo: "ACTIVO",
+      sessionVersionIncrementado: true,
     });
 
     this.invalidateCache(negocioId);
@@ -503,18 +528,41 @@ export class NegocioService extends Service {
       data: { estado: "ACTIVO", aprobadoPorId: adminId, aprobadoEn: new Date() },
     });
 
-    await logAudit("NEGOCIO_REACTIVADO", adminId, negocioId, {});
+    if (result.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: result.userId },
+        select: { rol: true },
+      });
+      if (user && user.rol !== "NEGOCIO" && user.rol !== "ADMIN") {
+        await prisma.user.update({
+          where: { id: result.userId },
+          data: {
+            rol: "NEGOCIO",
+            sessionVersion: { increment: 1 },
+          },
+        });
+        await this.cache.del(cacheKeys.usuario.detalle(result.userId));
+        await this.cache.del(cacheKeys.negocio.porUsuario(result.userId));
+      }
+    }
+
+    await logAudit("NEGOCIO_REACTIVADO", adminId, negocioId, {
+      sessionVersionIncrementado: result.userId ? true : false,
+    });
 
     this.invalidateCache(negocioId);
     return result;
   }
 
-  async invalidateCache(negocioId?: string): Promise<void> {
+  async invalidateCache(negocioId?: string, userId?: string): Promise<void> {
     await this.cache.invalidatePrefix(cachePrefixes.negocio);
     if (negocioId) {
       await this.cache.del(cacheKeys.negocio.detalle(negocioId));
       await this.cache.invalidatePrefix("negocio:" + negocioId + ":dashboard:fiscal");
       await this.cache.del(cacheKeys.logistica.checkout(negocioId));
+    }
+    if (userId) {
+      await this.cache.del(cacheKeys.negocio.porUsuario(userId));
     }
   }
 }

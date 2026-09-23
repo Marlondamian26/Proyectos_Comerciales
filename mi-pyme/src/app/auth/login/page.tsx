@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Lock, Eye, EyeOff, AlertCircle, Hash } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle, Hash, Check } from "lucide-react";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -17,9 +17,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const message = searchParams.get("message");
+
+  const successMessage =
+    message === "password-changed"
+      ? "Contraseña cambiada correctamente. Inicia sesión de nuevo."
+      : "";
 
   useEffect(() => {
     if (error) {
@@ -37,6 +42,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: identifier,
         password,
+        rememberMe: rememberMe ? "true" : "false",
         redirect: false,
       });
 
@@ -152,12 +158,19 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive animate-fade-in-up">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive animate-fade-in-up">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="flex items-center gap-2 rounded-lg bg-success/10 border border-success/20 p-3 text-sm text-success animate-fade-in-up">
+                <Check className="h-4 w-4 flex-shrink-0" />
+                <span>{successMessage}</span>
+              </div>
+            )}
 
               <div className="space-y-2">
                 <label htmlFor="identifier" className="text-sm font-medium text-foreground">

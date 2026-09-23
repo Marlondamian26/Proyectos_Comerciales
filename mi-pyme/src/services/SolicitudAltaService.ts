@@ -303,12 +303,19 @@ export class SolicitudAltaService extends Service {
     if (userActual && userActual.rol !== "NEGOCIO" && userActual.rol !== "ADMIN") {
       await prisma.user.update({
         where: { id: solicitud.userId },
-        data: { rol: "NEGOCIO" },
+        data: {
+          rol: "NEGOCIO",
+          sessionVersion: { increment: 1 },
+        },
       });
-       await this.cache.del(cacheKeys.usuario.detalle(solicitud.userId));
+      await this.cache.del(cacheKeys.usuario.detalle(solicitud.userId));
+      await this.cache.del(cacheKeys.negocio.porUsuario(solicitud.userId));
     }
 
-    await logAudit("SOLICITUD_APROBADA", adminId, solicitudId, { negocioId: negocio.id });
+    await logAudit("SOLICITUD_APROBADA", adminId, solicitudId, {
+      negocioId: negocio.id,
+      sessionVersionIncrementado: true,
+    });
 
     await this.cache.del(cacheKeys.solicitudes.pending());
     await this.cache.del(cacheKeys.solicitudes.detail(solicitudId));

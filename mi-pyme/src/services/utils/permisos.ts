@@ -44,39 +44,3 @@ export async function assertPertenencia(
     );
   }
 }
-
-export async function assertPropietarioOManager(
-  userId: string,
-  negocioId: string,
-  rolActual?: string
-): Promise<void> {
-  if (rolActual === "ADMIN") {
-    return;
-  }
-
-  const negocio = await prisma.negocio.findUnique({
-    where: { id: negocioId },
-    select: { userId: true },
-  });
-
-  if (!negocio) {
-    throw new BusinessError("Negocio no encontrado", "NO_ENCONTRADO", 404);
-  }
-
-  if (negocio.userId === userId) {
-    return;
-  }
-
-  // TODO(Fase 2): revisar NegocioUsuario para soporte N:N
-  const negocioUsuario = await prisma.negocioUsuario.findFirst({
-    where: { negocioId, userId },
-  });
-
-  if (!negocioUsuario) {
-    throw new BusinessError(
-      "No tienes permiso para acceder a este negocio",
-      "NO_AUTORIZADO",
-      403
-    );
-  }
-}

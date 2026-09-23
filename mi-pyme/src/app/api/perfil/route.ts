@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { obtenerPerfil, actualizarPerfil, cambiarPassword } from "@/lib/actions";
+import { logAudit } from "@/services/utils/audit";
 
 export async function GET() {
   try {
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
     }
 
     const result = await cambiarPassword(session.user.id, { passwordActual, passwordNuevo });
+
+    await logAudit("PASSWORD_CAMBIADO", session.user.id, session.user.id, {});
+
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

@@ -1,29 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import bcrypt from "bcryptjs";
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
-
-    if (!token) {
-      return NextResponse.json({ valid: false });
-    }
-
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
-    });
-
-    if (!verificationToken || verificationToken.expires < new Date()) {
-      return NextResponse.json({ valid: false });
-    }
-
-    return NextResponse.json({ valid: true });
-  } catch {
-    return NextResponse.json({ valid: false });
-  }
-}
+import { BCRYPT_ROUNDS } from "@/lib/auth/constants";
+import { validarPassword } from "@/lib/auth/password-policy";
+import { hashToken } from "@/lib/auth/token-hash";
+import { logAudit } from "@/services/utils/audit";
 
 export async function POST(request: Request) {
   try {
@@ -33,27 +14,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Token y contrasena son requeridos" }, { status: 400 });
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: "La contrasena debe tener al menos 8 caracteres" }, { status: 400 });
+    const passwordValidation = validarPassword(password);
+    if (!passwordValidation.valida) {
+      return NextResponse.json({ error: passwordValidation.errores.join("; ") }, { status: 400 });
     }
 
+    const tokenHash = hashToken(token);
+
     const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
+      where: { token: tokenHash },
     });
 
     if (!verificationToken || verificationToken.expires < new Date()) {
       return NextResponse.json({ error: "Token invalido o expirado" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { email: verificationToken.identifier },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        sessionVersion: { increment: 1 },
+      },
+    });
+
+    await logAudit("PASSWORD_RESET_COMPLETADO", updatedUser.id, updatedUser.id, {
+      email: verificationToken.identifier,
     });
 
     await prisma.verificationToken.delete({
-      where: { token },
+      where: { token: tokenHash },
     });
 
     return NextResponse.json({ success: true });

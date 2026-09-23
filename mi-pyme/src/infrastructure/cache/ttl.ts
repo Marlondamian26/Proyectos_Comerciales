@@ -13,6 +13,7 @@ export const cacheTTL = {
   pagos: 600,
   codigoEntrega: 3600,
   negocio: 120,
+  negocioUsuario: 60,
   dashboardFiscal: 120,
   dashboardResumen: 120,
   logistica: 3600,

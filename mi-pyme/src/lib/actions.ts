@@ -8,6 +8,8 @@ import { getCache, cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { revalidatePath } from "next/cache";
 import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
+import { BCRYPT_ROUNDS } from "@/lib/auth/constants";
+import { validarPassword } from "@/lib/auth/password-policy";
 import bcrypt from "bcryptjs";
 import { BusinessError } from "@/shared/types";
 import { DisponibilidadService } from "@/services/DisponibilidadService";
@@ -1441,10 +1443,14 @@ export async function cambiarEstadoUsuario(
 ) {
   await requireRole([Rol.ADMIN]);
 
-  const data: { rol?: Rol; nombre?: string } = {};
+  const data: { rol?: Rol; nombre?: string; sessionVersion?: { increment: number } } = {};
 
   if (datos.rol !== undefined) data.rol = datos.rol;
   if (datos.nombre !== undefined) data.nombre = datos.nombre;
+
+  if (datos.rol !== undefined) {
+    data.sessionVersion = { increment: 1 };
+  }
 
   await prisma.user.update({
     where: { id: usuarioId },
@@ -1453,6 +1459,7 @@ export async function cambiarEstadoUsuario(
 
   await getCache().del(cacheKeys.usuario.all());
   await getCache().del(cacheKeys.usuario.detalle(usuarioId));
+  await getCache().del(cacheKeys.negocio.porUsuario(usuarioId));
 
   return prisma.user.findUnique({
     where: { id: usuarioId },
@@ -1663,7 +1670,7 @@ export async function registrarUsuario(
     username: string;
     email: string;
     password: string;
-    rol: string;
+    rol?: string;
     provincia?: string;
     municipio?: string;
   }
@@ -1683,13 +1690,9 @@ export async function registrarUsuario(
       return { success: false, error: "El nombre de usuario solo puede contener letras, numeros y guiones bajos" };
     }
 
-    if (datos.password.length < 8) {
-      return { success: false, error: "La contraseña debe tener al menos 8 caracteres" };
-    }
-
-    const rolesValidos = ["CLIENTE", "NEGOCIO", "LOGISTICA"];
-    if (!rolesValidos.includes(datos.rol)) {
-      return { success: false, error: "Rol invalido. No se puede registrar como administrador." };
+    const passwordValidation = validarPassword(datos.password);
+    if (!passwordValidation.valida) {
+      return { success: false, error: passwordValidation.errores.join("; ") };
     }
 
     const existingEmail = await prisma.user.findUnique({
@@ -1706,7 +1709,7 @@ export async function registrarUsuario(
       return { success: false, error: "Ya existe un usuario con ese nombre de usuario" };
     }
 
-    const hashedPassword = await bcrypt.hash(datos.password, 10);
+    const hashedPassword = await bcrypt.hash(datos.password, BCRYPT_ROUNDS);
 
     const user = await prisma.user.create({
       data: {
@@ -1714,7 +1717,7 @@ export async function registrarUsuario(
         username: datos.username,
         password: hashedPassword,
         nombre: datos.nombre,
-        rol: datos.rol as Rol,
+        rol: "CLIENTE",
         provincia: datos.provincia,
         municipio: datos.municipio,
       },
@@ -1804,13 +1807,14 @@ export async function cambiarPassword(
 ) {
   await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN]);
 
-  if (datos.passwordNuevo.length < 8) {
-    throw new Error("La nueva contraseña debe tener al menos 8 caracteres");
+  const passwordValidation = validarPassword(datos.passwordNuevo);
+  if (!passwordValidation.valida) {
+    throw new Error(passwordValidation.errores.join("; "));
   }
 
   const user = await prisma.user.findUnique({
     where: { id: usuarioId },
-    select: { password: true },
+    select: { password: true, mustChangePassword: true },
   });
 
   if (!user || !user.password) {
@@ -1822,12 +1826,26 @@ export async function cambiarPassword(
     throw new Error("La contraseña actual es incorrecta");
   }
 
-  const hashedPassword = await bcrypt.hash(datos.passwordNuevo, 10);
+  const hashedPassword = await bcrypt.hash(datos.passwordNuevo, BCRYPT_ROUNDS);
+
+  const wasForced = user.mustChangePassword;
 
   await prisma.user.update({
     where: { id: usuarioId },
-    data: { password: hashedPassword },
+    data: {
+      password: hashedPassword,
+      mustChangePassword: false,
+      sessionVersion: { increment: 1 },
+    },
   });
+
+  if (wasForced) {
+    await logAudit("PASSWORD_CAMBIADO_OBLIGATORIO", usuarioId, usuarioId, {
+      reason: "Password changed due to mustChangePassword flag",
+    });
+  }
+
+  await logAudit("PASSWORD_CAMBIADO", usuarioId, usuarioId, {});
 
   return { success: true };
 }
@@ -1944,6 +1962,7 @@ async function deactivateGenericAdmin(actorId: string) {
       deletedAt: new Date(),
       deletedBy: usuarioId,
       deletedReason: "Eliminación voluntaria de cuenta",
+      sessionVersion: { increment: 1 },
     },
   });
 
@@ -2008,6 +2027,7 @@ export async function eliminarUltimoAdmin(
       deletedAt: new Date(),
       deletedBy: usuarioId,
       deletedReason: "Eliminación del último administrador con doble confirmación",
+      sessionVersion: { increment: 1 },
     },
   });
 
@@ -2043,11 +2063,15 @@ export async function asignarRolAdmin(usuarioId: string, actorId: string) {
 
   await prisma.user.update({
     where: { id: usuarioId },
-    data: { rol: "ADMIN" },
+    data: {
+      rol: "ADMIN",
+      sessionVersion: { increment: 1 },
+    },
   });
 
   await getCache().del(cacheKeys.usuario.all());
   await getCache().del(cacheKeys.usuario.detalle(usuarioId));
+  await getCache().del(cacheKeys.negocio.porUsuario(usuarioId));
 
   return prisma.user.findUnique({
     where: { id: usuarioId },

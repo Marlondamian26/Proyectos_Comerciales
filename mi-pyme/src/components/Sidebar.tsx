@@ -24,6 +24,7 @@ export interface SidebarItem {
   href: string;
   icon: React.ReactNode;
   allowedRoles: Rol[];
+  requiresNegocioOwnership?: boolean;
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -32,18 +33,21 @@ const sidebarItems: SidebarItem[] = [
     href: "/negocio",
     icon: <PackageIcon className="h-5 w-5" />,
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
+    requiresNegocioOwnership: true,
   },
   {
     label: "Disponibilidad",
     href: "/negocio/disponibilidad",
     icon: <CalendarIcon className="h-5 w-5" />,
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
+    requiresNegocioOwnership: true,
   },
   {
     label: "Inventario",
     href: "/negocio/inventario",
     icon: <PackageIcon className="h-5 w-5" />,
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
+    requiresNegocioOwnership: true,
   },
   {
     label: "Pedidos",
@@ -127,9 +131,10 @@ const sidebarItems: SidebarItem[] = [
 
 export interface SidebarProps {
   userRol?: Rol;
+  esDuenoDeNegocio?: boolean;
 }
 
-export function Sidebar({ userRol }: SidebarProps) {
+export function Sidebar({ userRol, esDuenoDeNegocio }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -146,7 +151,8 @@ export function Sidebar({ userRol }: SidebarProps) {
           .filter(
             (item) =>
               item.allowedRoles.length === 0 ||
-              (userRol && item.allowedRoles.includes(userRol))
+              (userRol && item.allowedRoles.includes(userRol)) ||
+              (item.requiresNegocioOwnership && esDuenoDeNegocio)
           )
           .map((item) => {
             const href = item.href.split("?")[0];

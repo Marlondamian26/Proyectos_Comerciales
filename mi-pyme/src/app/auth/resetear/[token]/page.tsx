@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { validarPassword } from "@/lib/auth/password-policy";
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function ResetearPage({ params }: { params: Promise<{ token: string }> }) {
@@ -19,10 +20,16 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const passwordValidation = password ? validarPassword(password) : null;
+
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const res = await fetch(`/api/auth/resetear?token=${encodeURIComponent(resolvedParams.token)}`);
+        const res = await fetch("/api/auth/resetear/validar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: resolvedParams.token }),
+        });
         const data = await res.json();
         setTokenValid(data.valid);
       } catch {
@@ -40,8 +47,10 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
       setError("Las contrasenas no coinciden");
       return;
     }
-    if (password.length < 8) {
-      setError("La contrasena debe tener al menos 8 caracteres");
+
+    const validation = validarPassword(password);
+    if (!validation.valida) {
+      setError(validation.errores.join("; "));
       return;
     }
 
@@ -186,9 +195,10 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Minimo 8 caracteres"
+                  placeholder="Minimo 10 caracteres, una letra y un numero"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  aria-describedby="password-requirements"
                   className="flex h-11 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
                   required
                 />
@@ -201,6 +211,28 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {passwordValidation && passwordValidation.valida && (
+                <div className="space-y-1.5">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5, 6].map((level) => (
+                      <div
+                        key={level}
+                        className="h-1 flex-1 rounded-full bg-success transition-all duration-300"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-success">
+                    Contraseña válida
+                  </p>
+                </div>
+              )}
+              {passwordValidation && !passwordValidation.valida && (
+                <ul id="password-requirements" className="text-xs text-muted-foreground space-y-0.5">
+                  {passwordValidation.errores.map((err, i) => (
+                    <li key={i}>• {err}</li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -237,7 +269,7 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
               disabled={loading}
             >
               {loading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <Loading size="sm" />
                   Actualizando...
                 </span>

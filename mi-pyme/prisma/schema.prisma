@@ -23,9 +23,13 @@ model User {
   isGenericAdmin                                                Boolean                @default(false)
   mustChangePassword                                            Boolean                @default(false)
   isActive                                                      Boolean                @default(true)
-  deletedAt                                                     DateTime?
+   deletedAt                                                     DateTime?
   deletedBy                                                     String?
   deletedReason                                                 String?
+  lastLoginAt                                                   DateTime?
+  failedLoginAttempts                                           Int        @default(0)
+  lockedUntil                                                   DateTime?
+  sessionVersion                                                Int        @default(0)
   createdAt                                                     DateTime               @default(now())
   updatedAt                                                     DateTime               @updatedAt
   accounts                                                      Account[]
@@ -46,8 +50,15 @@ model User {
   @@index([rol])
   @@index([isGenericAdmin])
   @@index([isActive])
+  @@index([lockedUntil])
 }
 
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -66,6 +77,9 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -74,6 +88,10 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Usado para tokens de reset de password.
+/// Expiración: 1h. Single-use.
+/// El campo `token` guarda el hash SHA-256 del token plano.
+/// El token plano solo existe en memoria (email/link), nunca se persiste.
 model VerificationToken {
   identifier String
   token      String   @unique

@@ -3,76 +3,25 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { validarPassword } from "@/lib/auth/password-policy";
 import {
   User,
-  Briefcase,
-  Truck,
   Eye,
   EyeOff,
   Mail,
   Lock,
   MapPin,
-  Check,
   AlertCircle,
   Hash,
 } from "lucide-react";
 
-const ROLES = [
-  {
-    value: "CLIENTE",
-    label: "Cliente",
-    description: "Compra productos y reserva servicios",
-    icon: User,
-    color: "primary",
-  },
-  {
-    value: "NEGOCIO",
-    label: "Negocio",
-    description: "Gestiona tu catalogo y ventas",
-    icon: Briefcase,
-    color: "secondary",
-  },
-  {
-    value: "LOGISTICA",
-    label: "Logistica",
-    description: "Administra entregas y pedidos",
-    icon: Truck,
-    color: "accent",
-  },
-] as const;
-
-const ROLE_COLORS: Record<string, { border: string; bg: string; text: string; ring: string; iconBg: string }> = {
-  primary: {
-    border: "border-primary/30",
-    bg: "bg-primary/5",
-    text: "text-primary",
-    ring: "ring-primary",
-    iconBg: "bg-primary/10",
-  },
-  secondary: {
-    border: "border-secondary/30",
-    bg: "bg-secondary/5",
-    text: "text-secondary",
-    ring: "ring-secondary",
-    iconBg: "bg-secondary/10",
-  },
-  accent: {
-    border: "border-accent/30",
-    bg: "bg-accent/5",
-    text: "text-accent",
-    ring: "ring-accent",
-    iconBg: "bg-accent/10",
-  },
-};
-
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
-  if (password.length >= 8) score++;
+  if (password.length >= 10) score++;
   if (password.length >= 12) score++;
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
   if (/\d/.test(password)) score++;
@@ -103,7 +52,6 @@ export default function RegistroPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    rol: "CLIENTE",
     provincia: "",
     municipio: "",
   });
@@ -113,6 +61,7 @@ export default function RegistroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const passwordValidation = form.password ? validarPassword(form.password) : null;
   const strength = form.password ? getPasswordStrength(form.password) : null;
 
   useEffect(() => {
@@ -134,11 +83,15 @@ export default function RegistroPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) newErrors.email = "Email invalido";
 
-    if (form.password.length < 8) newErrors.password = "La contrasena debe tener al menos 8 caracteres";
+    if (form.password && passwordValidation) {
+      if (!passwordValidation.valida) {
+        newErrors.password = passwordValidation.errores.join("; ");
+      }
+    } else {
+      newErrors.password = "La contrasena es obligatoria";
+    }
 
     if (form.password !== form.confirmPassword) newErrors.confirmPassword = "Las contrasenas no coinciden";
-
-    if (!form.rol) newErrors.rol = "El rol es obligatorio";
 
     if (!form.provincia.trim()) newErrors.provincia = "La provincia es obligatoria";
 
@@ -181,14 +134,7 @@ export default function RegistroPage() {
             router.push(callbackUrl);
           }
         } else {
-          const rolPath: Record<string, string> = {
-            CLIENTE: "/cliente",
-            NEGOCIO: "/negocio",
-            LOGISTICA: "/logistica",
-            ADMIN: "/admin",
-          };
-          const targetPath = rolPath[form.rol] || "/cliente";
-          router.push(targetPath);
+          router.push("/cliente");
         }
       } else {
         setApiError(result.error || "Error al registrar usuario");
@@ -356,9 +302,10 @@ export default function RegistroPage() {
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Minimo 8 caracteres"
+                    placeholder="Minimo 10 caracteres"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    aria-describedby="password-requirements"
                     className={`flex h-11 w-full rounded-lg border bg-background pl-10 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all ${errors.password ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
                   />
                   <button
@@ -370,20 +317,27 @@ export default function RegistroPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {strength && (
+                {passwordValidation && passwordValidation.valida && (
                   <div className="space-y-1.5">
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5, 6].map((level) => (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded-full transition-all duration-300 ${level <= strength.score ? strength.color : "bg-muted"}`}
+                          className={`h-1 flex-1 rounded-full transition-all duration-300 ${strength ? (level <= strength.score ? strength.color : "bg-muted") : "bg-muted"}`}
                         />
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Fortaleza: <span className="font-medium text-foreground">{strength.label}</span>
+                      Fortaleza: <span className="font-medium text-foreground">{strength?.label}</span>
                     </p>
                   </div>
+                )}
+                {passwordValidation && !passwordValidation.valida && (
+                  <ul id="password-requirements" className="text-xs text-muted-foreground space-y-0.5">
+                    {passwordValidation.errores.map((err, i) => (
+                      <li key={i}>• {err}</li>
+                    ))}
+                  </ul>
                 )}
                 {errors.password && <p className="text-sm text-destructive" role="alert">{errors.password}</p>}
               </div>
@@ -414,44 +368,6 @@ export default function RegistroPage() {
                   </button>
                 </div>
                 {errors.confirmPassword && <p className="text-sm text-destructive" role="alert">{errors.confirmPassword}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Selecciona tu rol
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROLES.map((rol) => {
-                    const Icon = rol.icon;
-                    const colors = ROLE_COLORS[rol.color];
-                    const isSelected = form.rol === rol.value;
-                    return (
-                      <button
-                        key={rol.value}
-                        type="button"
-                        onClick={() => setForm({ ...form, rol: rol.value })}
-                        className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
-                          isSelected
-                            ? `${colors.border} ${colors.bg} shadow-md`
-                            : "border-border hover:border-muted-foreground/30 bg-background"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${colors.iconBg} flex items-center justify-center`}>
-                            <Check className={`h-2.5 w-2.5 ${colors.text}`} />
-                          </div>
-                        )}
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? colors.iconBg : "bg-muted"}`}>
-                          <Icon className={`h-5 w-5 ${isSelected ? colors.text : "text-muted-foreground"}`} />
-                        </div>
-                        <span className={`text-xs font-medium ${isSelected ? colors.text : "text-foreground"}`}>
-                          {rol.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {errors.rol && <p className="text-sm text-destructive" role="alert">{errors.rol}</p>}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -518,6 +434,18 @@ export default function RegistroPage() {
                 Inicia sesion
               </Link>
             </p>
+
+            <div className="mt-6 rounded-lg border border-dashed border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                ¿Tienes un negocio?
+              </p>
+              <Link
+                href="/negocios/solicitar"
+                className="text-sm font-medium text-primary hover:text-primary-hover transition-colors"
+              >
+                Solicita unirte a Mi-Pyme
+              </Link>
+            </div>
           </div>
         </div>
       </div>

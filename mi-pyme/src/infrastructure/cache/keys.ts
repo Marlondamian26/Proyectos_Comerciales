@@ -72,11 +72,12 @@ export const cacheKeys = {
     cache: (pagoId: string) => `pago:${pagoId}:codigo-entrega`,
     intentos: (pagoId: string) => `pago:${pagoId}:codigo-intentos`,
   },
-  negocio: {
+   negocio: {
     detalle: (negocioId: string) => `negocio:${negocioId}`,
     horarios: (negocioId: string) => `negocio:${negocioId}:horarios`,
     dashboardFiscal: (negocioId: string, rango?: { desde?: Date; hasta?: Date }) =>
       buildKey(`negocio:${negocioId}:dashboard:fiscal`, hashFiltros(rango)),
+    porUsuario: (userId: string) => `negocio:porUsuario:${userId}`,
   },
   logistica: {
     checkout: (negocioId: string) => `logistica:checkout:${negocioId}`,
