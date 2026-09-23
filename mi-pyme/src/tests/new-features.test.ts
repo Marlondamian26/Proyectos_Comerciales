@@ -4,6 +4,7 @@ import { catalogoAddToCart, catalogoReserve } from "@/app/catalogo/actions";
 import { POST as registerPOST } from "@/app/api/auth/registro/route";
 import { GET as searchGET } from "@/app/api/search/quick/route";
 import { Rol } from "@/generated/prisma/client";
+import { HORA_CORTE_DISPONIBILIDAD } from "@/core/constants";
 
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn(),
@@ -27,10 +28,14 @@ describe("Catalogo Server Actions", () => {
   let testData: Awaited<ReturnType<typeof setupTestData>>;
 
   beforeAll(async () => {
+    const mockNow = new Date();
+    mockNow.setHours(HORA_CORTE_DISPONIBILIDAD - 3, 0, 0, 0);
+    vi.useFakeTimers({ now: mockNow });
     testData = await setupTestData();
   });
 
   afterAll(async () => {
+    vi.useRealTimers();
     await cleanupTestData();
   });
 

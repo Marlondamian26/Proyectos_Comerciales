@@ -2,6 +2,7 @@ import { PrismaClient, Rol } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import path from "path";
 import { vi } from "vitest";
+import { fechaHoy } from "@/shared/utils/fecha";
 
 // matchMedia polyfill for jsdom
 if (typeof window !== "undefined" && !window.matchMedia) {
@@ -32,9 +33,12 @@ export async function setupTestData() {
   await prisma.$executeRawUnsafe(`DELETE FROM "Factura";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "PedidoItem";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Pedido";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "OpcionLogistica";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "ProveedorLogistico";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Reserva";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "CarritoItem";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Carrito";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "DisponibilidadProducto";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Inventario";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Servicio";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Producto";`);
@@ -62,6 +66,10 @@ export async function setupTestData() {
       slug: "spa-premium",
       activo: true,
       areaId: area.id,
+      regimenFiscal: "GENERAL",
+      tasaIVA: 10,
+      modoPrecio: "IVA_INCLUIDO",
+      nit: "123456789",
     },
   });
 
@@ -115,6 +123,22 @@ export async function setupTestData() {
       ubicacion: "Almacén A",
     },
   });
+
+  // Disponibilidad diaria explícita para el producto de prueba.
+  // Se crea para hoy y los próximos 7 días con cantidad = stock (100)
+  // para que el producto sea "Disponible hoy" bajo la nueva regla.
+  const hoy = fechaHoy();
+  for (let i = 0; i <= 7; i++) {
+    const fecha = new Date(hoy);
+    fecha.setUTCDate(fecha.getUTCDate() + i);
+    await prisma.disponibilidadProducto.create({
+      data: {
+        productoId: producto.id,
+        fecha,
+        cantidad: 100,
+      },
+    });
+  }
 
   return {
     usuario,

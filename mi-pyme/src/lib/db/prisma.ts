@@ -1,5 +1,4 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { getCache } from "@/infrastructure";
 import path from "path";
 import { fileURLToPath } from "node:url";
 
@@ -31,14 +30,6 @@ if (process.env.NODE_ENV === "production") {
   prisma = global.__prisma;
 }
 
-export async function cachedQuery<T = unknown>(key: string, queryFn: () => Promise<T>): Promise<T> {
-  const cache = getCache();
-  const cached = cache.get<T>(key);
-  if (cached !== undefined) return cached;
-
-  const result = await queryFn();
-  cache.set(key, result);
-  return result;
-}
+export { cachedQuery } from "@/infrastructure";
 
 export default prisma;

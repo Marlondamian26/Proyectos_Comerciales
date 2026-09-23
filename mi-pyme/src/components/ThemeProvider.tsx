@@ -169,6 +169,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const ready = useSyncExternalStore(subscribe, getReadySnapshot, () => false);
 
   useEffect(() => {
+    initializeTheme();
+  }, []);
+
+  useEffect(() => {
     if (!ready) return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

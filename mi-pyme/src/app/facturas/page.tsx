@@ -104,7 +104,7 @@ export default function FacturasPage() {
 
               <div className="text-xs text-gray-500 mb-2">
                 <p>Subtotal: ${factura.subtotal.toFixed(2)}</p>
-                <p>IVA (21%): ${factura.impuestos.toFixed(2)}</p>
+                <p>IVA (10%): ${factura.impuestos.toFixed(2)}</p>
               </div>
 
               <button

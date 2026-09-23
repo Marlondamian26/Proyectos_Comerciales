@@ -1,14 +1,24 @@
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LoadingSkeleton } from "@/components/ui/Loading";
-import { listarProductos, listarServicios, listarAreas, listarSubareas } from "@/lib/actions";
+import {
+  listarProductosConDisponibilidad,
+  listarServiciosConCupos,
+  listarAreas,
+  listarSubareas,
+} from "@/lib/actions";
 import { auth } from "@/lib/auth";
 import { catalogoAddToCart, catalogoReserve } from "./actions";
 import Link from "next/link";
-import Image from "next/image";
 import { Home } from "lucide-react";
+import type {
+  ProductoConDisponibilidad,
+  ServicioConCupos,
+  ListarProductosParams,
+  ListarServiciosParams,
+} from "@/services/CatalogService";
 
 export const dynamic = "force-dynamic";
 
@@ -30,49 +40,79 @@ export default async function CatalogoPage({
 }) {
   const session = await auth();
   const filtros = await searchParams;
-  
+
   const page = parseInt(filtros.page || "1", 10);
   const offset = (page - 1) * ITEMS_PER_PAGE;
 
   const [productos, servicios, areas, subareas] = await Promise.all([
-    listarProductos({
-      areaId: filtros.areaId,
-      subareaId: filtros.subareaId,
-      disponibleHoy: filtros.disponibleHoy === "true",
-    }),
-    listarServicios({
-      areaId: filtros.areaId,
-      subareaId: filtros.subareaId,
-    }),
+    listarProductosConDisponibilidad(
+      filtros as unknown as ListarProductosParams
+    ),
+    listarServiciosConCupos(filtros as unknown as ListarServiciosParams),
     listarAreas(),
     listarSubareas(filtros.areaId),
   ]);
 
-  // Filtrar por búsqueda
   const query = filtros.q?.toLowerCase() || "";
-  const productosFiltrados = query
-    ? productos.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(query) ||
-          p.descripcion?.toLowerCase().includes(query) ||
-          p.negocio.nombre.toLowerCase().includes(query)
-      )
-    : productos;
 
-  const serviciosFiltrados = query
-    ? servicios.filter(
-        (s) =>
-          s.nombre.toLowerCase().includes(query) ||
-          s.descripcion?.toLowerCase().includes(query) ||
-          s.negocio.nombre.toLowerCase().includes(query)
-      )
-    : servicios;
+  const productosFiltrados = productos.filter((p) => {
+    const matchesQuery =
+      p.nombre.toLowerCase().includes(query) ||
+      p.descripcion?.toLowerCase().includes(query) ||
+      p.negocio.nombre.toLowerCase().includes(query);
+    if (!matchesQuery) return false;
 
-  // Paginación
+    if (filtros.disponibleHoy === "true") {
+      return p.disponibleHoy?.disponible === true;
+    }
+    if (filtros.disponibleHoy === "false") {
+      return p.disponibleHoy?.disponible !== true;
+    }
+    return true;
+  });
+
+  const serviciosFiltrados = servicios.filter((s) => {
+    const matchesQuery =
+      s.nombre.toLowerCase().includes(query) ||
+      s.descripcion?.toLowerCase().includes(query) ||
+      s.negocio.nombre.toLowerCase().includes(query);
+    if (!matchesQuery) return false;
+
+    if (filtros.disponibleHoy === "true") {
+      return s.cuposDisponiblesHoy?.disponible === true;
+    }
+    if (filtros.disponibleHoy === "false") {
+      return s.cuposDisponiblesHoy?.disponible !== true;
+    }
+    return true;
+  });
+
   const totalProductos = productosFiltrados.length;
   const totalServicios = serviciosFiltrados.length;
-  const totalPages = Math.ceil((totalProductos + totalServicios) / ITEMS_PER_PAGE);
-  const combined = [...productosFiltrados, ...serviciosFiltrados].slice(offset, offset + ITEMS_PER_PAGE);
+  const totalItems = totalProductos + totalServicios;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  let combined: Array<
+    (ProductoConDisponibilidad & { _tipo: "producto" }) |
+    (ServicioConCupos & { _tipo: "servicio" })
+  > = [];
+
+  if (page === 1) {
+    const prodSlice = productosFiltrados.slice(0, ITEMS_PER_PAGE);
+    const neededFromSvc = ITEMS_PER_PAGE - prodSlice.length;
+    const svcSlice = serviciosFiltrados.slice(0, Math.max(0, neededFromSvc));
+    combined = [
+      ...prodSlice.map((p) => ({ ...p, _tipo: "producto" as const })),
+      ...svcSlice.map((s) => ({ ...s, _tipo: "servicio" as const })),
+    ];
+  } else {
+    const itemsBefore = (page - 1) * ITEMS_PER_PAGE;
+    const allItems = [
+      ...productosFiltrados.map((p) => ({ ...p, _tipo: "producto" as const })),
+      ...serviciosFiltrados.map((s) => ({ ...s, _tipo: "servicio" as const })),
+    ];
+    combined = allItems.slice(itemsBefore, itemsBefore + ITEMS_PER_PAGE);
+  }
 
   const activeFilters = Object.entries(filtros).filter(
     ([, v]) => v !== undefined && v !== ""
@@ -196,12 +236,12 @@ export default async function CatalogoPage({
           {activeFilters > 0 && (
             <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
               <span>{activeFilters} filtro(s) activo(s)</span>
-              <a
+              <Link
                 href="/catalogo"
                 className="text-primary hover:underline"
               >
                 Limpiar
-              </a>
+              </Link>
             </div>
           )}
         </section>
@@ -213,15 +253,8 @@ export default async function CatalogoPage({
             Productos ({totalProductos})
           </h2>
         </div>
-        {combined.length === 0 && !query ? (
-          <EmptyStatePreset
-            preset="products"
-            action={{
-              label: "Agregar primer producto",
-              href: "/admin/productos/nuevo",
-            }}
-          />
-        ) : combined.filter((item) => "precio" in item).length === 0 && query ? (
+        {combined.filter((item) => item._tipo === "producto").length === 0 &&
+        query ? (
           <EmptyStatePreset
             preset="search"
             action={{
@@ -229,54 +262,99 @@ export default async function CatalogoPage({
               href: "/catalogo",
             }}
           />
+        ) : combined.filter((item) => item._tipo === "producto").length ===
+          0 &&
+          !query ? (
+          <EmptyStatePreset
+            preset="products"
+            action={{
+              label: "Agregar primer producto",
+              href: "/admin/productos/nuevo",
+            }}
+          />
         ) : (
           <>
             <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Productos">
               {combined
-                .filter((item) => "precio" in item)
-                .map((producto) => (
-                  <li key={producto.id}>
-                    <Card
-                    title={producto.nombre}
-                    description={producto.descripcion ?? undefined}
-                    image={{
-                      src: producto.imagenUrl,
-                      alt: producto.nombre,
-                    }}
-                    badge={{
-                      text: producto.disponibleHoy ? "Disponible" : "Agotado",
-                      variant: producto.disponibleHoy
-                        ? "success"
-                        : "warning",
-                    }}
-                    footer={
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-semibold">
-                          ${producto.precio.toFixed(2)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {producto.negocio.nombre} · {producto.unidadMedida}
-                        </span>
-                      </div>
-                    }
-                  >
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="flex-1"
-                        formAction={catalogoAddToCart}
-                        disabled={!producto.disponibleHoy}
-                        aria-label={`Agregar ${producto.nombre} al carrito`}
+                .filter((item) => item._tipo === "producto")
+                .map((producto) => {
+                  const disp = producto.disponibleHoy;
+                  const disponible = disp?.disponible ?? false;
+                  const cantidad = disp?.cantidadDisponible ?? 0;
+                  return (
+                    <li key={producto.id}>
+                      <Card
+                        title={producto.nombre}
+                        description={producto.descripcion ?? undefined}
+                        image={{
+                          src: producto.imagenUrl,
+                          alt: producto.nombre,
+                        }}
+                        badge={{
+                          text: disponible ? "Disponible" : "Agotado",
+                          variant: disponible ? "success" : "error",
+                        }}
+                        footer={
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-semibold">
+                              ${producto.precio.toFixed(2)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {producto.negocio.nombre} · {producto.unidadMedida}
+                            </span>
+                          </div>
+                        }
                       >
-                        <input type="hidden" name="productoId" value={producto.id} />
-                        Agregar al carrito
-                      </Button>
-                    </div>
-</Card>
-                  </li>
-                ))}
-              </ul>
+                        <div className="flex flex-col gap-3 mt-4">
+                          <DisponibilidadBadge
+                            disponible={disponible}
+                            cantidad={cantidad}
+                            variante="producto"
+                          />
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                            formAction={catalogoAddToCart}
+                            disabled={!disponible}
+                            title={
+                              !disponible
+                                ? "No disponible hoy"
+                                : undefined
+                            }
+                            aria-label={
+                              disponible
+                                ? `Agregar ${producto.nombre} al carrito`
+                                : `${producto.nombre} no disponible hoy`
+                            }
+                          >
+                            <input
+                              type="hidden"
+                              name="productoId"
+                              value={producto.id}
+                            />
+                            Agregar al carrito
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            asChild
+                          >
+                            <Link
+                              href={`/catalogo/${producto.id}`}
+                              aria-label={`Ver detalle de ${producto.nombre}`}
+                              data-testid="ver-detalle-producto"
+                            >
+                              Ver detalle
+                            </Link>
+                          </Button>
+                        </div>
+                      </Card>
+                    </li>
+                  );
+                })}
+            </ul>
 
             {totalPages > 1 && (
               <nav
@@ -322,7 +400,18 @@ export default async function CatalogoPage({
             Servicios ({totalServicios})
           </h2>
         </div>
-        {combined.filter((item) => "duracionMinutos" in item).length === 0 ? (
+        {combined.filter((item) => item._tipo === "servicio").length === 0 &&
+        query ? (
+          <EmptyStatePreset
+            preset="search"
+            action={{
+              label: "Limpiar búsqueda",
+              href: "/catalogo",
+            }}
+          />
+        ) : combined.filter((item) => item._tipo === "servicio").length ===
+          0 &&
+          !query ? (
           <EmptyStatePreset
             preset="services"
             action={{
@@ -330,52 +419,75 @@ export default async function CatalogoPage({
               href: "/admin/servicios/nuevo",
             }}
           />
-) : (
+        ) : (
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Servicios">
             {combined
-              .filter((item) => "duracionMinutos" in item)
-              .map((servicio) => (
-                <li key={servicio.id}>
-                  <Card
-                    title={servicio.nombre}
-                    description={servicio.descripcion ?? undefined}
-                    image={{
-                      src: servicio.imagenUrl,
-                      alt: servicio.nombre,
-                    }}
-                    badge={{
-                      text: servicio.activo ? "Activo" : "Inactivo",
-                      variant: servicio.activo ? "success" : "warning",
-                    }}
-                    footer={
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">
-                          {servicio.duracionMinutos} min · Capacidad:{ " "}
-                          {servicio.capacidad}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {servicio.negocio.nombre}
-                        </span>
+              .filter((item) => item._tipo === "servicio")
+              .map((servicio) => {
+                const cupos = servicio.cuposDisponiblesHoy;
+                const disponible = cupos?.disponible ?? servicio.activo;
+                const cantidadCupos = cupos?.cuposDisponibles ?? 0;
+                return (
+                  <li key={servicio.id}>
+                    <Card
+                      title={servicio.nombre}
+                      description={servicio.descripcion ?? undefined}
+                      image={{
+                        src: servicio.imagenUrl || "/placeholder-service.jpg",
+                        alt: servicio.nombre,
+                      }}
+                      badge={{
+                        text: disponible ? "Disponible" : "Sin cupos",
+                        variant: disponible ? "success" : "error",
+                      }}
+                      footer={
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">
+                            {servicio.duracionMinutos} min · Capacidad:{" "}
+                            {servicio.capacidad}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {servicio.negocio.nombre}
+                          </span>
+                        </div>
+                      }
+                    >
+                      <div className="flex flex-col gap-3 mt-4">
+                        <DisponibilidadBadge
+                          disponible={disponible}
+                          cantidad={cantidadCupos}
+                          variante="servicio"
+                        />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="flex-1"
+                          formAction={catalogoReserve}
+                          disabled={!disponible}
+                          title={
+                            !disponible
+                              ? "Sin cupos disponibles hoy"
+                              : undefined
+                          }
+                          aria-label={
+                            disponible
+                              ? `Reservar ${servicio.nombre}`
+                              : `${servicio.nombre} sin cupos hoy`
+                          }
+                        >
+                          <input
+                            type="hidden"
+                            name="servicioId"
+                            value={servicio.id}
+                          />
+                          Reservar
+                        </Button>
                       </div>
-                    }
-                  >
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="flex-1"
-                        formAction={catalogoReserve}
-                        disabled={!servicio.activo}
-                        aria-label={`Reservar ${servicio.nombre}`}
-                      >
-                        <input type="hidden" name="servicioId" value={servicio.id} />
-                        Reservar
-                      </Button>
-                    </div>
-                  </Card>
-                </li>
-              ))}
-            </ul>
+                    </Card>
+                  </li>
+                );
+              })}
+          </ul>
         )}
       </section>
     </main>

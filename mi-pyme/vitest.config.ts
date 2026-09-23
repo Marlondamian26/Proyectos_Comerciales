@@ -5,6 +5,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // La suite comparte una base SQLite (`data/mipyme.db`) entre archivos de test.
+    // Ejecutar los archivos en paralelo produce contención de locks de escritura.
+    fileParallelism: false,
     setupFiles: ["./src/tests/setup.ts"],
     coverage: {
       provider: "v8",

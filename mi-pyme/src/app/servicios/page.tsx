@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { listarServicios } from "@/lib/actions";
+import { listarServiciosConCupos } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Calendar, Clock, Users, ArrowRight, Home } from "lucide-react";
+import type { ServicioConCupos } from "@/services/CatalogService";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +17,9 @@ export default async function ServiciosPage({
   searchParams: Promise<{ negocioId?: string }>;
 }) {
   const { negocioId } = await searchParams;
-  const servicios = await listarServicios(
+  const servicios = (await listarServiciosConCupos(
     negocioId ? { negocioId } : undefined
-  );
+  )) as ServicioConCupos[];
 
   return (
     <main className="min-h-screen">
@@ -53,55 +55,84 @@ export default async function ServiciosPage({
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {servicios.map((servicio) => (
-                <Card
-                  key={servicio.id}
-                  image={{
-                    src: servicio.imagenUrl || "/placeholder-service.jpg",
-                    alt: servicio.nombre,
-                  }}
-                  badge={{
-                    text: servicio.activo ? "Disponible" : "Inactivo",
-                    variant: servicio.activo ? "success" : "warning",
-                  }}
-                  footer={
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {servicio.duracionMinutos} min
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {servicio.capacidad}
+              {servicios.map((servicio) => {
+                const cupos = servicio.cuposDisponiblesHoy;
+                const disponible = cupos?.disponible ?? servicio.activo;
+                const cantidadCupos = cupos?.cuposDisponibles ?? 0;
+                return (
+                  <Card
+                    key={servicio.id}
+                    image={{
+                      src: servicio.imagenUrl || "/placeholder-service.jpg",
+                      alt: servicio.nombre,
+                    }}
+                    badge={{
+                      text: disponible ? "Disponible" : "Sin cupos",
+                      variant: disponible ? "success" : "error",
+                    }}
+                    footer={
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {servicio.duracionMinutos} min
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {servicio.capacidad}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {servicio.negocio.nombre}
                         </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {servicio.negocio.nombre}
-                      </span>
-                    </div>
-                  }
-                  className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                >
-                  <h3 className="text-lg font-semibold mb-2">{servicio.nombre}</h3>
-                  {servicio.descripcion && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                      {servicio.descripcion}
-                    </p>
-                  )}
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full"
-                    asChild
+                    }
+                    className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                   >
-                    <Link href={`/reservas?servicioId=${servicio.id}`}>
-                      Reservar ahora
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Link>
-                  </Button>
-                </Card>
-              ))}
+                    <h3 className="text-lg font-semibold mb-2">{servicio.nombre}</h3>
+                    {servicio.descripcion && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                        {servicio.descripcion}
+                      </p>
+                    )}
+                    <div className="mb-3">
+                      <DisponibilidadBadge
+                        disponible={disponible}
+                        cantidad={cantidadCupos}
+                        variante="servicio"
+                      />
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="w-full"
+                      asChild
+                      disabled={!disponible}
+                    >
+                      <Link
+                        href={
+                          disponible
+                            ? `/servicios/${servicio.id}`
+                            : "#"
+                        }
+                        aria-label={
+                          disponible
+                            ? `Ver ${servicio.nombre}`
+                            : `${servicio.nombre} sin cupos hoy`
+                        }
+                        onClick={(e) => {
+                          if (!disponible) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        Reservar ahora
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

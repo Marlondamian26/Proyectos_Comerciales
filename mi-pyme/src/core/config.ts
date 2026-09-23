@@ -22,7 +22,7 @@ const envSchema = z.object({
   CACHE_CHECKPERIOD_SECONDS: z.coerce.number().default(120),
   CACHE_PERSISTENCE_PATH: z.string().default("./data/cache/cache.json"),
   RESERVATION_TTL_MINUTES: z.coerce.number().default(15),
-  TAX_RATE: z.coerce.number().default(0.21),
+  TAX_RATE: z.coerce.number().default(0.10),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   LOG_LEVEL: z

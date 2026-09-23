@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { prisma, setupTestData, cleanupTestData } from "./setup";
+import { HORA_CORTE_DISPONIBILIDAD } from "@/core/constants";
 import {
   listarProductos,
   agregarAlCarrito,
@@ -14,7 +15,7 @@ import {
   reporteProductosMasVendidos,
   reporteInventario,
 } from "@/lib/actions";
-import { delCache, clearCache } from "@/lib/cache";
+import { getCache, cacheKeys, cachePrefixes, resetCache } from "@/infrastructure";
 
 vi.mock("@/lib/auth/requireRole", () => ({
   requireRole: vi.fn(async () => ({
@@ -28,23 +29,26 @@ describe("Backend API Integration Tests", () => {
   let testData: Awaited<ReturnType<typeof setupTestData>>;
 
   beforeAll(async () => {
+    const mockNow = new Date();
+    mockNow.setHours(HORA_CORTE_DISPONIBILIDAD - 3, 0, 0, 0);
+    vi.useFakeTimers({ now: mockNow });
     testData = await setupTestData();
   });
 
   afterAll(async () => {
+    vi.useRealTimers();
     await cleanupTestData();
   });
 
   beforeEach(async () => {
-    clearCache();
-    delCache(`carrito:${testData.usuario.id}`);
-    delCache(`reservas:${testData.usuario.id}`);
-    delCache(`pedidos:${testData.usuario.id}`);
-    delCache(`facturas:usuario:${testData.usuario.id}`);
-    delCache(`facturas:negocio:${testData.negocio.id}`);
-    delCache(`reporte:ventas:${testData.negocio.id}`);
-    delCache(`reporte:productos:${testData.negocio.id}`);
-    delCache(`reporte:inventario:${testData.negocio.id}`);
+    await resetCache();
+    await getCache().del(cacheKeys.carrito.usuario(testData.usuario.id));
+    await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + testData.usuario.id + ":");
+    await getCache().invalidatePrefix(cachePrefixes.facturas + testData.usuario.id + ":");
+    await getCache().invalidatePrefix(cachePrefixes.facturas + testData.negocio.id + ":");
+    await getCache().del(cacheKeys.reporte.ventas(testData.negocio.id));
+    await getCache().del(cacheKeys.reporte.productos(testData.negocio.id));
+    await getCache().del(cacheKeys.reporte.inventario(testData.negocio.id));
 
     await prisma.facturaItem.deleteMany({});
     await prisma.factura.deleteMany({});
@@ -136,7 +140,7 @@ describe("Backend API Integration Tests", () => {
       expect(pedido.id).toBeDefined();
       expect(pedido.estado).toBe("pendiente");
       expect(pedido.items.length).toBe(1);
-      expect(pedido.total).toBe(testData.producto.precio);
+      expect(Number(pedido.total)).toBeCloseTo(Number(testData.producto.precio), 2);
 
       const pedidosResult = await listarPedidos(testData.usuario.id);
       const pedidos = pedidosResult.data;
@@ -160,11 +164,8 @@ describe("Backend API Integration Tests", () => {
 
       expect(factura.id).toBeDefined();
       expect(factura.estado).toBe("emitida");
-      expect(factura.numero).toMatch(/^FAC-\d{8}-[A-Z0-9]{4}$/);
-      expect(factura.total).toBeCloseTo(
-        pedido.total * 1.21,
-        2
-      );
+      expect(factura.numero).toMatch(/^PR-\d{4}-[A-Z0-9]{6}$/);
+      expect(Number(factura.total)).toBeCloseTo(Number(pedido.total), 2);
       expect(factura.items.length).toBe(1);
 
       const facturasResult = await listarFacturas(testData.usuario.id);
@@ -251,7 +252,7 @@ describe("Backend API Integration Tests", () => {
       expect(pedido.tipo).toBe("servicio");
 
       const factura = await emitirFactura(pedido.id);
-      expect(factura.numero).toMatch(/^FAC-\d{8}-[A-Z0-9]{4}$/);
+      expect(factura.numero).toMatch(/^PR-\d{4}-[A-Z0-9]{6}$/);
 
       const facturasResult = await listarFacturas(testData.usuario.id);
       const facturas = facturasResult.data;

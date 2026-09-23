@@ -27,11 +27,17 @@ const navItems: NavItem[] = [
     icon: "📦",
     allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA],
   },
-  {
+   {
     label: "Facturas",
     href: "/facturas",
     icon: "🧾",
     allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN],
+  },
+  {
+    label: "Pagos",
+    href: "/pagos",
+    icon: "💳",
+    allowedRoles: [Rol.CLIENTE, Rol.ADMIN],
   },
   {
     label: "Cliente",

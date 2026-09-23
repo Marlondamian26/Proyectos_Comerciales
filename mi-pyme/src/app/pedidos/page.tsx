@@ -9,8 +9,8 @@ import { LoadingTable } from "@/components/ui/Loading";
 import { Package, Eye, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 
 type PedidoItem = {
   id: string;
@@ -30,15 +30,25 @@ type OpcionLogistica = {
   proveedor: { nombre: string };
 };
 
+type PedidoNegocio = {
+  id: string;
+  nombre: string;
+  direccion: string | null;
+};
+
 type Pedido = {
   id: string;
   estado: string;
-  total: number;
+   estadoPago: string;
+   total: number;
   tipo: string;
-  direccionEntrega: string;
+  direccionEntrega: string | null;
+  tipoEntrega: "DOMICILIO" | "RECOGIDA_TIENDA" | null;
+  costoEnvio: number | null;
   fechaCreacion: string;
   items: PedidoItem[];
-  logistica?: OpcionLogistica | null;
+  opcionLogistica?: OpcionLogistica | null;
+  negocio?: PedidoNegocio | null;
   factura?: { id: string; numero: string } | null;
 };
 
@@ -126,6 +136,15 @@ export default function PedidosPage() {
       ),
     },
     {
+      key: "negocio",
+      header: "Negocio",
+      accessor: (pedido) => (
+        <span className="text-sm">
+          {pedido.negocio?.nombre ?? "Sin negocio"}
+        </span>
+      ),
+    },
+    {
       key: "tipo",
       header: "Tipo",
       accessor: (pedido) => (
@@ -158,9 +177,33 @@ export default function PedidosPage() {
       key: "logistica",
       header: "Logística",
       accessor: (pedido) => (
-        <span className={pedido.logistica ? "text-sm" : "text-xs text-muted-foreground"}>
-          {pedido.logistica?.nombre ?? "Sin asignar"}
+        <span className={pedido.opcionLogistica ? "text-sm" : "text-xs text-muted-foreground"}>
+          {pedido.opcionLogistica?.nombre ?? "Sin asignar"}
         </span>
+      ),
+    },
+     {
+      key: "estadoPago",
+      header: "Pago",
+      accessor: (pedido) => (
+        <div className="flex items-center gap-2">
+          <EstadoPagoBadge estado={pedido.estadoPago as "PENDIENTE" | "EN_PROCESO" | "COMPLETADO" | "FALLIDO" | "REEMBOLSADO" | "CANCELADO"} />
+          {pedido.estadoPago !== "PENDIENTE" ? (
+            <a
+              href={`/pagos?pedidoId=${pedido.id}`}
+              className="text-xs text-primary hover:underline"
+            >
+              Ver pago
+            </a>
+          ) : (
+            <a
+              href={`/pagos?pedidoId=${pedido.id}`}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              Asignar pago
+            </a>
+          )}
+        </div>
       ),
     },
     {
@@ -276,10 +319,24 @@ export default function PedidosPage() {
                 <h4 className="font-medium text-sm text-muted-foreground">Estado</h4>
                 <p>{ESTADO_LABELS[selectedPedido.estado]?.label ?? selectedPedido.estado}</p>
               </div>
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Dirección de entrega</h4>
-                <p>{selectedPedido.direccionEntrega || "No especificada"}</p>
-              </div>
+               <div>
+                 <h4 className="font-medium text-sm text-muted-foreground">Dirección de entrega</h4>
+                 <p>{selectedPedido.direccionEntrega || "No especificada"}</p>
+               </div>
+               <div>
+                 <h4 className="font-medium text-sm text-muted-foreground">Tipo de entrega</h4>
+                 <p>
+                   {selectedPedido.tipoEntrega === "DOMICILIO"
+                     ? "Entrega a domicilio"
+                     : selectedPedido.tipoEntrega === "RECOGIDA_TIENDA"
+                     ? "Recogida en tienda"
+                     : "No definido"}
+                 </p>
+               </div>
+               <div>
+                 <h4 className="font-medium text-sm text-muted-foreground">Costo de envío</h4>
+                 <p>${selectedPedido.costoEnvio?.toFixed(2) ?? "0.00"}</p>
+               </div>
             </div>
 
             <div className="border-t pt-4">
@@ -319,21 +376,21 @@ export default function PedidosPage() {
               </div>
             </div>
 
-            {selectedPedido.logistica && (
+            {selectedPedido.opcionLogistica && (
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-3">Información de logística</h4>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Proveedor</p>
-                    <p className="font-medium">{selectedPedido.logistica.proveedor.nombre}</p>
+                    <p className="font-medium">{selectedPedido.opcionLogistica.proveedor.nombre}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Opción</p>
-                    <p className="font-medium">{selectedPedido.logistica.nombre}</p>
+                    <p className="font-medium">{selectedPedido.opcionLogistica.nombre}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Tarifa</p>
-                    <p className="font-medium">${selectedPedido.logistica.precio.toFixed(2)}</p>
+                    <p className="font-medium">${selectedPedido.opcionLogistica.precio.toFixed(2)}</p>
                   </div>
                 </div>
               </div>

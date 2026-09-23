@@ -9,34 +9,39 @@ datasource db {
 }
 
 model User {
-  id                    String               @id @default(cuid())
-  name                  String?
-  username              String?              @unique
-  email                 String               @unique
-  emailVerified         DateTime?
-  image                 String?
-  password              String?
-  nombre                String?
-  rol                   Rol                  @default(CLIENTE)
-  provincia             String?
-  municipio             String?
-  isGenericAdmin        Boolean              @default(false)
-  mustChangePassword    Boolean              @default(false)
-  isActive              Boolean              @default(true)
-  deletedAt             DateTime?
-  deletedBy             String?
-  deletedReason         String?
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-  accounts              Account[]
-  carritos              Carrito[]
-  facturas              Factura[]
-  negocios              Negocio[]
-  pedidos               Pedido[]
-  proveedoresLogisticos ProveedorLogistico[]
-  reservas              Reserva[]
-  sessions              Session[]
-  auditLogs             AuditLog[]
+  id                                                            String                 @id @default(cuid())
+  name                                                          String?
+  username                                                      String?                @unique
+  email                                                         String                 @unique
+  emailVerified                                                 DateTime?
+  image                                                         String?
+  password                                                      String?
+  nombre                                                        String?
+  rol                                                           Rol                    @default(CLIENTE)
+  provincia                                                     String?
+  municipio                                                     String?
+  isGenericAdmin                                                Boolean                @default(false)
+  mustChangePassword                                            Boolean                @default(false)
+  isActive                                                      Boolean                @default(true)
+  deletedAt                                                     DateTime?
+  deletedBy                                                     String?
+  deletedReason                                                 String?
+  createdAt                                                     DateTime               @default(now())
+  updatedAt                                                     DateTime               @updatedAt
+  accounts                                                      Account[]
+  auditLogs                                                     AuditLog[]
+  carritos                                                      Carrito[]
+  facturas                                                      Factura[]
+  Negocio_Negocio_aprobadoPorIdToUser                           Negocio[]              @relation("Negocio_aprobadoPorIdToUser")
+  negocios                                                      Negocio[]
+  NegocioUsuario                                                NegocioUsuario[]
+  Pago                                                          Pago[]
+  pedidos                                                       Pedido[]
+  proveedoresLogisticos                                         ProveedorLogistico[]
+  reservas                                                      Reserva[]
+  sessions                                                      Session[]
+  SolicitudAltaNegocio_SolicitudAltaNegocio_revisadoPorIdToUser SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
+  SolicitudAltaNegocio_SolicitudAltaNegocio_userIdToUser        SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_userIdToUser")
 
   @@index([rol])
   @@index([isGenericAdmin])
@@ -78,38 +83,64 @@ model VerificationToken {
 }
 
 model Negocio {
-  id                 String            @id @default(cuid())
-  nombre             String
-  descripcion        String?
-  slug               String            @unique
-  activo             Boolean           @default(true)
-  areaId             String?
-  userId             String?
-  permiteReservas    Boolean           @default(true)
-  permiteEnvio       Boolean           @default(false)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  facturas           Factura[]
-  area               Area?             @relation(fields: [areaId], references: [id])
-  user               User?             @relation(fields: [userId], references: [id])
-  subareas           NegocioSubarea[]
-  opcionesLogisticas OpcionLogistica[]
-  pedidosItems       PedidoItem[]
-  productos          Producto[]
-  reportesVentas     ReporteVenta[]
-  reservas           Reserva[]
-  servicios          Servicio[]
+  id                       String            @id @default(cuid())
+  nombre                   String
+  descripcion              String?
+  slug                     String            @unique
+  activo                   Boolean           @default(true)
+  estado                   String            @default("PENDIENTE_APROBACION")
+  motivoRechazo            String?
+  aprobadoPorId            String?
+  aprobadoEn               DateTime?
+  areaId                   String?
+  userId                   String?
+  provincia                String?
+  municipio                String?
+  telefono                 String?
+  emailContacto            String?
+  direccion                String?
+  permiteReservas          Boolean           @default(true)
+  permiteEnvio             Boolean           @default(false)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  regimenFiscal            RegimenFiscal     @default(GENERAL)
+  tasaIVA                  Decimal           @default(10.00)
+  modoPrecio               ModoPrecio        @default(IVA_INCLUIDO)
+  nit                      String?
+  direccionFiscal          String?
+  telefonoFiscal           String?
+  emailFiscal              String?
+  numeroFacturaConsecutivo Int               @default(0)
+  prefijoFactura           String            @default("PR")
+  facturas                 Factura[]
+  horarios                 HorarioNegocio[]
+  aprobadoPor              User?             @relation("Negocio_aprobadoPorIdToUser", fields: [aprobadoPorId], references: [id])
+  user                     User?             @relation(fields: [userId], references: [id])
+  area                     Area?             @relation(fields: [areaId], references: [id])
+  subareas                 NegocioSubarea[]
+  negocioUsuarios          NegocioUsuario[]
+  opcionesLogisticas       OpcionLogistica[]
+  pedidos                  Pedido[]
+  pedidosItems             PedidoItem[]
+  productos                Producto[]
+  reportesVentas           ReporteVenta[]
+  reservas                 Reserva[]
+  servicios                Servicio[]
+
+  @@index([regimenFiscal])
+  @@index([estado])
 }
 
 model Area {
-  id        String    @id @default(cuid())
-  nombre    String
-  slug      String    @unique
-  activo    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  negocios  Negocio[]
-  subareas  Subarea[]
+  id                   String                 @id @default(cuid())
+  nombre               String
+  slug                 String                 @unique
+  activo               Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  negocios             Negocio[]
+  SolicitudAltaNegocio SolicitudAltaNegocio[]
+  subareas             Subarea[]
 }
 
 model Subarea {
@@ -130,35 +161,40 @@ model NegocioSubarea {
   id        String  @id @default(cuid())
   negocioId String
   subareaId String
-  negocio   Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
   subarea   Subarea @relation(fields: [subareaId], references: [id], onDelete: Cascade)
+  negocio   Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
 
   @@unique([negocioId, subareaId])
 }
 
 model Producto {
-  id            String        @id @default(cuid())
-  negocioId     String
-  subareaId     String
-  nombre        String
-  descripcion   String?
-  precio        Float
-  unidadMedida  String
-  imagenUrl     String
-  disponibleHoy Boolean       @default(true)
-  activo        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  carritoItems  CarritoItem[]
-  facturaItems  FacturaItem[]
-  inventario    Inventario[]
-  pedidoItems   PedidoItem[]
-  negocio       Negocio       @relation(fields: [negocioId], references: [id])
-  subarea       Subarea       @relation(fields: [subareaId], references: [id])
+  id               String                   @id @default(cuid())
+  negocioId        String
+  subareaId        String
+  nombre           String
+  descripcion      String?
+  precio           Float
+  unidadMedida     String
+  imagenUrl        String
+  disponibleHoy    Boolean                  @default(true)
+  activo           Boolean                  @default(true)
+  tratamientoIVA   TratamientoIVA           @default(GRAVADO)
+  tasaIVAOverride  Decimal?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  carritoItems     CarritoItem[]
+  disponibilidades DisponibilidadProducto[]
+  facturaItems     FacturaItem[]
+  inventario       Inventario[]
+  pedidoItems      PedidoItem[]
+  subarea          Subarea                  @relation(fields: [subareaId], references: [id])
+  negocio          Negocio                  @relation(fields: [negocioId], references: [id])
+
+  @@index([tratamientoIVA])
 }
 
 model Servicio {
-  id                  String        @id @default(cuid())
+  id                  String         @id @default(cuid())
   negocioId           String
   subareaId           String
   nombre              String
@@ -167,16 +203,20 @@ model Servicio {
   horariosDisponibles Json
   capacidad           Int
   imagenUrl           String
-  activo              Boolean       @default(true)
-  permiteReservas     Boolean       @default(true)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  activo              Boolean        @default(true)
+  permiteReservas     Boolean        @default(true)
+  tratamientoIVA      TratamientoIVA @default(GRAVADO)
+  tasaIVAOverride     Decimal?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
   carritoItems        CarritoItem[]
   facturaItems        FacturaItem[]
   pedidoItems         PedidoItem[]
   reservas            Reserva[]
-  negocio             Negocio       @relation(fields: [negocioId], references: [id])
-  subarea             Subarea       @relation(fields: [subareaId], references: [id])
+  subarea             Subarea        @relation(fields: [subareaId], references: [id])
+  negocio             Negocio        @relation(fields: [negocioId], references: [id])
+
+  @@index([tratamientoIVA])
 }
 
 model Inventario {
@@ -210,9 +250,10 @@ model CarritoItem {
   cantidad       Int
   precioUnitario Float
   tipo           String
-  carrito        Carrito   @relation(fields: [carritoId], references: [id], onDelete: Cascade)
-  producto       Producto? @relation(fields: [productoId], references: [id])
+  fechaEntrega   DateTime?
   servicio       Servicio? @relation(fields: [servicioId], references: [id])
+  producto       Producto? @relation(fields: [productoId], references: [id])
+  carrito        Carrito   @relation(fields: [carritoId], references: [id], onDelete: Cascade)
 }
 
 model Reserva {
@@ -224,22 +265,23 @@ model Reserva {
   fechaHoraFin    DateTime
   venceEn         DateTime
   estado          String   @default("pendiente")
-  usuario         User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  servicio        Servicio @relation(fields: [servicioId], references: [id])
   negocio         Negocio  @relation(fields: [negocioId], references: [id])
+  servicio        Servicio @relation(fields: [servicioId], references: [id])
+  usuario         User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }
 
 model ProveedorLogistico {
-  id            String            @id @default(cuid())
-  usuarioId     String
-  nombre        String
-  zonaCobertura String
-  contacto      String
-  activo        Boolean           @default(true)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  opciones      OpcionLogistica[]
-  usuario       User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  usuarioId       String
+  nombre          String
+  zonaCobertura   String
+  alcanceNacional Boolean           @default(false)
+  contacto        String
+  activo          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  opciones        OpcionLogistica[]
+  usuario         User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }
 
 model OpcionLogistica {
@@ -255,71 +297,109 @@ model OpcionLogistica {
   updatedAt          DateTime           @updatedAt
   proveedor          ProveedorLogistico @relation(fields: [proveedorId], references: [id])
   negocio            Negocio            @relation(fields: [negocioId], references: [id])
-  pedidos            Pedido[]
+  Pedido             Pedido[]
 }
 
 model Pedido {
-  id               String           @id @default(cuid())
-  usuarioId        String
-  total            Float
-  estado           String           @default("pendiente")
-  tipo             String
-  negocioIds       Json
-  logisticaId      String?
-  direccionEntrega String
-  fechaCreacion    DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  factura          Factura?
-  logistica        OpcionLogistica? @relation(fields: [logisticaId], references: [id])
-  usuario          User             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  items            PedidoItem[]
+  id                   String           @id @default(cuid())
+  usuarioId            String
+  negocioId            String
+  total                Decimal
+  baseImponibleTotal   Decimal          @default(0)
+  montoIVATotal        Decimal          @default(0)
+  totalConIVA          Decimal          @default(0)
+  modoPrecio           ModoPrecio       @default(IVA_INCLUIDO)
+  regimenFiscalNegocio RegimenFiscal    @default(GENERAL)
+  tasaIVANegocio       Decimal          @default(10.00)
+  estado               String           @default("pendiente")
+  tipo                 String
+  tipoEntrega          String           @default("DOMICILIO")
+  negocioIds           Json
+  opcionLogisticaId    String?
+  costoEnvio           Decimal          @default(0)
+  direccionEntrega     String?
+  fechaEntrega         DateTime?
+  notas                String?
+  fechaCreacion        DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  estadoPago           String           @default("PENDIENTE")
+  factura              Factura?
+  pago                 Pago?
+  usuario              User             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  negocio              Negocio          @relation(fields: [negocioId], references: [id])
+  opcionLogistica      OpcionLogistica? @relation(fields: [opcionLogisticaId], references: [id])
+  items                PedidoItem[]
+
+  @@index([estadoPago])
+  @@index([estado])
+  @@index([usuarioId, negocioId])
+  @@index([negocioId])
 }
 
 model PedidoItem {
-  id             String    @id @default(cuid())
-  pedidoId       String
-  productoId     String?
-  servicioId     String?
-  cantidad       Int
-  precioUnitario Float
-  subtotal       Float
-  negocioId      String
-  negocio        Negocio   @relation(fields: [negocioId], references: [id])
-  servicio       Servicio? @relation(fields: [servicioId], references: [id])
-  producto       Producto? @relation(fields: [productoId], references: [id])
-  pedido         Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  id                   String         @id @default(cuid())
+  pedidoId             String
+  productoId           String?
+  servicioId           String?
+  cantidad             Int
+  precioUnitario       Decimal
+  precioUnitarioBase   Decimal        @default(0)
+  precioUnitarioConIVA Decimal        @default(0)
+  tasaIVA              Decimal        @default(0)
+  tratamientoIVA       TratamientoIVA @default(GRAVADO)
+  baseImponible        Decimal        @default(0)
+  montoIVA             Decimal        @default(0)
+  subtotal             Decimal
+  negocioId            String
+  fechaEntrega         DateTime?
+  pedido               Pedido         @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto             Producto?      @relation(fields: [productoId], references: [id])
+  servicio             Servicio?      @relation(fields: [servicioId], references: [id])
+  negocio              Negocio        @relation(fields: [negocioId], references: [id])
 }
 
 model Factura {
-  id        String        @id @default(cuid())
-  pedidoId  String        @unique
-  usuarioId String
-  negocioId String?
-  numero    String        @unique
-  fecha     DateTime      @default(now())
-  estado    String        @default("emitida")
-  subtotal  Float
-  impuestos Float         @default(0)
-  total     Float
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  pedido    Pedido        @relation(fields: [pedidoId], references: [id])
-  negocio   Negocio?      @relation(fields: [negocioId], references: [id])
-  usuario   User          @relation(fields: [usuarioId], references: [id])
-  items     FacturaItem[]
+  id            String        @id @default(cuid())
+  pedidoId      String        @unique
+  usuarioId     String
+  negocioId     String?
+  numero        String        @unique
+  nitEmisor     String?
+  nitReceptor   String?
+  fecha         DateTime      @default(now())
+  estado        String        @default("emitida")
+  subtotal      Decimal
+  impuestos     Decimal       @default(0)
+  total         Decimal
+  baseImponible Decimal?
+  montoIVA      Decimal?
+  desgloseIVA   Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  usuario       User          @relation(fields: [usuarioId], references: [id])
+  negocio       Negocio?      @relation(fields: [negocioId], references: [id])
+  pedido        Pedido        @relation(fields: [pedidoId], references: [id])
+  items         FacturaItem[]
+  Pago          Pago?
 }
 
 model FacturaItem {
-  id             String    @id @default(cuid())
-  facturaId      String
-  productoId     String?
-  servicioId     String?
-  cantidad       Int
-  precioUnitario Float
-  subtotal       Float
-  servicio       Servicio? @relation(fields: [servicioId], references: [id])
-  producto       Producto? @relation(fields: [productoId], references: [id])
-  factura        Factura   @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  id                   String         @id @default(cuid())
+  facturaId            String
+  productoId           String?
+  servicioId           String?
+  cantidad             Int
+  precioUnitario       Decimal
+  precioUnitarioBase   Decimal        @default(0)
+  precioUnitarioConIVA Decimal        @default(0)
+  tasaIVA              Decimal        @default(0)
+  tratamientoIVA       TratamientoIVA @default(GRAVADO)
+  baseImponible        Decimal        @default(0)
+  montoIVA             Decimal        @default(0)
+  subtotal             Decimal
+  factura              Factura        @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  producto             Producto?      @relation(fields: [productoId], references: [id])
+  servicio             Servicio?      @relation(fields: [servicioId], references: [id])
 }
 
 model ReporteVenta {
@@ -331,6 +411,139 @@ model ReporteVenta {
   negocio         Negocio  @relation(fields: [negocioId], references: [id])
 }
 
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventType String
+  actorId   String?
+  targetId  String?
+  timestamp DateTime @default(now())
+  meta      Json?
+  user      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([eventType])
+  @@index([actorId])
+  @@index([targetId])
+  @@index([timestamp])
+}
+
+model DisponibilidadProducto {
+  id         String   @id @default(cuid())
+  productoId String
+  fecha      DateTime
+  cantidad   Int
+  notas      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, fecha])
+  @@index([productoId, fecha])
+  @@index([fecha])
+}
+
+model HorarioNegocio {
+  id           String   @id @default(cuid())
+  negocioId    String
+  diaSemana    Int
+  horaApertura String
+  horaCierre   String
+  cerrado      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  negocio      Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, diaSemana])
+  @@index([negocioId])
+}
+
+model NegocioUsuario {
+  id        String   @id
+  negocioId String
+  userId    String
+  rol       String   @default("GESTOR")
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Negocio   Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, userId])
+  @@index([userId])
+}
+
+model Pago {
+  id                       String     @id @default(cuid())
+  pedidoId                 String     @unique
+  facturaId                String?    @unique
+  metodo                   MetodoPago
+  estado                   EstadoPago @default(PENDIENTE)
+  monto                    Decimal
+  moneda                   String     @default("CUP")
+  /// DEPRECADO: redefinida como "nro. de tarjeta/cuenta destino". No es el ID de operación. Ver SERVICE_ARCHITECTURE.md
+  referencia               String?
+  comprobanteUrl           String?
+  notasCliente             String?
+  notasNegocio             String?
+  idTransferencia          String?    @unique
+  entidadPago              String?
+  fechaTransferencia       DateTime?
+  idTransferenciaReembolso String?
+  fechaReembolso           DateTime?
+  confirmadoPorId          String?
+  confirmadoEn             DateTime?
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+
+  // Código de confirmación para EFECTIVO_CONTRA_ENTREGA
+  codigoEntregaHash           String? // hash bcrypt del código de 6 dígitos
+  codigoEntregaExpira         DateTime? // expiración (7 días desde generación)
+  codigoEntregaIntentos       Int       @default(0)
+  codigoEntregaRegeneraciones Int       @default(0)
+  codigoEntregaUsadoEn        DateTime?
+  codigoEntregaBloqueado      Boolean   @default(false)
+
+  // Confirmación manual (override del admin)
+  confirmacionManual       Boolean @default(false)
+  motivoConfirmacionManual String?
+
+  pedido  Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  factura Factura? @relation(fields: [facturaId], references: [id])
+  user    User?    @relation(fields: [confirmadoPorId], references: [id])
+
+  @@index([pedidoId])
+  @@index([metodo])
+  @@index([estado])
+  @@index([idTransferencia])
+  @@index([entidadPago])
+  @@index([fechaTransferencia])
+  @@index([codigoEntregaExpira])
+  @@index([codigoEntregaBloqueado])
+}
+
+model SolicitudAltaNegocio {
+  id            String    @id @default(cuid())
+  userId        String
+  nombreNegocio String
+  descripcion   String?
+  areaId        String?
+  subareaIds    String?
+  provincia     String?
+  municipio     String?
+  telefono      String?
+  emailContacto String?
+  direccion     String?
+  estado        String    @default("PENDIENTE_APROBACION")
+  motivoRechazo String?
+  revisadoPorId String?
+  revisadoEn    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  revisadoPor   User?     @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
+  area          Area?     @relation(fields: [areaId], references: [id])
+  user          User      @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([estado])
+}
+
 enum Rol {
   ADMIN
   CLIENTE
@@ -338,17 +551,49 @@ enum Rol {
   LOGISTICA
 }
 
-model AuditLog {
-  id          String   @id @default(cuid())
-  eventType   String
-  actorId     String?
-  targetId    String?
-  timestamp   DateTime @default(now())
-  meta        Json?
-  user        User?    @relation(fields: [actorId], references: [id])
+enum MetodoPago {
+  EFECTIVO_CONTRA_ENTREGA
+  TRANSFERENCIA_BANCARIA
+  PAGO_MOVIL
+  TARJETA
+}
 
-  @@index([eventType])
-  @@index([actorId])
-  @@index([targetId])
-  @@index([timestamp])
+enum EstadoPago {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+  CANCELADO
+}
+
+enum TipoEntrega {
+  DOMICILIO
+  RECOGIDA_TIENDA
+  ENVIO
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  EMITIDA
+  PAGADA
+  ANULADA
+}
+
+enum RegimenFiscal {
+  GENERAL
+  SIMPLIFICADO
+  EXENTO
+  NO_SUJETO
+}
+
+enum ModoPrecio {
+  IVA_INCLUIDO
+  IVA_AGREGADO
+}
+
+enum TratamientoIVA {
+  GRAVADO
+  EXENTO
+  NO_SUJETO
 }

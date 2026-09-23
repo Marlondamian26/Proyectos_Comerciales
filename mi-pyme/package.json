@@ -18,7 +18,8 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "postinstall": "prisma skills sync || exit 0",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:disp": "tsx scripts/seed-disponibilidad.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^0.5.2-next.19",

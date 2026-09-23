@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 export async function catalogoAddToCart(formData: FormData) {
   const productoId = formData.get("productoId") as string;
+  const fechaEntrega = formData.get("fechaEntrega") as string | null;
   const session = await auth();
   if (!session?.user?.id) {
     const params = new URLSearchParams({
@@ -16,7 +17,11 @@ export async function catalogoAddToCart(formData: FormData) {
     redirect(`/auth/registro?${params.toString()}`);
     return;
   }
-  await agregarAlCarrito(session.user.id, { productoId, cantidad: 1 });
+  await agregarAlCarrito(session.user.id, {
+    productoId,
+    cantidad: 1,
+    fechaEntrega: fechaEntrega ?? undefined,
+  });
   revalidatePath("/catalogo");
   revalidatePath("/carrito");
 }

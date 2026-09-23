@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listarProductos } from "@/lib/actions";
+import { listarProductosConDisponibilidad } from "@/lib/actions";
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       }),
     };
 
-    const productos = await listarProductos(filtros);
+    const productos = await listarProductosConDisponibilidad(filtros);
     return NextResponse.json(productos);
   } catch (error) {
     console.error("Error fetching productos:", error);

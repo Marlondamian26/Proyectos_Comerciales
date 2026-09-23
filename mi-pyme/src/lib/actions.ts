@@ -1,16 +1,41 @@
 "use server";
 
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, TratamientoIVA, type MetodoPago } from "@/generated/prisma/client";
 
 import prisma from "@/lib/db/prisma";
 import { cachedQuery } from "@/lib/db/prisma";
-import { delCache } from "@/lib/cache";
+import { getCache, cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { revalidatePath } from "next/cache";
 import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
 import bcrypt from "bcryptjs";
+import { BusinessError } from "@/shared/types";
+import { DisponibilidadService } from "@/services/DisponibilidadService";
+import { AdminDisponibilidadService } from "@/services/AdminDisponibilidadService";
+import { NegocioService } from "@/services/NegocioService";
+import { SolicitudAltaService } from "@/services/SolicitudAltaService";
+import { LogisticaNegocioService } from "@/services/LogisticaNegocioService";
+import { DashboardNegocioService } from "@/services/DashboardNegocioService";
+import { CatalogService } from "@/services/CatalogService";
+import { CheckoutService } from "@/services/CheckoutService";
+import { LogisticaService } from "@/services/LogisticaService";
+import { PagoService } from "@/services/PagoService";
+import IVAService, { type GrupoItemInput } from "@/services/IVAService";
+import FacturaService from "@/services/FacturaService";
+import { assertPertenencia } from "@/services/utils/permisos";
+import { normalizarFecha } from "@/shared/utils/fecha";
+import { CODIGO_SIN_DISPONIBILIDAD } from "@/core/constants";
+import type { ConfirmarCheckoutPayload, RecalcularSeleccion } from "@/shared/checkout.types";
 
 const RESERVA_TTL_MS = 15 * 60 * 1000;
+const disponibilidadService = new DisponibilidadService();
+const adminDispService = new AdminDisponibilidadService();
+const checkoutService = new CheckoutService();
+const logisticaService = new LogisticaService();
+const pagoService = new PagoService();
+const ivaService = new IVAService();
+const facturaService = new FacturaService();
+facturaService.setPagoService(pagoService);
 
 async function logAudit(
   eventType: string,
@@ -29,7 +54,8 @@ async function logAudit(
 }
 
 export async function listarAreas() {
-  return cachedQuery("areas", async () => {
+  const cacheKey = cacheKeys.catalogo.areas();
+  return cachedQuery(cacheKey, async () => {
     return prisma.area.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
@@ -38,7 +64,7 @@ export async function listarAreas() {
 }
 
 export async function listarSubareas(areaId?: string) {
-  const cacheKey = areaId ? `subareas:${areaId}` : "subareas";
+  const cacheKey = cacheKeys.catalogo.subareas(areaId ? { areaId } : undefined);
   return cachedQuery(cacheKey, async () => {
     return prisma.subarea.findMany({
       where: {
@@ -61,9 +87,7 @@ export async function listarSubareas(areaId?: string) {
 export async function listarNegocios(options?: {
   sort?: { campo?: string; orden?: "asc" | "desc" };
 }) {
-  const cacheKey = options?.sort
-    ? `negocios:sort:${JSON.stringify(options.sort)}`
-    : "negocios";
+  const cacheKey = cacheKeys.catalogo.negocios(options?.sort ? { sort: options.sort } : undefined);
 
   const orderBy: Record<string, "asc" | "desc"> = {};
   if (options?.sort?.campo === "nombre") {
@@ -89,9 +113,7 @@ export async function listarNegocios(options?: {
 }
 
 export async function listarProductosOrdenados(sort?: { campo?: string; orden?: "asc" | "desc" }) {
-  const cacheKey = sort
-    ? `productos:sort:${JSON.stringify(sort)}`
-    : "productos";
+  const cacheKey = sort ? cacheKeys.catalogo.productos({ sort }) : cacheKeys.catalogo.productos();
 
   return cachedQuery(cacheKey, async () => {
   const orderBy: Record<string, "asc" | "desc"> = {};
@@ -113,10 +135,10 @@ export async function listarProductosOrdenados(sort?: { campo?: string; orden?: 
 
 export async function obtenerNegocioDelUsuario(usuarioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  return cachedQuery(`usuario:${usuarioId}:negocio`, async () => {
+  return cachedQuery(cacheKeys.usuario.negocio(usuarioId), async () => {
     const negocio = await prisma.negocio.findFirst({
       where: { userId: usuarioId, activo: true },
-      include: { area: true, subareas: true },
+      include: { area: true, subareas: true, horarios: { orderBy: { diaSemana: "asc" } } },
     });
     return negocio;
   });
@@ -128,7 +150,7 @@ export async function listarProductos(filtros?: {
   subareaId?: string;
   disponibleHoy?: boolean;
 }) {
-  const cacheKey = `productos:${JSON.stringify(filtros || {})}`;
+  const cacheKey = cacheKeys.catalogo.productos(filtros);
 
   return cachedQuery(cacheKey, async () => {
     return prisma.producto.findMany({
@@ -157,9 +179,7 @@ export async function listarServicios(options?: {
   subareaId?: string;
   activo?: boolean;
 }) {
-  const cacheKey = options
-    ? `servicios:${JSON.stringify(options)}`
-    : "servicios";
+  const cacheKey = cacheKeys.catalogo.servicios(options);
 
   const orderBy: Record<string, "asc" | "desc"> = {};
   if (options?.sort?.campo === "nombre") {
@@ -188,7 +208,7 @@ export async function listarServicios(options?: {
 }
 
 export async function obtenerCarrito(usuarioId: string) {
-  const cacheKey = `carrito:${usuarioId}`;
+  const cacheKey = cacheKeys.carrito.usuario(usuarioId);
   return cachedQuery(cacheKey, async () => {
     return prisma.carrito.findFirst({
       where: { usuarioId, estado: "activo" },
@@ -211,9 +231,11 @@ export async function anadirItemCarrito(
     productoId?: string;
     servicioId?: string;
     cantidad?: number;
+    fechaEntrega?: Date | string | number;
   }
 ) {
   const cantidad = datos.cantidad ?? 1;
+  const fechaEntrega = normalizarFecha(datos.fechaEntrega ?? new Date());
 
   const carrito = await prisma.carrito.upsert({
     where: {
@@ -257,10 +279,27 @@ export async function anadirItemCarrito(
     },
   });
 
+  const cantidadTotal = (existingItem?.cantidad ?? 0) + cantidad;
+
+  // Validar disponibilidad antes de reservar unidades adicionales.
+  if (datos.productoId) {
+    await disponibilidadService.puedeComprarProducto(
+      datos.productoId,
+      cantidadTotal,
+      fechaEntrega
+    );
+  } else if (datos.servicioId) {
+    await disponibilidadService.puedeReservarServicio(
+      datos.servicioId,
+      fechaEntrega,
+      cantidadTotal
+    );
+  }
+
   if (existingItem) {
     await prisma.carritoItem.update({
       where: { id: existingItem.id },
-      data: { cantidad: existingItem.cantidad + cantidad },
+      data: { cantidad: cantidadTotal, fechaEntrega },
     });
   } else {
     await prisma.carritoItem.create({
@@ -271,13 +310,14 @@ export async function anadirItemCarrito(
         cantidad,
         precioUnitario,
         tipo,
+        fechaEntrega,
       },
     });
   }
 
-  delCache(`carrito:${usuarioId}`);
+  await getCache().del(cacheKeys.carrito.usuario(usuarioId))
 
-  return prisma.carrito.findUnique({
+  const updatedCart = await prisma.carrito.findUnique({
     where: { id: carrito.id },
     include: {
       items: {
@@ -288,6 +328,12 @@ export async function anadirItemCarrito(
       },
     },
   });
+
+  if (!updatedCart) {
+    throw new Error("Error al obtener el carrito actualizado");
+  }
+
+  return updatedCart;
 }
 
 export async function listarCarrito(usuarioId: string) {
@@ -305,6 +351,7 @@ export async function agregarAlCarrito(
     productoId?: string;
     servicioId?: string;
     cantidad?: number;
+    fechaEntrega?: Date | string | number;
   }
 ) {
   await requireRole([Rol.CLIENTE, Rol.ADMIN]);
@@ -323,7 +370,7 @@ export async function eliminarCarritoItem(itemId: string, usuarioId?: string) {
   });
 
   if (usuarioId) {
-    delCache(`carrito:${usuarioId}`);
+    await getCache().del(cacheKeys.carrito.usuario(usuarioId))
   }
 }
 
@@ -339,11 +386,11 @@ export async function vaciarCarrito(usuarioId: string) {
     },
   });
 
-  delCache(`carrito:${usuarioId}`);
+  await getCache().del(cacheKeys.carrito.usuario(usuarioId))
 }
 
 export async function listarReservas(usuarioId: string) {
-  const cacheKey = `reservas:${usuarioId}`;
+  const cacheKey = cacheKeys.reservas.usuario(usuarioId);
 
   return cachedQuery(cacheKey, async () => {
     return prisma.reserva.findMany({
@@ -364,13 +411,25 @@ export async function listarReservas(usuarioId: string) {
 
 export async function cancelarReserva(reservaId: string, usuarioId?: string) {
   await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+
+  const reserva = await prisma.reserva.findUnique({
+    where: { id: reservaId },
+    select: { servicioId: true, fechaHoraInicio: true },
+  });
+
   await prisma.reserva.update({
     where: { id: reservaId },
     data: { estado: "cancelada" },
   });
 
   if (usuarioId) {
-    delCache(`reservas:${usuarioId}`);
+    await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + usuarioId + ":");
+  }
+  if (reserva?.servicioId) {
+    await disponibilidadService.invalidateServicioCache(
+      reserva.servicioId,
+      reserva.fechaHoraInicio
+    );
   }
 }
 
@@ -402,21 +461,16 @@ export async function crearReserva(
     throw new Error("Servicio no disponible");
   }
 
+  // Validar cupos de hoy contra el calendario de reservas real.
+  await disponibilidadService.puedeReservarServicio(
+    datos.servicioId,
+    fechaInicio,
+    1
+  );
+
   const fechaFin = new Date(
     fechaInicio.getTime() + servicio.duracionMinutos * 60 * 1000
   );
-
-  const existingCount = await prisma.reserva.count({
-    where: {
-      servicioId: datos.servicioId,
-      fechaHoraInicio: fechaInicio,
-      estado: { not: "cancelada" },
-    },
-  });
-
-  if (existingCount >= servicio.capacidad) {
-    throw new Error("Servicio sin disponibilidad en esta fecha y hora");
-  }
 
   const venceEn = new Date(Date.now() + RESERVA_TTL_MS);
 
@@ -432,14 +486,18 @@ export async function crearReserva(
     },
   });
 
-   delCache(`reservas:${usuarioId}`);
+    await getCache().del(cacheKeys.reservas.usuario(usuarioId))
+    await disponibilidadService.invalidateServicioCache(
+    datos.servicioId,
+    fechaInicio
+  );
 
   return reserva;
 }
 
 export async function listarPedidos(usuarioId: string, options?: { page?: number; limit?: number; search?: string; estado?: string }) {
   await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = options ? `pedidos:${usuarioId}:${JSON.stringify(options)}` : `pedidos:${usuarioId}`;
+  const cacheKey = options ? cacheKeys.pedidos.usuario(usuarioId, { ...(options.page && { page: options.page }), ...(options.limit && { limit: options.limit }), ...(options.search && { search: options.search }), ...(options.estado && { estado: options.estado }) }) : cacheKeys.pedidos.usuario(usuarioId);
 
   return cachedQuery(cacheKey, async () => {
     const page = options?.page ?? 1;
@@ -466,9 +524,12 @@ export async function listarPedidos(usuarioId: string, options?: { page?: number
               servicio: true,
               negocio: true,
             },
-          },
-          logistica: true,
-        },
+           },
+           opcionLogistica: true,
+           negocio: {
+             select: { id: true, nombre: true, direccion: true },
+           },
+         },
         orderBy: { fechaCreacion: "desc" },
         skip,
         take: limit,
@@ -490,25 +551,22 @@ export async function listarPedidos(usuarioId: string, options?: { page?: number
 
 export async function listarPedidosPorNegocio(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `pedidos:negocio:${negocioId}`;
+  const cacheKey = cacheKeys.pedidos.negocio(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     return prisma.pedido.findMany({
       where: {
-        items: {
-          some: { negocioId },
-        },
+        negocioId,
       },
       include: {
         items: {
-          where: { negocioId },
           include: {
             producto: true,
             servicio: true,
             negocio: true,
           },
         },
-        logistica: true,
+        opcionLogistica: true,
         usuario: {
           select: { id: true, email: true, nombre: true },
         },
@@ -543,6 +601,61 @@ export async function crearPedido(
     throw new Error("El carrito no existe o está vacío");
   }
 
+  // Revalidar disponibilidad de todos los items antes de persistir.
+  const fechaReferencia = normalizarFecha(new Date());
+  const problemas: string[] = [];
+  for (const item of carrito.items) {
+    const fechaItem = item.fechaEntrega
+      ? normalizarFecha(item.fechaEntrega)
+      : fechaReferencia;
+    try {
+      if (item.productoId) {
+        const disp = await disponibilidadService.getDisponibilidadProducto(
+          item.productoId,
+          fechaItem
+        );
+        const valido =
+          disp.disponible &&
+          disp.cantidadReservada <= disp.cantidadOfertada &&
+          disp.cantidadReservada <= disp.stockFisico;
+        if (!valido) {
+          problemas.push(
+            `producto ${item.producto?.nombre ?? item.productoId}: sin disponibilidad suficiente (oferta ${disp.cantidadOfertada}, reservada ${disp.cantidadReservada}, stock ${disp.stockFisico})`
+          );
+        }
+      } else if (item.servicioId) {
+        const cupos = await disponibilidadService.getCuposServicio(
+          item.servicioId,
+          fechaItem
+        );
+        const valido =
+          cupos.disponible &&
+          cupos.cuposDisponibles + item.cantidad <= cupos.capacidad;
+        if (!valido) {
+          problemas.push(
+            `servicio ${item.servicio?.nombre ?? item.servicioId}: sin cupos suficientes (cupos ${cupos.cuposDisponibles})`
+          );
+        }
+      }
+    } catch (err: unknown) {
+      const detalle =
+        item.productoId
+          ? `producto ${item.producto?.nombre ?? item.productoId}`
+          : `servicio ${item.servicio?.nombre ?? item.servicioId}`;
+      problemas.push(
+        `${detalle}: ${err instanceof Error ? err.message : "sin disponibilidad"}`
+      );
+    }
+  }
+
+  if (problemas.length > 0) {
+    throw new BusinessError(
+      `No se puede crear el pedido: ${problemas.join("; ")}`,
+      CODIGO_SIN_DISPONIBILIDAD,
+      409
+    );
+  }
+
   const tieneProductos = carrito.items.some((item) => item.tipo === "producto");
   const tieneServicios = carrito.items.some((item) => item.tipo === "servicio");
   const tipo =
@@ -561,58 +674,76 @@ export async function crearPedido(
   });
 
   const negocioIds = Array.from(new Set(itemNegocioIds));
+  const negocioPrincipalId = itemNegocioIds[0] ?? "";
 
   const total = carrito.items.reduce(
     (sum, item) => sum + item.precioUnitario * item.cantidad,
     0
   );
 
-  const pedido = await prisma.pedido.create({
-    data: {
-      usuarioId,
-      total,
-      estado: "pendiente",
-      tipo,
-      negocioIds: JSON.stringify(negocioIds),
-      direccionEntrega: datos.direccionEntrega,
-      items: {
-        create: carrito.items.map((item) => ({
-          productoId: item.productoId,
-          servicioId: item.servicioId,
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          subtotal: item.precioUnitario * item.cantidad,
-          negocioId:
-            item.producto?.negocioId ?? item.servicio?.negocioId ?? "",
-        })),
-      },
-    },
-    include: {
-      items: {
-        include: {
-          producto: true,
-          servicio: true,
-          negocio: true,
+  // TODO: migrar a transacción Serializable en PostgreSQL. En SQLite,
+  //  $transaction reduce la ventana de carrera entre validar y persistir.
+  const pedido = await prisma.$transaction(async (tx) => {
+    const pedidoCreado = await tx.pedido.create({
+      data: {
+        usuarioId,
+        negocioId: negocioPrincipalId,
+        total,
+        estado: "pendiente",
+        tipo,
+        tipoEntrega: datos.direccionEntrega
+          ? ("DOMICILIO" as const)
+          : ("RECOGIDA_TIENDA" as const),
+        negocioIds: JSON.stringify(negocioIds),
+        direccionEntrega: datos.direccionEntrega || null,
+        costoEnvio: 0,
+        items: {
+          create: carrito.items.map((item) => ({
+            productoId: item.productoId,
+            servicioId: item.servicioId,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            subtotal: item.precioUnitario * item.cantidad,
+            negocioId:
+              item.producto?.negocioId ?? item.servicio?.negocioId ?? "",
+            fechaEntrega: item.fechaEntrega ?? undefined,
+          })),
         },
       },
-    },
+      include: {
+        items: {
+          include: {
+            producto: true,
+            servicio: true,
+            negocio: true,
+          },
+        },
+      },
+    });
+
+    await tx.carritoItem.deleteMany({
+      where: { carritoId: carrito.id },
+    });
+
+    return pedidoCreado;
   });
 
-  await prisma.carritoItem.deleteMany({
-    where: { carritoId: carrito.id },
-  });
+  await getCache().del(cacheKeys.carrito.usuario(usuarioId));
+  await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + usuarioId + ":");
 
-  delCache(`carrito:${usuarioId}`);
-  delCache(`pedidos:${usuarioId}`);
+  // Invalidar disponibilidad de los productos afectados.
+  for (const item of carrito.items) {
+    if (item.productoId) {
+      await disponibilidadService.invalidateProductoCache(item.productoId);
+    }
+  }
 
   return pedido;
 }
 
 export async function listarOpcionesLogisticas(negocioId?: string) {
   await requireRole([Rol.LOGISTICA, Rol.ADMIN]);
-  const cacheKey = negocioId
-    ? `logistica:opciones:${negocioId}`
-    : "logistica:opciones";
+  const cacheKey = cacheKeys.logistica.opciones(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     return prisma.opcionLogistica.findMany({
@@ -634,7 +765,7 @@ export async function listarOpcionesLogistica(negocioId?: string) {
 
 export async function listarProveedoresLogisticos() {
   await requireRole([Rol.LOGISTICA, Rol.ADMIN]);
-  return cachedQuery("logistica:proveedores", async () => {
+  return cachedQuery(cacheKeys.logistica.proveedores(), async () => {
     return prisma.proveedorLogistico.findMany({
       where: { activo: true },
       include: {
@@ -647,7 +778,7 @@ export async function listarProveedoresLogisticos() {
 
 export async function listarPedidosAsignados(usuarioId: string) {
   await requireRole([Rol.LOGISTICA, Rol.ADMIN]);
-  const cacheKey = `logistica:pedidos:${usuarioId}`;
+  const cacheKey = cacheKeys.logistica.pedidos(usuarioId);
 
   return cachedQuery(cacheKey, async () => {
     const proveedor = await prisma.proveedorLogistico.findFirst({
@@ -663,7 +794,7 @@ export async function listarPedidosAsignados(usuarioId: string) {
 
     return prisma.pedido.findMany({
       where: {
-        logisticaId: { in: opcionesLogisticasIds },
+        opcionLogisticaId: { in: opcionesLogisticasIds },
       },
       include: {
         items: {
@@ -673,7 +804,7 @@ export async function listarPedidosAsignados(usuarioId: string) {
             negocio: true,
           },
         },
-        logistica: true,
+        opcionLogistica: true,
         usuario: {
           select: { id: true, email: true, nombre: true },
         },
@@ -695,8 +826,8 @@ export async function actualizarEstadoPedido(
   });
 
   if (pedido) {
-    delCache(`pedidos:${pedido.usuarioId}`);
-    delCache(`logistica:pedidos:*`);
+    await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + pedido.usuarioId + ":");
+    await getCache().invalidatePrefix(cachePrefixes.logisticaPedidos);
   }
 
   return pedido;
@@ -704,11 +835,11 @@ export async function actualizarEstadoPedido(
 
 export async function asignarLogistica(
   pedidoId: string,
-  logisticaId: string
+  opcionLogisticaId: string
 ) {
   await requireRole([Rol.LOGISTICA, Rol.ADMIN]);
   const opcionLogistica = await prisma.opcionLogistica.findUnique({
-    where: { id: logisticaId },
+    where: { id: opcionLogisticaId },
   });
 
   if (!opcionLogistica) {
@@ -717,7 +848,7 @@ export async function asignarLogistica(
 
   const pedido = await prisma.pedido.update({
     where: { id: pedidoId },
-    data: { logisticaId },
+    data: { opcionLogisticaId },
     include: {
       items: {
         include: {
@@ -726,81 +857,133 @@ export async function asignarLogistica(
           negocio: true,
         },
       },
-      logistica: true,
+      opcionLogistica: true,
     },
   });
 
-   delCache(`pedidos:${pedido.usuarioId}`);
+   await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + pedido.usuarioId + ":");
+   await getCache().invalidatePrefix(cachePrefixes.logisticaPedidos);
 
    return pedido;
-}
+  }
 
-export async function asignarLogisticaForm(
+  export async function asignarLogisticaForm(
    prevState: { error?: string; ok?: boolean } | undefined,
    data: FormData
 ) {
-   const pedidoId = data.get("pedidoId") as string;
-   const logisticaId = data.get("logisticaId") as string;
+    const pedidoId = data.get("pedidoId") as string;
+    const opcionLogisticaId = data.get("opcionLogisticaId") as string;
 
-   if (!pedidoId || !logisticaId) {
-     return { error: "Faltan parámetros: pedidoId y logisticaId son requeridos" };
-   }
+    if (!pedidoId || !opcionLogisticaId) {
+      return { error: "Faltan parámetros: pedidoId y opcionLogisticaId son requeridos" };
+    }
 
-   try {
-     const pedido = await asignarLogistica(pedidoId, logisticaId);
+    try {
+      const pedido = await asignarLogistica(pedidoId, opcionLogisticaId);
      revalidatePath("/logistica");
      revalidatePath("/pedidos");
      return { ok: true, pedido };
-   } catch (err: unknown) {
-     return { error: err instanceof Error ? err.message : String(err) };
-   }
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
-const TASA_IMPUESTO = 0.21;
+// -- Checkout --
 
-export async function listarFacturas(usuarioId?: string, negocioId?: string, options?: { page?: number; limit?: number }) {
-  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+export async function prepararCheckoutAction(options?: { direccionEntrega?: string }) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await checkoutService.prepararCheckout(session.id, options);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function confirmarCheckoutAction(payload: ConfirmarCheckoutPayload) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await checkoutService.confirmarCheckout(session.id, payload);
+    revalidatePath("/pedidos");
+    revalidatePath("/carrito");
+
+    // Filtrar código de entrega para non-CLIENTE roles (solo CLIENTE lo ve)
+    if (session.rol !== Rol.CLIENTE) {
+      result.pedidosCreados = result.pedidosCreados.map((p: any) => ({
+        ...p,
+        codigoEntrega: null,
+      }));
+    }
+
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function recalcularTotalesAction(seleccion: RecalcularSeleccion) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    return await checkoutService.recalcularTotales(session.id, seleccion);
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function getOpcionesLogisticaAction(negocioId: string) {
+  try {
+    return await logisticaService.listOpcionesParaCheckout(negocioId);
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function listarPedidosDeUsuarioAction(options?: { page?: number; limit?: number; estado?: string }) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
   const cacheKey = options
-    ? negocioId
-      ? `facturas:negocio:${negocioId}:${JSON.stringify(options)}`
-      : `facturas:usuario:${usuarioId}:${JSON.stringify(options)}`
-    : negocioId
-      ? `facturas:negocio:${negocioId}`
-      : `facturas:usuario:${usuarioId}`;
+    ? cacheKeys.pedidos.usuario(session.id, { ...(options.page && { page: options.page }), ...(options.limit && { limit: options.limit }), ...(options.estado && { estado: options.estado }) })
+    : cacheKeys.pedidos.usuario(session.id);
 
   return cachedQuery(cacheKey, async () => {
     const page = options?.page ?? 1;
     const limit = options?.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where: Record<string, unknown> = {
-      ...(usuarioId && !negocioId && { usuarioId }),
-      ...(negocioId && { negocioId }),
-    };
+    const where: Record<string, unknown> = { usuarioId: session.id };
+    if (options?.estado) {
+      where.estado = options.estado;
+    }
 
-    const [facturas, total] = await Promise.all([
-      prisma.factura.findMany({
+    const [pedidos, total] = await Promise.all([
+      prisma.pedido.findMany({
         where,
         include: {
-          pedido: {
-            include: {
-              items: {
-                include: {
-                  producto: true,
-                  servicio: true,
-                },
-              },
-            },
+          items: {
+            include: { producto: true, servicio: true, negocio: true },
           },
+          opcionLogistica: true,
+          negocio: true,
         },
-        orderBy: { fecha: "desc" },
+        orderBy: { fechaCreacion: "desc" },
         skip,
         take: limit,
       }),
-      prisma.factura.count({ where }),
+      prisma.pedido.count({ where }),
     ]);
 
     return {
-      data: facturas,
+      data: pedidos,
       pagination: {
         page,
         limit,
@@ -811,91 +994,201 @@ export async function listarFacturas(usuarioId?: string, negocioId?: string, opt
   });
 }
 
-export async function emitirFactura(pedidoId: string) {
-  await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const pedido = await prisma.pedido.findUnique({
-    where: { id: pedidoId },
-    include: {
-      items: {
-        include: {
-          producto: true,
-          servicio: true,
+export async function getPedidoAction(pedidoId: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  const cacheKey = cacheKeys.pedidos.detalle(pedidoId, session.id);
+
+  return cachedQuery(cacheKey, async () => {
+    const pedido = await prisma.pedido.findUnique({
+      where: { id: pedidoId },
+      include: {
+        items: {
+          include: { producto: true, servicio: true, negocio: true },
+        },
+        opcionLogistica: true,
+        negocio: true,
+        factura: true,
+        usuario: {
+          select: { id: true, email: true, nombre: true },
         },
       },
-    },
+    });
+
+    if (!pedido) {
+      throw new Error("Pedido no encontrado");
+    }
+
+    // Validar propiedad: el cliente solo ve sus pedidos, el negocio ve los suyos
+    if (session.rol === Rol.CLIENTE && pedido.usuarioId !== session.id) {
+      throw new Error("No tienes permiso para ver este pedido");
+    }
+    if (session.rol === Rol.NEGOCIO && pedido.negocioId !== session.id) {
+      throw new Error("No tienes permiso para ver este pedido");
+    }
+
+    return pedido;
+  });
+}
+
+export async function cambiarEstadoPedidoAction(pedidoId: string, nuevoEstado: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN]);
+
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    select: { negocioId: true, estado: true },
   });
 
   if (!pedido) {
     throw new Error("Pedido no encontrado");
   }
 
-  const existingFactura = await prisma.factura.findUnique({
-    where: { pedidoId },
-  });
-
-  if (existingFactura) {
-    throw new Error("Ya existe una factura para este pedido");
+  if (session.rol === Rol.NEGOCIO && pedido.negocioId !== session.id) {
+    throw new Error("No tienes permiso para modificar este pedido");
   }
 
-  const subtotal = pedido.total;
-  const impuestos = subtotal * TASA_IMPUESTO;
-  const total = subtotal + impuestos;
-
-  const now = new Date();
-  const año = now.getFullYear();
-  const mes = String(now.getMonth() + 1).padStart(2, "0");
-  const día = String(now.getDate()).padStart(2, "0");
-  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const numero = `FAC-${año}${mes}${día}-${randomSuffix}`;
-
-  const negocioId = pedido.items[0]?.negocioId ?? null;
-
-  const factura = await prisma.factura.create({
-    data: {
-      pedidoId: pedido.id,
-      usuarioId: pedido.usuarioId,
-      negocioId,
-      numero,
-      fecha: now,
-      estado: "emitida",
-      subtotal,
-      impuestos,
-      total,
-      items: {
-        create: pedido.items.map((item) => ({
-          productoId: item.productoId,
-          servicioId: item.servicioId,
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          subtotal: item.subtotal,
-        })),
-      },
-    },
-    include: {
-      items: {
-        include: {
-          producto: true,
-          servicio: true,
-        },
-      },
-      pedido: true,
-    },
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: { estado: nuevoEstado },
   });
 
-  delCache(`pedidos:${pedido.usuarioId}`);
-  delCache(`facturas:usuario:${pedido.usuarioId}`);
-  if (negocioId) {
-    delCache(`facturas:negocio:${negocioId}`);
+   await getCache().del(cacheKeys.pedidos.detalle(pedidoId))
+   await getCache().invalidatePrefix(cachePrefixes.pedidosNegocio + pedido.negocioId + ":");
+   revalidatePath("/dashboard/negocio/pedidos");
+}
+
+export async function listarFacturas(usuarioId?: string, negocioId?: string, options?: { page?: number; limit?: number }) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  return facturaService.listarFacturas(usuarioId, negocioId, options);
+}
+
+export async function emitirFactura(pedidoId: string, _params?: Record<string, unknown>) {
+  await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return facturaService.emitirFactura(pedidoId);
+}
+
+export async function getDatosFiscalesAction(negocioId: string) {
+  await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const negocio = await prisma.negocio.findUnique({
+    where: { id: negocioId },
+    select: {
+      regimenFiscal: true,
+      tasaIVA: true,
+      modoPrecio: true,
+      nit: true,
+      direccionFiscal: true,
+      telefonoFiscal: true,
+      emailFiscal: true,
+      prefijoFactura: true,
+    },
+  });
+  if (!negocio) {
+    throw new BusinessError("Negocio no encontrado", "NO_ENCONTRADO", 404);
+  }
+  return {
+    regimenFiscal: negocio.regimenFiscal,
+    tasaIVA: Number(negocio.tasaIVA),
+    modoPrecio: negocio.modoPrecio,
+    nit: negocio.nit,
+    direccionFiscal: negocio.direccionFiscal,
+    telefonoFiscal: negocio.telefonoFiscal,
+    emailFiscal: negocio.emailFiscal,
+    prefijoFactura: negocio.prefijoFactura,
+  };
+}
+
+export async function actualizarDatosFiscalesAction(
+  negocioId: string,
+  datos: {
+    regimenFiscal?: string;
+    tasaIVA?: number | string;
+    modoPrecio?: string;
+    nit?: string | null;
+    direccionFiscal?: string | null;
+    telefonoFiscal?: string | null;
+     emailFiscal?: string | null;
+     prefijoFactura?: string;
+     confirmarCambioRegimen?: boolean;
+   }
+ ) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+    const result = await negocioService.actualizarDatosFiscales(
+    negocioId,
+    datos,
+    session.id,
+    session.rol as Rol
+  );
+  revalidatePath("/negocio/mi-negocio");
+  revalidatePath("/negocio");
+  return result;
+}
+
+export async function getFacturaAction(facturaId: string) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  return facturaService.getFactura(facturaId);
+}
+
+export async function descargarFacturaAction(facturaId: string) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  return facturaService.descargarFactura(facturaId);
+}
+
+export async function simularIVAAction(params: {
+  negocioId: string;
+  items: Array<{
+    precio: number | string;
+    cantidad: number;
+    tratamientoIVA: string;
+    tasaOverride?: number | string | null;
+  }>;
+}) {
+  await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+
+  const negocio = await prisma.negocio.findUnique({
+    where: { id: params.negocioId },
+    select: { regimenFiscal: true, tasaIVA: true, modoPrecio: true },
+  });
+
+  if (!negocio) {
+    throw new BusinessError("Negocio no encontrado", "NO_ENCONTRADO", 404);
   }
 
-  return factura;
+  const negocioFiscal = {
+    regimenFiscal: negocio.regimenFiscal,
+    tasaIVA: negocio.tasaIVA,
+    modoPrecio: negocio.modoPrecio,
+  };
+
+  const itemsFiscales = params.items.map((i) => ({
+    precio: i.precio,
+    cantidad: i.cantidad,
+    tratamientoIVA: i.tratamientoIVA as TratamientoIVA,
+    tasaOverride: i.tasaOverride ?? null,
+  }));
+
+  const calculoGrupo = ivaService.calcularGrupo(itemsFiscales, negocioFiscal);
+
+  return {
+    baseImponible: Number(calculoGrupo.baseImponible.toFixed(2)),
+    montoIVA: Number(calculoGrupo.montoIVA.toFixed(2)),
+    totalConIVA: Number(calculoGrupo.totalConIVA.toFixed(2)),
+    regimenFiscal: negocio.regimenFiscal,
+    modoPrecio: negocio.modoPrecio,
+    tasaIVA: Number(negocio.tasaIVA),
+    items: calculoGrupo.items.map((item) => ({
+      baseImponible: Number(item.baseImponible.toFixed(2)),
+      montoIVA: Number(item.montoIVA.toFixed(2)),
+      subtotal: Number(item.subtotal.toFixed(2)),
+      tratamientoIVA: item.tratamientoIVA,
+      tasaAplicada: Number(item.tasaAplicada.toFixed(2)),
+    })),
+  };
 }
 
 export async function reporteVentasPorDia(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `reporte:ventas:${negocioId}`;
+   const cacheKey = cacheKeys.reporte.ventas(negocioId);
 
-  return cachedQuery(cacheKey, async () => {
+   return cachedQuery(cacheKey, async () => {
     const items = await prisma.pedidoItem.findMany({
       where: { negocioId },
       select: {
@@ -919,7 +1212,7 @@ export async function reporteVentasPorDia(negocioId: string) {
       if (!ventasPorDiaMap[fecha]) {
         ventasPorDiaMap[fecha] = { fecha, totalVentas: 0, cantidad: 0 };
       }
-      ventasPorDiaMap[fecha].totalVentas += item.subtotal;
+       ventasPorDiaMap[fecha].totalVentas += Number(item.subtotal);
       ventasPorDiaMap[fecha].cantidad += item.cantidad;
     });
 
@@ -931,7 +1224,7 @@ export async function reporteVentasPorDia(negocioId: string) {
 
 export async function reporteVentasGlobal() {
   await requireRole([Rol.ADMIN]);
-  const cacheKey = "reporte:ventas:global";
+  const cacheKey = cacheKeys.reporte.ventasGlobal();
 
   return cachedQuery(cacheKey, async () => {
     const items = await prisma.pedidoItem.findMany({
@@ -956,7 +1249,7 @@ export async function reporteVentasGlobal() {
       if (!ventasPorDiaMap[fecha]) {
         ventasPorDiaMap[fecha] = { fecha, totalVentas: 0, cantidad: 0 };
       }
-      ventasPorDiaMap[fecha].totalVentas += item.subtotal;
+       ventasPorDiaMap[fecha].totalVentas += Number(item.subtotal);
       ventasPorDiaMap[fecha].cantidad += item.cantidad;
     });
 
@@ -968,7 +1261,7 @@ export async function reporteVentasGlobal() {
 
 export async function reporteProductosMasVendidos(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `reporte:productos:${negocioId}`;
+  const cacheKey = cacheKeys.reporte.productos(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     const items = await prisma.pedidoItem.findMany({
@@ -1000,7 +1293,7 @@ export async function reporteProductosMasVendidos(negocioId: string) {
         };
       }
       productosMap[key].cantidad += item.cantidad;
-      productosMap[key].totalVentas += item.subtotal;
+       productosMap[key].totalVentas += Number(item.subtotal);
     });
 
     return Object.entries(productosMap)
@@ -1011,7 +1304,7 @@ export async function reporteProductosMasVendidos(negocioId: string) {
 
 export async function reporteInventario(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `reporte:inventario:${negocioId}`;
+  const cacheKey = cacheKeys.reporte.inventario(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     const inventarios = await prisma.inventario.findMany({
@@ -1036,7 +1329,7 @@ export async function reporteInventario(negocioId: string) {
 
 export async function productosMasVendidos(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `reporte:productos-vendidos:${negocioId}`;
+  const cacheKey = cacheKeys.reporte.productosVendidos(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     const items = await prisma.pedidoItem.findMany({
@@ -1068,7 +1361,7 @@ export async function productosMasVendidos(negocioId: string) {
         };
       }
       productosMap[key].cantidad += item.cantidad;
-      productosMap[key].totalVentas += item.subtotal;
+       productosMap[key].totalVentas += Number(item.subtotal);
     });
 
     return Object.entries(productosMap)
@@ -1079,7 +1372,7 @@ export async function productosMasVendidos(negocioId: string) {
 
 export async function estadoInventario(negocioId: string) {
   await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
-  const cacheKey = `reporte:inventario-estado:${negocioId}`;
+  const cacheKey = cacheKeys.reporte.inventivoEstado(negocioId);
 
   return cachedQuery(cacheKey, async () => {
     const inventarios = await prisma.inventario.findMany({
@@ -1105,7 +1398,7 @@ export async function estadoInventario(negocioId: string) {
 
 export async function listarUsuarios() {
   await requireRole([Rol.ADMIN]);
-  return cachedQuery("usuarios", async () => {
+  return cachedQuery(cacheKeys.usuario.all(), async () => {
     return prisma.user.findMany({
       select: {
         id: true,
@@ -1125,7 +1418,7 @@ export async function listarUsuarios() {
 
 export async function estadoUsuario(usuarioId: string) {
   await requireRole([Rol.ADMIN]);
-  return cachedQuery(`usuario:${usuarioId}`, async () => {
+  return cachedQuery(cacheKeys.usuario.detalle(usuarioId), async () => {
     const user = await prisma.user.findUnique({
       where: { id: usuarioId },
       select: {
@@ -1158,8 +1451,8 @@ export async function cambiarEstadoUsuario(
     data,
   });
 
-  delCache("usuarios");
-  delCache(`usuario:${usuarioId}`);
+  await getCache().del(cacheKeys.usuario.all());
+  await getCache().del(cacheKeys.usuario.detalle(usuarioId));
 
   return prisma.user.findUnique({
     where: { id: usuarioId },
@@ -1182,8 +1475,8 @@ export async function cambiarEstadoArea(areaId: string, activo: boolean) {
     data: { activo },
   });
 
-  delCache("areas");
-  delCache(`area:${areaId}`);
+  await getCache().del(cacheKeys.catalogo.areas());
+  await getCache().del(`area:${areaId}`);
 
   return prisma.area.findUnique({
     where: { id: areaId },
@@ -1198,8 +1491,8 @@ export async function cambiarEstadoSubarea(subareaId: string, activo: boolean) {
     data: { activo },
   });
 
-  delCache("subareas");
-  delCache(`subarea:${subareaId}`);
+  await getCache().invalidatePrefix("catalogo:subareas");
+  await getCache().del(`subarea:${subareaId}`);
 
   return prisma.subarea.findUnique({
     where: { id: subareaId },
@@ -1214,8 +1507,8 @@ export async function cambiarEstadoNegocio(negocioId: string, activo: boolean) {
     data: { activo },
   });
 
-  delCache("negocios");
-  delCache(`negocio:${negocioId}`);
+  await getCache().del(cacheKeys.catalogo.negocios());
+  await getCache().del(cacheKeys.negocio.detalle(negocioId));
 
   return prisma.negocio.findUnique({
     where: { id: negocioId },
@@ -1231,8 +1524,8 @@ export async function togglePermiteReservas(negocioId: string) {
     where: { id: negocioId },
     data: { permiteReservas: !negocio.permiteReservas },
   });
-  delCache("negocios");
-  delCache(`negocio:${negocioId}`);
+  await getCache().del(cacheKeys.catalogo.negocios());
+  await getCache().del(cacheKeys.negocio.detalle(negocioId));
   return prisma.negocio.findUnique({ where: { id: negocioId } });
 }
 
@@ -1245,8 +1538,8 @@ export async function togglePermiteEnvio(negocioId: string) {
     where: { id: negocioId },
     data: { permiteEnvio: !negocio.permiteEnvio },
   });
-  delCache("negocios");
-  delCache(`negocio:${negocioId}`);
+  await getCache().del(cacheKeys.catalogo.negocios());
+  await getCache().del(cacheKeys.negocio.detalle(negocioId));
   return prisma.negocio.findUnique({ where: { id: negocioId } });
 }
 
@@ -1288,8 +1581,8 @@ export async function actualizarArea(
 ) {
   await requireRole([Rol.ADMIN]);
 
-  delCache("areas");
-  delCache(`area:${areaId}`);
+  await getCache().del(cacheKeys.catalogo.areas());
+  await getCache().del(`area:${areaId}`);
 
   return prisma.area.update({
     where: { id: areaId },
@@ -1303,8 +1596,8 @@ export async function actualizarSubarea(
 ) {
   await requireRole([Rol.ADMIN]);
 
-  delCache("subareas");
-  delCache(`subarea:${subareaId}`);
+  await getCache().invalidatePrefix("catalogo:subareas");
+  await getCache().del(`subarea:${subareaId}`);
 
   return prisma.subarea.update({
     where: { id: subareaId },
@@ -1354,8 +1647,8 @@ export async function actualizarNegocio(
 ) {
   await requireRole([Rol.ADMIN]);
 
-  delCache("negocios");
-  delCache(`negocio:${negocioId}`);
+  await getCache().del(cacheKeys.catalogo.negocios());
+  await getCache().del(cacheKeys.negocio.detalle(negocioId));
 
   return prisma.negocio.update({
     where: { id: negocioId },
@@ -1499,8 +1792,8 @@ export async function actualizarPerfil(
     },
   });
 
-  delCache(`usuario:${usuarioId}`);
-  delCache("usuarios");
+  await getCache().del(cacheKeys.usuario.detalle(usuarioId));
+  await getCache().del(cacheKeys.usuario.all());
 
   return user;
 }
@@ -1594,7 +1887,7 @@ export async function ensureGenericAdminExists(actorId?: string) {
     });
   }
 
-  delCache("usuarios");
+  await getCache().del(cacheKeys.usuario.all());
 }
 
 async function deactivateGenericAdmin(actorId: string) {
@@ -1610,11 +1903,9 @@ async function deactivateGenericAdmin(actorId: string) {
     await logAudit("GENERIC_ADMIN_DEACTIVATED_BY_ADMIN", actorId, genericAdmin.id, {
       reason: "New admin created",
     });
-    delCache("usuarios");
+    await getCache().del(cacheKeys.usuario.all())
   }
-}
-
-export async function eliminarCuenta(
+}export async function eliminarCuenta(
   usuarioId: string,
   datos: { password: string }
 ) {
@@ -1661,8 +1952,8 @@ export async function eliminarCuenta(
     wasGenericAdmin: user.isGenericAdmin,
   });
 
-  delCache("usuarios");
-  delCache(`usuario:${usuarioId}`);
+  await getCache().del(cacheKeys.usuario.all());
+  await getCache().del(cacheKeys.usuario.detalle(usuarioId));
 
   await ensureGenericAdminExists(usuarioId);
 
@@ -1724,8 +2015,8 @@ export async function eliminarUltimoAdmin(
     reason: "Last admin deleted with dual password confirmation",
   });
 
-  delCache("usuarios");
-  delCache(`usuario:${usuarioId}`);
+  await getCache().del(cacheKeys.usuario.all());
+  await getCache().del(cacheKeys.usuario.detalle(usuarioId));
 
   await ensureGenericAdminExists(usuarioId);
 
@@ -1755,8 +2046,8 @@ export async function asignarRolAdmin(usuarioId: string, actorId: string) {
     data: { rol: "ADMIN" },
   });
 
-  delCache("usuarios");
-  delCache(`usuario:${usuarioId}`);
+  await getCache().del(cacheKeys.usuario.all());
+  await getCache().del(cacheKeys.usuario.detalle(usuarioId));
 
   return prisma.user.findUnique({
     where: { id: usuarioId },
@@ -1772,4 +2063,1238 @@ export async function asignarRolAdmin(usuarioId: string, actorId: string) {
       updatedAt: true,
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Disponibilidad diaria (Fase 1 — Punto 2)
+// ---------------------------------------------------------------------------
+
+export async function getDisponibilidadProductoAction(
+  productoId: string,
+  fecha?: Date | string | number
+) {
+  return disponibilidadService.getDisponibilidadProducto(productoId, fecha);
+}
+
+export async function getDisponibilidadSemanaAction(productoId: string) {
+  return disponibilidadService.listarDisponibilidadSemana(productoId);
+}
+
+export async function getCuposServicioAction(
+  servicioId: string,
+  fecha?: Date | string | number
+) {
+  return disponibilidadService.getCuposServicio(servicioId, fecha);
+}
+
+export async function setDisponibilidadAction(
+  productoId: string,
+  fecha: Date | string | number,
+  cantidad: number,
+  notas?: string
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await adminDispService.setDisponibilidadAutorizado(
+    session.id,
+    productoId,
+    fecha,
+    cantidad,
+    notas
+  );
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/negocio/disponibilidad");
+}
+
+export async function bulkSetDisponibilidadAction(
+  productoId: string,
+  fechas: Array<Date | string | number>,
+  cantidad: number
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const total = await adminDispService.bulkSetDisponibilidadAutorizado(
+    session.id,
+    productoId,
+    fechas,
+    cantidad
+  );
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/negocio/disponibilidad");
+  return total;
+}
+
+export async function validarCarritoAction() {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  const cartService = new (await import("@/services/CartService")).CartService();
+  return cartService.validarCarritoCompleto(session.id);
+}
+
+/**
+ * Lista productos enriquecidos con disponibilidad de hoy (batch).
+ */
+export async function listarProductosConDisponibilidad(filtros?: {
+  areaId?: string;
+  negocioId?: string;
+  subareaId?: string;
+  disponibleHoy?: boolean;
+}) {
+  await getCache().invalidatePrefix(cachePrefixes.catalogo + "productos");
+  const cacheKey = cacheKeys.catalogo.productos(filtros);
+  return cachedQuery(cacheKey, async () => {
+    const productos = await prisma.producto.findMany({
+      where: {
+        activo: true,
+        ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
+        ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
+        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(filtros?.disponibleHoy !== undefined && {
+          disponibleHoy: filtros.disponibleHoy,
+        }),
+      },
+      include: {
+        negocio: true,
+        subarea: true,
+        disponibilidades: {
+          where: { fecha: normalizarFecha(new Date()) },
+        },
+      },
+      orderBy: { nombre: "asc" },
+    });
+
+    const ids = productos.map((p) => p.id);
+    const mapa = await disponibilidadService.getDisponibilidadProductos(ids);
+
+    return productos.map((p) => {
+      const disp = mapa.get(p.id) ?? null;
+      return {
+        ...p,
+        disponibleHoy: disp
+          ? {
+              cantidadDisponible: disp.cantidadDisponible,
+              disponible: disp.disponible,
+              cantidadReservada: disp.cantidadReservada,
+            }
+          : null,
+      };
+    });
+  });
+}
+
+/**
+ * Lista servicios enriquecidos con cupos disponibles hoy.
+ */
+export async function listarServiciosConCupos(filtros?: {
+  areaId?: string;
+  negocioId?: string;
+  subareaId?: string;
+  activo?: boolean;
+}) {
+  const cacheKey = cacheKeys.catalogo.servicios(filtros);
+  return cachedQuery(cacheKey, async () => {
+    const servicios = await prisma.servicio.findMany({
+      where: {
+        ...(filtros?.activo !== undefined
+          ? { activo: filtros.activo }
+          : { activo: true }),
+        ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
+        ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
+        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+      },
+      include: {
+        negocio: true,
+        subarea: true,
+      },
+      orderBy: { nombre: "asc" },
+    });
+
+    const resultados = await Promise.all(
+      servicios.map(async (s) => {
+        const cupos = await disponibilidadService.getCuposServicio(s.id);
+        return { ...s, cuposDisponiblesHoy: cupos };
+      })
+    );
+
+    return resultados;
+  });
+}
+
+/**
+ * Obtiene un producto individual enriquecido con disponibilidad de hoy.
+ */
+export async function obtenerProductoConDisponibilidadAction(id: string) {
+  const producto = await prisma.producto.findUnique({
+    where: { id, activo: true },
+    include: {
+      negocio: true,
+      subarea: true,
+      disponibilidades: {
+        where: { fecha: normalizarFecha(new Date()) },
+      },
+    },
+  });
+
+  if (!producto) return null;
+
+  const mapa = await disponibilidadService.getDisponibilidadProductos([id]);
+  const disp = mapa.get(id) ?? null;
+
+  return {
+    ...producto,
+    disponibleHoy: disp
+      ? {
+          cantidadDisponible: disp.cantidadDisponible,
+          disponible: disp.disponible,
+          cantidadReservada: disp.cantidadReservada,
+        }
+      : null,
+  };
+}
+
+/**
+ * Obtiene un servicio individual enriquecido con cupos de hoy.
+ */
+export async function obtenerServicioConCuposAction(id: string) {
+  const servicio = await prisma.servicio.findUnique({
+    where: { id, activo: true },
+    include: {
+      negocio: true,
+      subarea: true,
+    },
+  });
+
+  if (!servicio) return null;
+
+  const cupos = await disponibilidadService.getCuposServicio(id);
+
+  return {
+    ...servicio,
+    cuposDisponiblesHoy: cupos,
+  };
+}
+
+/**
+ * Lista productos del negocio del usuario enriquecidos con disponibilidad de hoy.
+ */
+export async function listarProductosParaNegocioAction() {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const userId = session.id;
+  const negocio = await prisma.negocio.findFirst({
+    where: { userId },
+  });
+  if (!negocio) return [];
+  return listarProductosConDisponibilidad({ negocioId: negocio.id });
+}
+
+/**
+ * Lista servicios del negocio del usuario enriquecidos con cupos.
+ */
+export async function listarServiciosParaNegocioAction() {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const userId = session.id;
+  const negocio = await prisma.negocio.findFirst({
+    where: { userId },
+  });
+  if (!negocio) return [];
+  return listarServiciosConCupos({ negocioId: negocio.id });
+}
+
+/**
+ * Lista entradas de disponibilidad para un producto.
+ */
+export async function listarDisponibilidadAction(
+  productoId: string,
+  desde?: Date | string | number,
+  hasta?: Date | string | number
+) {
+  return adminDispService.listarDisponibilidad(productoId, desde, hasta);
+}
+
+/**
+ * Elimina la disponibilidad para un producto y fecha.
+ */
+export async function eliminarDisponibilidadAction(
+  productoId: string,
+  fecha: Date | string | number
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await adminDispService.eliminarDisponibilidadAutorizado(
+    session.id,
+    productoId,
+    fecha
+  );
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/negocio/disponibilidad");
+}
+
+/**
+ * Obtiene los productos del negocio del usuario con disponibilidad para
+ * los próximos 7 días. Usado en el dashboard de disponibilidad.
+ */
+export async function obtenerProductosDisponibilidadAction() {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const userId = session.id;
+  const negocio = await prisma.negocio.findFirst({
+    where: { userId },
+  });
+  if (!negocio) return [];
+
+  const productos = await prisma.producto.findMany({
+    where: {
+      negocioId: negocio.id,
+      activo: true,
+    },
+    select: {
+      id: true,
+      nombre: true,
+      precio: true,
+      unidadMedida: true,
+      imagenUrl: true,
+    },
+    orderBy: { nombre: "asc" },
+  });
+
+  return Promise.all(
+    productos.map(async (p) => {
+      const semana = await disponibilidadService.listarDisponibilidadSemana(
+        p.id
+      );
+      const hoy = await disponibilidadService.getDisponibilidadProducto(p.id);
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        precio: Number(p.precio),
+        unidadMedida: p.unidadMedida,
+        imagenUrl: p.imagenUrl ?? null,
+        cantidadDisponibleHoy: hoy.cantidadDisponible,
+        disponibleHoy: hoy.disponible,
+        semana: semana.map((d) => ({
+          fecha: d.fecha,
+          cantidadDisponible: d.cantidadDisponible,
+          disponible: d.disponible,
+          cantidadReservada: d.cantidadReservada,
+        })),
+      };
+       })
+   );
+}
+
+
+// ---------------------------------------------------------------------------
+// Panel de autogestión del negocio (Fase 1 — Punto 3)
+// ---------------------------------------------------------------------------
+
+const negocioService = new NegocioService();
+const solicitudAltaService = new SolicitudAltaService();
+const logisticaNegocioService = new LogisticaNegocioService();
+const dashboardNegocioService = new DashboardNegocioService();
+const catalogService = new CatalogService();
+
+// -- Negocio --
+
+export async function getNegocioAction(id: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return negocioService.getNegocio(id, session.id, session.rol);
+}
+
+export async function listNegociosDeUsuarioAction() {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return negocioService.listNegociosDeUsuario(session.id);
+}
+
+export async function actualizarNegocioAction(
+  negocioId: string,
+  datos: {
+    nombre?: string;
+    descripcion?: string | null;
+    areaId?: string | null;
+    subareaIds?: string[];
+    provincia?: string | null;
+    municipio?: string | null;
+    telefono?: string | null;
+    emailContacto?: string | null;
+    direccion?: string | null;
+    permiteReservas?: boolean;
+    permiteEnvio?: boolean;
+  }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await negocioService.actualizarNegocio(
+    negocioId,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath("/negocio");
+  revalidatePath(`/negocio/mi-negocio`);
+  return result;
+}
+
+export async function actualizarSubareasNegocioAction(
+  negocioId: string,
+  subareaIds: string[]
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await assertPertenencia(session.id, negocioId, session.rol);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.negocioSubarea.deleteMany({ where: { negocioId } });
+    if (subareaIds.length > 0) {
+      await tx.negocioSubarea.createMany({
+        data: subareaIds.map((sid) => ({ negocioId, subareaId: sid })),
+      });
+    }
+  });
+
+  await getCache().del(cacheKeys.negocio.detalle(negocioId));
+  await getCache().del(cacheKeys.catalogo.negocios());
+  revalidatePath(`/negocio/mi-negocio`);
+}
+
+// -- Horarios --
+
+export async function listarHorariosAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await assertPertenencia(session.id, negocioId, session.rol);
+  return prisma.horarioNegocio.findMany({
+    where: { negocioId },
+    orderBy: { diaSemana: "asc" },
+  });
+}
+
+export async function actualizarHorariosAction(
+  negocioId: string,
+  horarios: Array<{
+    diaSemana: number;
+    horaApertura: string;
+    horaCierre: string;
+    cerrado: boolean;
+  }>
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await negocioService.actualizarHorarios(
+    negocioId,
+    horarios,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/horarios`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+// -- Productos --
+
+export async function crearProductoAction(
+  negocioId: string,
+  datos: {
+    nombre: string;
+    descripcion?: string | null;
+    precio: number;
+    unidadMedida: string;
+    imagenUrl: string;
+    subareaId: string;
+    activo?: boolean;
+    disponibleHoy?: boolean;
+    tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    tasaIVAOverride?: number | string | null;
+  }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await catalogService.crearProducto(
+    negocioId,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/productos`);
+  revalidatePath(`/negocio`);
+  revalidatePath("/catalogo");
+  return result;
+}
+
+export async function actualizarProductoAction(
+  id: string,
+  datos: Partial<{
+    nombre: string;
+    descripcion?: string | null;
+    precio: number;
+    unidadMedida: string;
+    imagenUrl: string;
+    subareaId: string;
+    activo?: boolean;
+    disponibleHoy?: boolean;
+    tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    tasaIVAOverride?: number | string | null;
+  }>
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await catalogService.actualizarProducto(
+    id,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/productos`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+export async function eliminarProductoAction(id: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await catalogService.eliminarProducto(id, session.id, session.rol);
+  await getCache().invalidatePrefix(cachePrefixes.catalogo + "productos");
+  revalidatePath(`/negocio/productos`);
+  revalidatePath(`/negocio`);
+  revalidatePath("/catalogo");
+}
+
+// -- Servicios --
+
+export async function crearServicioAction(
+  negocioId: string,
+  datos: {
+    nombre: string;
+    descripcion?: string | null;
+    duracionMinutos: number;
+    capacidad: number;
+    imagenUrl: string;
+    horariosDisponibles: Record<string, string[]>;
+    subareaId: string;
+    activo?: boolean;
+    permiteReservas?: boolean;
+    tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    tasaIVAOverride?: number | string | null;
+  }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await catalogService.crearServicio(
+    negocioId,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/servicios`);
+  revalidatePath(`/negocio`);
+  revalidatePath("/servicios");
+  return result;
+}
+
+export async function actualizarServicioAction(
+  id: string,
+  datos: Partial<{
+    nombre: string;
+    descripcion?: string | null;
+    duracionMinutos: number;
+    capacidad: number;
+    imagenUrl: string;
+    horariosDisponibles: Record<string, string[]>;
+    subareaId: string;
+    activo?: boolean;
+    permiteReservas?: boolean;
+    tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
+    tasaIVAOverride?: number | string | null;
+  }>
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await catalogService.actualizarServicio(
+    id,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/servicios`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+export async function eliminarServicioAction(id: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await catalogService.eliminarServicio(id, session.id, session.rol);
+  await getCache().invalidatePrefix(cachePrefixes.catalogo + "servicios");
+  revalidatePath(`/negocio/servicios`);
+  revalidatePath(`/negocio`);
+  revalidatePath("/servicios");
+}
+
+// -- Inventario --
+
+export async function actualizarInventarioAction(
+  productoId: string,
+  datos: { cantidadActual: number; puntoReorden: number; ubicacion: string }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await catalogService.actualizarInventario(
+    productoId,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/inventario`);
+  revalidatePath(`/negocio/productos`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+export async function listarInventarioDeNegocioAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return catalogService.listarInventarioDeNegocio(
+    negocioId,
+    session.id,
+    session.rol
+  );
+}
+
+// -- Logística --
+
+export async function listOpcionesDeNegocioAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return logisticaNegocioService.listOpcionesDeNegocio(
+    negocioId,
+    session.id,
+    session.rol
+  );
+}
+
+export async function crearOpcionLogisticaAction(
+  negocioId: string,
+  datos: {
+    proveedorId: string;
+    nombre: string;
+    tipo: string;
+    tarifaBase: number;
+    tarifaPorDistancia: number;
+    tiempoEstimado: string;
+  }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await logisticaNegocioService.crearOpcion(
+    negocioId,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/logistica`);
+  return result;
+}
+
+export async function actualizarOpcionLogisticaAction(
+  id: string,
+  datos: Partial<{
+    proveedorId: string;
+    nombre: string;
+    tipo: string;
+    tarifaBase: number;
+    tarifaPorDistancia: number;
+    tiempoEstimado: string;
+  }>
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await logisticaNegocioService.actualizarOpcion(
+    id,
+    datos,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/logistica`);
+  return result;
+}
+
+export async function eliminarOpcionLogisticaAction(id: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  await logisticaNegocioService.eliminarOpcion(id, session.id, session.rol);
+  await getCache().invalidatePrefix(cachePrefixes.logisticaNegocio);
+  revalidatePath(`/negocio/logistica`);
+}
+
+export async function listProveedoresDisponiblesAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return logisticaNegocioService.listProveedoresDisponibles(
+    negocioId,
+    session.id,
+    session.rol
+  );
+}
+
+// -- Solicitudes de alta --
+
+export async function crearSolicitudAltaAction(datos: {
+  nombreNegocio: string;
+  descripcion?: string | null;
+  areaId?: string | null;
+  subareaIds?: string[];
+  provincia?: string | null;
+  municipio?: string | null;
+  telefono?: string | null;
+  emailContacto?: string | null;
+  direccion?: string | null;
+}) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await solicitudAltaService.crearSolicitud(session.id, datos);
+  revalidatePath("/admin/solicitudes");
+  return result;
+}
+
+export async function cancelarSolicitudAltaAction(id: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await solicitudAltaService.cancelarSolicitud(id, session.id);
+  revalidatePath("/admin/solicitudes");
+  return result;
+}
+
+export async function getSolicitudAltaAction(id: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  return solicitudAltaService.getSolicitud(id, session.id, session.rol);
+}
+
+export async function listarSolicitudesUsuarioAction(usuarioId: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  return solicitudAltaService.listarSolicitudesUsuario(usuarioId, session.id, session.rol);
+}
+
+export async function listarSolicitudesPendientesAction() {
+  const session = await requireRole([Rol.ADMIN]);
+  return solicitudAltaService.listarSolicitudes("PENDIENTE_APROBACION");
+}
+
+export async function listarSolicitudesAction(estado?: string) {
+  const session = await requireRole([Rol.ADMIN]);
+  return solicitudAltaService.listarSolicitudes(estado);
+}
+
+export async function aprobarNegocioAction(solicitudId: string) {
+  const session = await requireRole([Rol.ADMIN]);
+  const result = await solicitudAltaService.aprobarSolicitud(
+    solicitudId,
+    session.id
+  );
+  revalidatePath("/admin/solicitudes");
+  revalidatePath("/negocio");
+  return result;
+}
+
+export async function rechazarNegocioAction(solicitudId: string, motivo: string) {
+  const session = await requireRole([Rol.ADMIN]);
+  const result = await solicitudAltaService.rechazarSolicitud(
+    solicitudId,
+    session.id,
+    motivo
+  );
+  revalidatePath("/admin/solicitudes");
+  return result;
+}
+
+// -- Dashboard --
+
+export async function getDashboardNegocioAction(
+  negocioId: string,
+  rango?: { desde?: string; hasta?: string }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const desde = rango?.desde ? new Date(rango.desde) : undefined;
+  const hasta = rango?.hasta ? new Date(rango.hasta) : undefined;
+  return dashboardNegocioService.getResumen(
+    negocioId,
+    session.id,
+    { desde, hasta },
+    session.rol
+  );
+}
+
+export async function getResumenAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return dashboardNegocioService.getResumen(
+    negocioId,
+    session.id,
+    undefined,
+    session.rol
+  );
+}
+
+export async function getPedidosRecientesAction(negocioId: string, limit = 10) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return dashboardNegocioService.getPedidosRecientes(
+    negocioId,
+    session.id,
+    limit,
+    session.rol
+  );
+}
+
+export async function getReservasProximasAction(negocioId: string, limit = 10) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return dashboardNegocioService.getReservasProximas(
+    negocioId,
+    session.id,
+    limit,
+    session.rol
+  );
+}
+
+export async function actualizarEstadoPedidoAction(
+  negocioId: string,
+  pedidoId: string,
+  estado: string
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await dashboardNegocioService.actualizarEstadoPedido(
+    negocioId,
+    pedidoId,
+    estado,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/pedidos`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+export async function listarPedidosNegocioAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return dashboardNegocioService.listarPedidos(
+    negocioId,
+    session.id,
+    session.rol
+  );
+}
+
+export async function listarReservasNegocioAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return dashboardNegocioService.listarReservas(
+    negocioId,
+    session.id,
+    session.rol
+  );
+}
+
+export async function actualizarReservaAction(
+  negocioId: string,
+  reservaId: string,
+  estado: string
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  const result = await dashboardNegocioService.actualizarReserva(
+    negocioId,
+    reservaId,
+    estado,
+    session.id,
+    session.rol
+  );
+  revalidatePath(`/negocio/reservas`);
+  revalidatePath(`/negocio`);
+  return result;
+}
+
+export async function estaAbiertoHoyAction(negocioId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  return negocioService.estaAbiertoHoy(negocioId);
+}
+
+export async function listarAreasAction() {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN, Rol.CLIENTE]);
+  return prisma.area.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } });
+}
+
+export async function listarSubareasAction(areaId?: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN, Rol.CLIENTE]);
+  return prisma.subarea.findMany({
+    where: {
+      activo: true,
+      ...(areaId && { areaId }),
+    },
+    orderBy: { nombre: "asc" },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Pago Actions (Fase 1 — Punto 5)
+// ---------------------------------------------------------------------------
+
+export async function getPagoDePedidoAction(pedidoId: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const pago = await pagoService.getPagoDePedido(
+      pedidoId,
+      session.id,
+      session.rol
+    );
+    return pago;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function getPagoAction(pagoId: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const pago = await pagoService.getPago(pagoId, session.id, session.rol);
+    return pago;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function listPagosDeUsuarioAction(options?: {
+  estado?: string[];
+  metodo?: string[];
+  entidadPago?: string[];
+  idTransferencia?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await pagoService.listPagosDeUsuario(session.id, {
+      estado: options?.estado as any,
+      metodo: options?.metodo as any,
+      entidadPago: options?.entidadPago,
+      idTransferencia: options?.idTransferencia,
+      page: options?.page,
+      limit: options?.limit,
+    }, session.rol);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function listPagosDeNegocioAction(negocioId: string, options?: {
+  estado?: string[];
+  metodo?: string[];
+  entidadPago?: string[];
+  idTransferencia?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.listPagosDeNegocio(
+      negocioId,
+      session.id,
+      {
+        estado: options?.estado as any,
+        metodo: options?.metodo as any,
+        entidadPago: options?.entidadPago,
+        idTransferencia: options?.idTransferencia,
+        page: options?.page,
+        limit: options?.limit,
+      },
+      session.rol
+    );
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function getResumenPagosAction() {
+  const session = await requireRole([Rol.ADMIN]);
+  try {
+    return await pagoService.getResumenPagos();
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function getResumenPagosPorEntidadAction(
+  negocioId: string,
+  rangoFechas?: { desde?: Date; hasta?: Date }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+     const result = await dashboardNegocioService.getResumenPagosPorEntidad(
+      negocioId,
+      session.id,
+      rangoFechas,
+      session.rol
+    );
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function confirmarPagoAction(pagoId: string, datos?: { notasNegocio?: string | null }) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.confirmarPago(
+      pagoId,
+      session.id,
+      datos,
+      session.rol
+    );
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath("/admin/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function rechazarPagoAction(pagoId: string, motivo: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.rechazarPago(
+      pagoId,
+      session.id,
+      motivo,
+      session.rol
+    );
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath("/admin/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function reembolsarPagoAction(
+  pagoId: string,
+  motivo: string,
+  datosReembolso?: { idTransferenciaReembolso?: string | null; fechaReembolso?: Date | null }
+) {
+  const session = await requireRole([Rol.ADMIN]);
+  try {
+    const result = await pagoService.reembolsarPago(pagoId, session.id, motivo, datosReembolso);
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath("/admin/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function cancelarPagoAction(pagoId: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const pago = await prisma.pago.findUnique({
+      where: { id: pagoId },
+      select: { pedido: { select: { usuarioId: true } } },
+    });
+    const rol = session.rol === Rol.ADMIN ? Rol.ADMIN : Rol.CLIENTE;
+    const result = await pagoService.cancelarPago(
+      pagoId,
+      session.id,
+      rol
+    );
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath("/admin/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function crearPagoAction(
+  pedidoId: string,
+  metodo: string,
+  datos?: {
+    monto?: number;
+    moneda?: string;
+    referencia?: string | null;
+    comprobanteUrl?: string | null;
+    idTransferencia?: string | null;
+    entidadPago?: string | null;
+    fechaTransferencia?: Date | null;
+    notasCliente?: string | null;
+  }
+) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await pagoService.crearPagoParaPedido(
+      pedidoId,
+      metodo as MetodoPago,
+      datos,
+      session.id,
+      session.rol
+    );
+    revalidatePath("/pagos");
+    revalidatePath(`/pedidos`);
+    revalidatePath(`/pagos/${result.id}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function subirComprobanteAction(
+  pagoId: string,
+  datos: {
+    referencia?: string | null;
+    comprobanteUrl?: string | null;
+    idTransferencia?: string | null;
+    entidadPago?: string | null;
+    fechaTransferencia?: Date | null;
+    notasCliente?: string | null;
+  }
+) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await pagoService.subirComprobante(pagoId, datos, session.id);
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function vincularFacturaPagoAction(pagoId: string, facturaId: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.vincularFactura(pagoId, facturaId);
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function verificarIdTransferenciaAction(idTransferencia: string) {
+  try {
+    const existe = await pagoService.existeIdTransferencia(idTransferencia);
+    return { existe, disponible: !existe };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function buscarPagoPorIdTransferenciaAction(idTransferencia: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.buscarPagoPorIdTransferencia(
+      idTransferencia,
+      session.id,
+      session.rol
+    );
+    if (!result) {
+      return { error: "Pago no encontrado", codigo: "NO_ENCONTRADO", statusCode: 404 };
+    }
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Códigos de entrega EFECTIVO_CONTRA_ENTREGA
+// ---------------------------------------------------------------------------
+
+export async function getCodigoEntregaAction(pagoId: string) {
+  const session = await requireRole([Rol.CLIENTE]);
+  try {
+    const result = await pagoService.getCodigoEntregaCache(pagoId, session.id);
+    return { codigo: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function regenerarCodigoEntregaAction(pagoId: string, motivo: string) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
+  try {
+    const result = await pagoService.regenerarCodigoEntrega(pagoId, session.id, motivo);
+    revalidatePath(`/pagos/${pagoId}`);
+    return { codigo: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function confirmarPagoConCodigoAction(
+  pagoId: string,
+  codigo: string,
+  datos?: { notasNegocio?: string | null }
+) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.confirmarConCodigoEntrega(
+      pagoId,
+      codigo,
+      session.id,
+      session.rol,
+      datos?.notasNegocio ?? undefined
+    );
+    revalidatePath("/pagos");
+    revalidatePath("/dashboard/negocio/pagos");
+    revalidatePath("/admin/pagos");
+    revalidatePath(`/pagos/${pagoId}`);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function validarCodigoEntregaAction(pagoId: string, codigo: string) {
+  const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
+  try {
+    const result = await pagoService.validarCodigoEntrega(pagoId, codigo, session.id, session.rol);
+    return { valido: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 }

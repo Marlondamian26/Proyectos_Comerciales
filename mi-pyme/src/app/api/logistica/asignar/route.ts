@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     await requireRole([Rol.LOGISTICA, Rol.ADMIN]);
 
     const body = await request.json();
-    const pedido = await asignarLogistica(body.pedidoId, body.logisticaId);
+    const pedido = await asignarLogistica(body.pedidoId, body.opcionLogisticaId);
     return NextResponse.json(pedido);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

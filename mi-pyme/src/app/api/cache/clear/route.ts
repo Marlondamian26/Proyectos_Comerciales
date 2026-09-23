@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { clearCache } from "@/lib/cache";
+import { resetCache } from "@/infrastructure";
 
 export async function POST() {
-  clearCache();
+  await resetCache();
   return NextResponse.json({ status: "cache cleared" });
 }

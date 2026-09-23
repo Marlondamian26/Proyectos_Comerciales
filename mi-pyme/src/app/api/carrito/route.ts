@@ -2,6 +2,22 @@ import { NextResponse } from "next/server";
 import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
 import { obtenerCarrito, anadirItemCarrito, vaciarCarrito } from "@/lib/actions";
+import { BusinessError } from "@/shared/types";
+
+function handleError(err: unknown) {
+  if (err instanceof BusinessError) {
+    return NextResponse.json(
+      { error: err.message, code: err.code },
+      { status: err.status }
+    );
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes("denegado") || message.includes("autorizado")) {
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+  console.error("Error in carrito API:", err);
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 
 export async function GET() {
   try {
@@ -10,12 +26,7 @@ export async function GET() {
     const carrito = await obtenerCarrito(session.id);
     return NextResponse.json(carrito);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    const status = message.includes("denegado") || message.includes("autorizado")
-      ? 403
-      : 500;
-    console.error("Error fetching carrito:", err);
-    return NextResponse.json({ error: message }, { status });
+    return handleError(err);
   }
 }
 
@@ -27,12 +38,7 @@ export async function POST(request: Request) {
     const carrito = await anadirItemCarrito(session.id, body);
     return NextResponse.json(carrito);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    const status = message.includes("denegado") || message.includes("autorizado")
-      ? 403
-      : 500;
-    console.error("Error adding item to carrito:", err);
-    return NextResponse.json({ error: message }, { status });
+    return handleError(err);
   }
 }
 
@@ -43,11 +49,6 @@ export async function DELETE() {
     await vaciarCarrito(session.id);
     return NextResponse.json({ status: "Carrito vaciado" });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    const status = message.includes("denegado") || message.includes("autorizado")
-      ? 403
-      : 500;
-    console.error("Error clearing carrito:", err);
-    return NextResponse.json({ error: message }, { status });
+    return handleError(err);
   }
 }

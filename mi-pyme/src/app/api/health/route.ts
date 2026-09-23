@@ -62,9 +62,9 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   try {
     const start = Date.now();
     const testKey = "_healthcheck_" + Date.now();
-    getCache().set(testKey, { test: true });
-    const value = getCache().get<{ test: boolean }>(testKey);
-    getCache().del(testKey);
+    await getCache().set(testKey, { test: true });
+    const value = await getCache().get<{ test: boolean }>(testKey);
+    await getCache().del(testKey);
     checks.cache = {
       status: value?.test === true ? "healthy" : "unhealthy",
       latency: Date.now() - start,

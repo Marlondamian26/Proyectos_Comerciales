@@ -10,11 +10,13 @@ import {
   CalendarIcon,
   PackageIcon,
   ReceiptIcon,
+  CreditCardIcon,
   UsersIcon,
   BuildingIcon,
   TruckIcon,
   CogIcon,
   UserIcon,
+  FileBarChartIcon,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -32,8 +34,14 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
   },
   {
+    label: "Disponibilidad",
+    href: "/negocio/disponibilidad",
+    icon: <CalendarIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
+  },
+  {
     label: "Inventario",
-    href: "/negocio?tab=inventario",
+    href: "/negocio/inventario",
     icon: <PackageIcon className="h-5 w-5" />,
     allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
   },
@@ -48,6 +56,12 @@ const sidebarItems: SidebarItem[] = [
     href: "/facturas",
     icon: <ReceiptIcon className="h-5 w-5" />,
     allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN],
+  },
+  {
+    label: "Pagos",
+    href: "/pagos",
+    icon: <CreditCardIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.ADMIN],
   },
   {
     label: "Reservas",
@@ -68,6 +82,12 @@ const sidebarItems: SidebarItem[] = [
     allowedRoles: [Rol.LOGISTICA, Rol.ADMIN],
   },
   {
+    label: "Solicitudes",
+    href: "/admin/solicitudes",
+    icon: <CogIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
     label: "Usuarios",
     href: "/admin?tab=usuarios",
     icon: <UsersIcon className="h-5 w-5" />,
@@ -83,6 +103,18 @@ const sidebarItems: SidebarItem[] = [
     label: "Configuración",
     href: "/admin?tab=config",
     icon: <CogIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Facturas",
+    href: "/admin/facturas",
+    icon: <ReceiptIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Reporte fiscal",
+    href: "/admin/reportes/fiscal",
+    icon: <FileBarChartIcon className="h-5 w-5" />,
     allowedRoles: [Rol.ADMIN],
   },
   {

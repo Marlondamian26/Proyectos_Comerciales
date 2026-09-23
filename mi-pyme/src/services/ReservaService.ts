@@ -7,15 +7,17 @@
 
 import { Service } from "./Service";
 import prisma from "@/lib/db/prisma";
-import { getCache } from "@/infrastructure";
+import { ICache, getCache } from "@/infrastructure";
+import { cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { BusinessError } from "@/shared/types";
+import { DisponibilidadService } from "./DisponibilidadService";
 import type { Reserva, Servicio } from "@/generated/prisma/client";
 
 const RESERVA_TTL_MS = 15 * 60 * 1000;
 
 export interface CrearReservaParams {
   servicioId: string;
-  fechaHoraFincio: string;
+  fechaHoraInicio: string;
 }
 
 export interface ListarReservasParams {
@@ -23,12 +25,22 @@ export interface ListarReservasParams {
 }
 
 export class ReservaService extends Service {
+  private dispService: DisponibilidadService;
+  private cache: ICache;
+
+  constructor(cache?: ICache) {
+    super();
+    this.cache = cache ?? getCache();
+    this.dispService = new DisponibilidadService(cache);
+  }
+
   async listarReservas(
     userId: string,
     params: ListarReservasParams = {}
   ): Promise<Reserva[]> {
-    const cacheKey = "reservas:" + userId;
-    const cached = getCache().get<Reserva[]>(cacheKey);
+    void params;
+    const cacheKey = cacheKeys.reservas.usuario(userId);
+    const cached = await this.cache.get<Reserva[]>(cacheKey);
     if (cached) return cached;
 
     const reservas = await prisma.reserva.findMany({
@@ -45,7 +57,7 @@ export class ReservaService extends Service {
       orderBy: { fechaHoraFin: "desc" },
     });
 
-    getCache().set(cacheKey, reservas);
+    await this.cache.set(cacheKey, reservas, cacheTTL.reservas);
     return reservas;
   }
 
@@ -53,11 +65,12 @@ export class ReservaService extends Service {
     userId: string,
     datos: CrearReservaParams
   ): Promise<Reserva> {
-    const fechaIni = new Date;
+    const fechaIni = new Date(datos.fechaHoraInicio);
 
     const servicio = await prisma.servicio.findUnique({
       where: { id: datos.servicioId },
       select: {
+        id: true,
         activo: true,
         duracionMinutos: true,
         capacidad: true,
@@ -73,21 +86,15 @@ export class ReservaService extends Service {
       throw new BusinessError("Servicio no disponible");
     }
 
+    await this.dispService.puedeReservarServicio(
+      datos.servicioId,
+      fechaIni,
+      1
+    );
+
     const fechaFin = new Date(
       fechaIni.getTime() + servicio.duracionMinutos * 60 * 1000
     );
-
-    const existingCount = await prisma.reserva.count({
-      where: {
-        servicioId: datos.servicioId,
-        fechaHoraFin: fechaIni,
-        estado: { not: "cancelada" },
-      },
-    });
-
-    if (existingCount >= servicio.capacidad) {
-      throw new BusinessError("Servicio sin disponibilidad en esta fecha y hora");
-    }
 
     const venceEn = new Date(Date.now() + RESERVA_TTL_MS);
 
@@ -103,7 +110,8 @@ export class ReservaService extends Service {
       },
     });
 
-    getCache().del("reservas:" + userId);
+    await this.cache.del(cacheKeys.reservas.usuario(userId));
+    await this.dispService.invalidateServicioCache(servicio.id, fechaIni);
 
     return reserva;
   }
@@ -112,17 +120,30 @@ export class ReservaService extends Service {
     reservaId: string,
     userId?: string
   ): Promise<void> {
+    const reserva = await prisma.reserva.findUnique({
+      where: { id: reservaId },
+      select: { servicioId: true },
+    });
+
     await prisma.reserva.update({
       where: { id: reservaId },
       data: { estado: "cancelada" },
     });
 
     if (userId) {
-      getCache().del("reservas:" + userId);
+      await this.cache.del(cacheKeys.reservas.usuario(userId));
+    }
+    if (reserva?.servicioId) {
+      await this.dispService.invalidateServicioCache(
+        reserva.servicioId,
+        new Date()
+      );
     }
   }
 
-  invalidateCache(userId: string): void {
-    getCache().del("reservas:" + userId);
+  async invalidateCache(userId: string): Promise<void> {
+    await this.cache.del(cacheKeys.reservas.usuario(userId));
   }
 }
+
+export default ReservaService;

@@ -23,8 +23,8 @@ export function ThemeToggle() {
     system: "Siguiendo preferencia del sistema",
   };
 
-  const currentLabel = ready ? labels[theme] : "Cargando preferencia de tema";
-  const currentDescription = ready ? descriptions[theme] : "Inicializando tema";
+  const currentLabel = ready ? labels[resolvedTheme] : "Cargando preferencia de tema";
+  const currentDescription = ready ? descriptions[resolvedTheme] : "Inicializando tema";
 
   const options = [
     { value: "light" as const, label: "Claro", icon: <Sun className="h-4 w-4" />, description: "Forzar modo claro" },

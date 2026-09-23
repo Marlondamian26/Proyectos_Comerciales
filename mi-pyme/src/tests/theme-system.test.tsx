@@ -6,6 +6,12 @@ import * as React from "react";
 import "@testing-library/jest-dom";
 import type { Mock } from "vitest";
 
+// Ensure no persisted theme preference leaks between tests via document.cookie.
+beforeEach(() => {
+  document.cookie =
+    "mi-pyme-theme=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+});
+
 describe("ThemeProvider", () => {
   const originalLocalStorage = global.localStorage;
   const originalMatchMedia = global.matchMedia;
@@ -212,7 +218,9 @@ describe("ThemeToggle", () => {
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
     }));
-    vi.useFakeTimers();
+    // The dropdown/toggle tests use no JS timers themselves; real timers keep
+    // `waitFor`/`act` from hanging under `vi.useFakeTimers()`.
+    vi.useRealTimers();
   });
 
   afterEach(() => {

@@ -7,9 +7,8 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { LoadingTable } from "@/components/ui/Loading";
-import { Plus, Minus, Trash2, CreditCard, ShoppingBag, ArrowRight } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
 
 type CarritoItem = {
@@ -17,8 +16,9 @@ type CarritoItem = {
   cantidad: number;
   precioUnitario: number;
   tipo: string;
-  producto?: { id: string; nombre: string; precio: number; imagenUrl?: string };
-  servicio?: { id: string; nombre: string; imagenUrl?: string };
+  fechaEntrega?: string | null;
+  producto?: { id: string; nombre: string; precio: number; imagenUrl?: string; negocioId?: string };
+  servicio?: { id: string; nombre: string; imagenUrl?: string; negocioId?: string };
 };
 
 type Carrito = {
@@ -27,7 +27,16 @@ type Carrito = {
   items: CarritoItem[];
 };
 
-const TASA_IMPUESTO = 0.21;
+type ValidacionItem = {
+  itemId: string;
+  productoId?: string | null;
+  servicioId?: string | null;
+  cantidad: number;
+  fechaEntrega: Date;
+  problema: string | null;
+};
+
+const TASA_IMPUESTO = 0.10;
 const COSTO_ENVIO = 5.99;
 
 export default function CarritoPage() {
@@ -37,6 +46,8 @@ export default function CarritoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [validaciones, setValidaciones] = useState<ValidacionItem[]>([]);
+  const [validando, setValidando] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -52,7 +63,24 @@ export default function CarritoPage() {
 
   const userId = session?.user?.id ?? "";
 
-  const fetchCarrito = async () => {
+   const fetchValidaciones = async () => {
+    setValidando(true);
+    try {
+      const res = await fetch("/api/carrito/validar");
+      if (res.ok) {
+        const data = await res.json();
+        setValidaciones(data);
+      } else if (res.status === 401) {
+        setValidaciones([]);
+      }
+    } catch {
+      /* mantener validaciones previas */
+    } finally {
+      setValidando(false);
+    }
+  };
+
+   const fetchCarrito = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/carrito");
@@ -66,16 +94,26 @@ export default function CarritoPage() {
     }
   };
 
-  useEffect(() => {
+   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch("/api/carrito");
-        if (!res.ok) throw new Error("No se pudo cargar el carrito");
-        const data = await res.json();
-        if (!cancelled) setCarrito(data);
+        const [cartRes, valRes] = await Promise.all([
+          fetch("/api/carrito"),
+          fetch("/api/carrito/validar"),
+        ]);
+        if (cartRes.ok) {
+          const data = await cartRes.json();
+          if (!cancelled) setCarrito(data);
+        } else {
+          if (!cancelled) setError("No se pudo cargar el carrito");
+        }
+        if (valRes.ok) {
+          const valData = await valRes.json();
+          if (!cancelled) setValidaciones(valData);
+        }
       } catch {
         if (!cancelled) setError("No se pudo cargar el carrito");
       } finally {
@@ -89,7 +127,12 @@ export default function CarritoPage() {
     };
   }, []);
 
-  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+  const handleRevalidar = async () => {
+    await fetchCarrito();
+    await fetchValidaciones();
+  };
+
+   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setUpdating(itemId);
     try {
@@ -98,11 +141,12 @@ export default function CarritoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cantidad: newQuantity }),
       });
-      if (res.ok) {
-        await fetchCarrito();
-      } else {
-        setError("No se pudo actualizar la cantidad");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || "No se pudo actualizar la cantidad");
       }
+      await fetchCarrito();
+      await fetchValidaciones();
     } catch {
       setError("No se pudo actualizar la cantidad");
     } finally {
@@ -110,7 +154,7 @@ export default function CarritoPage() {
     }
   };
 
-  const handleRemove = async (itemId: string) => {
+   const handleRemove = async (itemId: string) => {
     setUpdating(itemId);
     try {
       const res = await fetch(`/api/carrito/item/${itemId}`, {
@@ -118,6 +162,7 @@ export default function CarritoPage() {
       });
       if (res.ok) {
         await fetchCarrito();
+        await fetchValidaciones();
       } else {
         setError("No se pudo eliminar el item");
       }
@@ -128,11 +173,12 @@ export default function CarritoPage() {
     }
   };
 
-  const handleVaciar = async () => {
+   const handleVaciar = async () => {
     try {
       const res = await fetch("/api/carrito", { method: "DELETE" });
       if (res.ok) {
         await fetchCarrito();
+        await fetchValidaciones();
       } else {
         setError("No se pudo vaciar el carrito");
       }
@@ -141,14 +187,20 @@ export default function CarritoPage() {
     }
   };
 
-  const handleCheckout = async () => {
-    const res = await fetch("/api/pedidos", { method: "POST" });
-    if (res.ok) {
-      router.push("/pedidos");
-    } else {
-      const data = await res.json();
-      setError(data.error || "No se pudo crear el pedido");
+   const handleCheckout = () => {
+    const negocioIds = Array.from(
+      new Set(
+        (carrito?.items ?? []).map(
+          (item) => item.producto?.negocioId ?? item.servicio?.negocioId ?? ""
+        )
+      )
+    ).filter(Boolean);
+
+    if (negocioIds.length > 1) {
+      // Multi-negocio: navegar al checkout formal que agrupa por negocio
     }
+
+    router.push("/checkout");
   };
 
   const subtotal =
@@ -208,8 +260,32 @@ export default function CarritoPage() {
             />
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+         <div className="grid gap-8 lg:grid-cols-3">
+             <div className="lg:col-span-2">
+               {carrito &&
+                 Array.from(
+                   new Set(
+                     carrito.items.map(
+                       (item) =>
+                         item.producto?.negocioId ?? item.servicio?.negocioId ?? ""
+                     )
+                   )
+                 ).filter(Boolean).length > 1 && (
+                 <div className="mb-4 rounded-lg bg-info/10 border border-info/20 p-3 text-sm text-info-foreground">
+                   Tu carrito tiene items de{" "}
+                   {Array.from(
+                     new Set(
+                       carrito.items.map(
+                         (item) =>
+                           item.producto?.negocioId ??
+                           item.servicio?.negocioId ??
+                           ""
+                       )
+                     )
+                   ).filter(Boolean).length}{" "}
+                   negocios; el checkout los agrupará por negocio.
+                 </div>
+               )}
               <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="px-6 py-4 border-b bg-muted/30">
                   <h2 className="font-semibold">
@@ -217,10 +293,16 @@ export default function CarritoPage() {
                   </h2>
                 </div>
                 <div className="divide-y">
-                  {carrito?.items.map((item) => (
+                  {carrito?.items.map((item) => {
+                    const valItem = validaciones.find((v) => v.itemId === item.id);
+                    const tieneProblema = !!valItem?.problema;
+                    return (
                     <div
                       key={item.id}
-                      className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+                      className={cn(
+                        "p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center",
+                        tieneProblema && "bg-destructive/5"
+                      )}
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         {(item.producto?.imagenUrl || item.servicio?.imagenUrl) && (
@@ -241,13 +323,24 @@ export default function CarritoPage() {
                           <p className="text-sm text-muted-foreground">
                             ${item.precioUnitario.toFixed(2)} c/u
                           </p>
+                          {tieneProblema && (
+                            <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {valItem!.problema}
+                            </p>
+                          )}
+                          {item.fechaEntrega && (
+                            <p className="text-xs text-muted-foreground">
+                              Entrega: {new Date(item.fechaEntrega).toLocaleDateString("es-ES")}
+                            </p>
+                          )}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.cantidad - 1)}
-                          disabled={item.cantidad <= 1 || updating === item.id}
+                          disabled={item.cantidad <= 1 || updating === item.id || tieneProblema}
                           className={cn(
                             "rounded-lg border px-3 py-2 text-sm transition-colors",
                             "hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
@@ -259,7 +352,7 @@ export default function CarritoPage() {
                         <span className="w-10 text-center font-medium">{item.cantidad}</span>
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.cantidad + 1)}
-                          disabled={updating === item.id}
+                          disabled={updating === item.id || tieneProblema}
                           className={cn(
                             "rounded-lg border px-3 py-2 text-sm transition-colors",
                             "hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
@@ -289,7 +382,8 @@ export default function CarritoPage() {
                         <span className="hidden sm:inline">Eliminar</span>
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -303,7 +397,7 @@ export default function CarritoPage() {
                     <span className="font-medium">${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Impuestos (21%)</span>
+                    <span className="text-muted-foreground">Impuestos (10%)</span>
                     <span className="font-medium">${impuestos.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -319,8 +413,17 @@ export default function CarritoPage() {
                   <div className="flex flex-col gap-3 pt-4">
                     <Button
                       variant="outline"
+                      onClick={handleRevalidar}
+                      disabled={validando || !carrito || carrito.items.length === 0}
+                      className="w-full"
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", validando && "animate-spin")} />
+                      Revalidar disponibilidad
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={handleVaciar}
-                      disabled={!carrito || carrito.items.length === 0}
+                      disabled={!carrito || carrito.items.length === 0 || validando}
                       className="w-full"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -329,12 +432,22 @@ export default function CarritoPage() {
                     <Button
                       size="lg"
                       onClick={handleCheckout}
-                      disabled={!carrito || carrito.items.length === 0}
+                      disabled={
+                        !carrito ||
+                        carrito.items.length === 0 ||
+                        validando ||
+                        validaciones.some((v) => v.problema)
+                      }
                       className="w-full"
                     >
-                      Proceder al pago
+                      Iniciar checkout
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
+                    {validaciones.some((v) => v.problema) && (
+                      <p className="text-xs text-destructive text-center mt-2">
+                        Algunos items no tienen disponibilidad. Revisa antes de proceder.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

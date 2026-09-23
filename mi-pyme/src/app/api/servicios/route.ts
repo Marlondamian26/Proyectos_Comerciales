@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listarServicios } from "@/lib/actions";
+import { listarServiciosConCupos } from "@/lib/actions";
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       }),
     };
 
-    const servicios = await listarServicios(filtros);
+    const servicios = await listarServiciosConCupos(filtros);
     return NextResponse.json(servicios);
   } catch (error) {
     console.error("Error fetching servicios:", error);

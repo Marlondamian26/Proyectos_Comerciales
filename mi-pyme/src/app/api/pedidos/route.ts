@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
 import { listarPedidos, crearPedido } from "@/lib/actions";
+import { BusinessError } from "@/shared/types";
+
+function handleError(err: unknown) {
+  if (err instanceof BusinessError) {
+    return NextResponse.json(
+      { error: err.message, code: err.code },
+      { status: err.status }
+    );
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  const status =
+    message.includes("no existe") || message.includes("vacío")
+      ? 400
+      : message.includes("denegado") || message.includes("autorizado")
+      ? 403
+      : 500;
+  console.error("Error fetching pedidos:", err);
+  return NextResponse.json({ error: message }, { status });
+}
 
 export async function GET(request: Request) {
   try {
@@ -33,6 +52,12 @@ export async function POST(request: Request) {
     const pedido = await crearPedido(session.id, body);
     return NextResponse.json(pedido, { status: 201 });
   } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status: err.status }
+      );
+    }
     const message = err instanceof Error ? err.message : String(err);
     const status =
       message.includes("no existe") || message.includes("vacío")

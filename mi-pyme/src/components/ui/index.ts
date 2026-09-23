@@ -1,5 +1,7 @@
 export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from "./Button";
 export { Badge, type BadgeProps, type BadgeVariant } from "./Badge";
+export { DisponibilidadBadge, type DisponibilidadBadgeProps, type DisponibilidadVariante } from "./DisponibilidadBadge";
+export { SelectorFechaDisponibilidad, type SelectorFechaDisponibilidadProps, type SelectorTipo } from "./SelectorFechaDisponibilidad";
 export { Card, CardLink, type CardProps, type CardLinkProps } from "./Card";
 export { Modal, type ModalProps } from "./Modal";
 export { Table, type TableProps, type Column } from "./Table";
