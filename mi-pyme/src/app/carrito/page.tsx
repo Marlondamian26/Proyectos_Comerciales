@@ -17,8 +17,9 @@ type CarritoItem = {
   precioUnitario: number;
   tipo: string;
   fechaEntrega?: string | null;
+  metadata?: Record<string, unknown> | null;
   producto?: { id: string; nombre: string; precio: number; imagenUrl?: string; negocioId?: string };
-  servicio?: { id: string; nombre: string; imagenUrl?: string; negocioId?: string };
+  servicio?: { id: string; nombre: string; imagenUrl?: string; negocioId?: string; tipo?: string };
 };
 
 type Carrito = {
@@ -209,7 +210,9 @@ export default function CarritoPage() {
       0
     ) ?? 0;
   const impuestos = subtotal * TASA_IMPUESTO;
-  const total = subtotal + impuestos + COSTO_ENVIO;
+  const tieneTransporte = carrito?.items.some((item) => item.servicio?.tipo === "TRANSPORTE");
+  const COSTO_ENVIO_CALCULADO = tieneTransporte ? 0 : COSTO_ENVIO;
+  const total = subtotal + impuestos + COSTO_ENVIO_CALCULADO;
 
   if (loading) {
     return (
@@ -330,9 +333,25 @@ export default function CarritoPage() {
                             </p>
                           )}
                           {item.fechaEntrega && (
-                            <p className="text-xs text-muted-foreground">
-                              Entrega: {new Date(item.fechaEntrega).toLocaleDateString("es-ES")}
-                            </p>
+                             <p className="text-xs text-muted-foreground">
+                               Entrega: {new Date(item.fechaEntrega).toLocaleDateString("es-ES")}
+                             </p>
+                          )}
+                          {item.metadata && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {(item.metadata.origen as string) && (
+                                <p>Origen: {String(item.metadata.origen as string)}</p>
+                              )}
+                              {(item.metadata.destino as string) && (
+                                <p>Destino: {String(item.metadata.destino as string)}</p>
+                              )}
+                              {(item.metadata.fecha as string) && (
+                                <p>Fecha: {new Date(String(item.metadata.fecha as string)).toLocaleDateString("es-ES")}</p>
+                              )}
+                              {(item.metadata.peso as number) && (
+                                <p>Peso: {String(item.metadata.peso as number)} kg</p>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -400,14 +419,14 @@ export default function CarritoPage() {
                     <span className="text-muted-foreground">Impuestos (10%)</span>
                     <span className="font-medium">${impuestos.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Envío estimado</span>
-                    <span className="font-medium">${COSTO_ENVIO.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                   <div className="flex justify-between text-sm">
+                     <span className="text-muted-foreground">Envío estimado</span>
+                     <span className="font-medium">${COSTO_ENVIO_CALCULADO.toFixed(2)}</span>
+                   </div>
+                   <div className="border-t pt-4">
+                     <div className="flex justify-between text-lg font-bold">
+                       <span>Total</span>
+                       <span>${total.toFixed(2)}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-3 pt-4">

@@ -19,6 +19,9 @@ import {
   CreditCard,
   FileText,
   Receipt,
+  Percent,
+  Tag,
+  PackageOpen,
 } from "lucide-react";
 
 export interface NegocioSidebarItem {
@@ -41,6 +44,9 @@ const negocioSidebarItems: NegocioSidebarItem[] = [
   { label: "Pedidos", href: "/negocio/pedidos", icon: <ShoppingCart className="h-5 w-5" /> },
   { label: "Pagos", href: "/negocio/pagos", icon: <CreditCard className="h-5 w-5" /> },
   { label: "Reservas", href: "/negocio/reservas", icon: <CalendarCheck className="h-5 w-5" /> },
+  { label: "Promociones", href: "/negocio/promociones", icon: <Percent className="h-5 w-5" /> },
+  { label: "Cupones", href: "/negocio/cupones", icon: <Tag className="h-5 w-5" /> },
+  { label: "Combos", href: "/negocio/combos", icon: <PackageOpen className="h-5 w-5" /> },
   { label: "Ventas", href: "/negocio/ventas", icon: <TrendingUp className="h-5 w-5" /> },
   { label: "Perfil", href: "/perfil", icon: <User className="h-5 w-5" /> },
 ];

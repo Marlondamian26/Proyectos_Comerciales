@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/db/prisma";
 import { Rol } from "@/lib/auth/roles";
 import { logAudit } from "@/services/utils/audit";
+import { actualizarLastLogin } from "@/lib/auth/actualizar-last-login";
 
 export interface AuthorizeCredentials {
   email?: string;
@@ -82,6 +83,8 @@ export async function credentialsAuthorize(
     identifier,
     rememberMe: credentials.rememberMe === "true",
   });
+
+  await actualizarLastLogin(user.id);
 
   return {
     id: user.id,

@@ -834,7 +834,7 @@ describe("PagoService", () => {
    it("getResumenPagos retorna KPIs correctos", async () => {
     // Crear un pedido y pago COMPLETADO
     await cartService.anadirItem(usuarioId, { productoId, cantidad: 1 });
-    let preparado = await checkoutService.prepararCheckout(usuarioId, {});
+    const preparado = await checkoutService.prepararCheckout(usuarioId, {});
     const res = await checkoutService.confirmarCheckout(usuarioId, {
       checkoutToken: preparado.checkoutToken,
       grupos: [{ negocioId, tipoEntrega: "RECOGIDA_TIENDA" }],

@@ -28,3 +28,13 @@ export { InMemoryCache as MemoryCache } from "./cache/InMemoryCache";
 export type { IEventBus, EventHandler } from "./eventBus/IEventBus";
 export { InMemoryEventBus } from "./eventBus/InMemoryEventBus";
 export { getEventBus, resetEventBus } from "./eventBus/index";
+
+// --- Email ---
+export type { IEmailProvider, EmailDestino, ResultadoEnvio } from "./email/IEmailProvider";
+export { ConsoleEmailProvider } from "./email/ConsoleEmailProvider";
+export { SMTPEmailProvider } from "./email/SMTPEmailProvider";
+export { getEmailProvider, setEmailProvider } from "./email/EmailService";
+export { EmailQueue, getEmailQueue, resetEmailQueue } from "./email/EmailQueue";
+export type { EmailJob } from "./email/EmailQueue";
+export { obtenerPlantilla, contextoDesdeNotificacion } from "./email/templates";
+export type { PlantillaEmail } from "./email/templates";

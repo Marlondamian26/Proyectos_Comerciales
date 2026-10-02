@@ -3,10 +3,13 @@
  * Framework-agnostic.
  */
 import type { MetodoPago, TipoEntrega, ModoPrecio, RegimenFiscal, TratamientoIVA } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 
 export type { MetodoPago, TipoEntrega };
 
 export type DecimalValue = number | string;
+
+export type JsonValue = Prisma.JsonValue;
 
 export interface NegocioCheckoutDTO {
   id: string;
@@ -28,6 +31,7 @@ export interface ItemCheckoutDTO {
   precioUnitario: number;
   tipo: string;
   fechaEntrega?: Date | null;
+  metadata?: JsonValue;
   producto?: { id: string; nombre: string; precio: number; imagenUrl?: string } | null;
   servicio?: { id: string; nombre: string; imagenUrl?: string | null } | null;
   tratamientoIVA?: TratamientoIVA | null;
@@ -38,6 +42,8 @@ export interface ItemCheckoutDTO {
   baseImponible?: DecimalValue | null;
   montoIVA?: DecimalValue | null;
   subtotal?: DecimalValue | null;
+  precioConDescuento?: DecimalValue | null;
+  descuentoItem?: DecimalValue | null;
 }
 
 export interface OpcionLogisticaCheckoutDTO {
@@ -78,6 +84,7 @@ export interface TotalesCheckoutDTO {
   regimenFiscal?: RegimenFiscal | null;
   tasaIVA?: DecimalValue | null;
   modoPrecio?: ModoPrecio | null;
+  descuentoTotal: number;
 }
 
 export interface CheckoutPreparadoDTO {
@@ -85,6 +92,31 @@ export interface CheckoutPreparadoDTO {
   grupos: GrupoCheckoutDTO[];
   totales: TotalesCheckoutDTO;
   direccionUsuario?: string | null;
+  cuponCodigo?: string | null;
+  cuponAplicado?: {
+    cuponId: string;
+    codigo: string;
+    tipo: string;
+    valor: number | null;
+    descuentoTotal: number;
+  } | null;
+  comboAplicado?: {
+    comboId: string;
+    nombre: string;
+    descuentoTotal: number;
+    repartoNegocios: Array<{
+      negocioId: string;
+      descuentoAsignado: number;
+      items: Array<{
+        id: string;
+        productoId?: string | null;
+        servicioId?: string | null;
+        cantidad: number;
+        precioOriginal: number;
+        precioConDescuento: number;
+      }>;
+    }>;
+  } | null;
 }
 
 export interface SeleccionEntregaGrupo {
@@ -93,6 +125,34 @@ export interface SeleccionEntregaGrupo {
   opcionLogisticaId?: string;
   direccionEntrega?: string;
   notas?: string;
+}
+
+export interface GrupoCheckoutDTO {
+  negocioId: string;
+  negocio: NegocioCheckoutDTO;
+  items: ItemCheckoutDTO[];
+  subtotal: number;
+  iva: number;
+  baseImponible?: DecimalValue | null;
+  montoIVA?: DecimalValue | null;
+  totalConIVA?: DecimalValue | null;
+  total?: DecimalValue | null;
+  regimenFiscal?: RegimenFiscal | null;
+  tasaIVA?: DecimalValue | null;
+  modoPrecio?: ModoPrecio | null;
+  opcionesLogistica: OpcionLogisticaCheckoutDTO[];
+  puedeRecogerEnTienda: boolean;
+  disponibilidadOk: boolean;
+  erroresDisponibilidad: string[];
+  tieneTransporte: boolean;
+  descuentoTotal: number;
+  envioGratis: boolean;
+  promocionesAplicadas: Array<{
+    id: string;
+    nombre: string;
+    tipo: string;
+    descuento: number;
+  }>;
 }
 
 export interface DatosPagoCheckout {
@@ -107,6 +167,7 @@ export interface ConfirmarCheckoutPayload {
   metodoPago?: MetodoPago;
   datosPago?: DatosPagoCheckout;
   grupos: SeleccionEntregaGrupo[];
+  cuponCodigo?: string | null;
 }
 
 export interface PedidoCreadoDTO {

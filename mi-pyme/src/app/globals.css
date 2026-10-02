@@ -57,7 +57,15 @@
   --color-border: #E6EEF6;
   --color-border-strong: #D0DAE8;
   --color-border-muted: #F0F4FA;
-  --color-muted: #F0F4FA;
+     --color-muted: #F0F4FA;
+
+  --color-foreground: var(--color-text-primary);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text-primary);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text-primary);
+  --color-input: var(--color-border);
 
   --color-success: #16A34A;
   --color-success-100: #DCFCE7;
@@ -264,9 +272,17 @@
   --color-border: rgba(255, 255, 255, 0.06);
   --color-border-strong: rgba(255, 255, 255, 0.12);
   --color-border-muted: rgba(255, 255, 255, 0.03);
-  --color-muted: rgba(255, 255, 255, 0.08);
+     --color-muted: rgba(255, 255, 255, 0.08);
 
-  --color-success: #22C55E;
+    --color-foreground: var(--color-text-primary);
+    --color-muted-foreground: var(--color-text-muted);
+    --color-card: var(--color-surface);
+    --color-card-foreground: var(--color-text-primary);
+    --color-popover: var(--color-surface);
+    --color-popover-foreground: var(--color-text-primary);
+    --color-input: var(--color-border);
+
+    --color-success: #22C55E;
   --color-success-100: #063E2D;
   --color-success-200: #0D6146;
   --color-success-foreground: #0B1220;
@@ -370,6 +386,14 @@
     --color-border-strong: rgba(255, 255, 255, 0.12);
     --color-border-muted: rgba(255, 255, 255, 0.03);
     --color-muted: rgba(255, 255, 255, 0.08);
+
+    --color-foreground: var(--color-text-primary);
+    --color-muted-foreground: var(--color-text-muted);
+    --color-card: var(--color-surface);
+    --color-card-foreground: var(--color-text-primary);
+    --color-popover: var(--color-surface);
+    --color-popover-foreground: var(--color-text-primary);
+    --color-input: var(--color-border);
 
     --color-success: #22C55E;
     --color-success-100: #063E2D;

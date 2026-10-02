@@ -117,8 +117,8 @@ npm install
 # Aplicar migraciones
 npx prisma migrate dev
 
-# Seed de disponibilidad (productos demo + disponibilidad)
-npm run db:seed:disp
+# Seed (datos de prueba completos)
+npx prisma db seed
 
 # Tests unitarios
 npm run test
@@ -777,6 +777,7 @@ diferido a **Fase 4**.
 | Password policy | 10 chars + letra + número + lista negra | `src/lib/auth/password-policy.ts` |
 | `isActive` bloquea login | Filtrado en `credentialsAuthorize` | `src/lib/auth/` |
 | `mustChangePassword` | Middleware redirige a cambio obligado | `src/middleware.ts` |
+| `lastLoginAt` | Se actualiza en login exitoso vía `actualizarLastLogin` | `src/lib/auth/actualizar-last-login.ts` |
 | `NEXTAUTH_SECRET` validado | Build fails en prod si < 32 chars | `src/lib/auth/validate-env.ts` |
 | Token reset hasheado | SHA-256 + `timingSafeEqual` | `src/lib/auth/token-hash.ts` |
 | Anti-enumeración | Mensajes genéricos en login y recuperación | todos los endpoints |
@@ -971,3 +972,128 @@ Nest.js. Los pasos serían:
 arquitectura (microservicios vs monolito Nest.js, boundaries, eventos de
 dominio) que se tomarán en Fase 4. Mantener providers sin usar sería código
 muerto.
+
+---
+
+# Auditoría de Accesibilidad y Rendimiento (Fase 2, Punto 9)
+
+## Problemas detectados y corregidos
+
+### 1. Falta de variables CSS semánticas en Tailwind v4
+
+**Problema:** El bloque `@theme inline` en `src/app/globals.css` definía
+variables `--color-*` pero no las variables semánticas que Tailwind v4 requiere
+para generar utility classes como `text-muted-foreground`, `bg-card`,
+`bg-popover`, `text-foreground`, `border-border`, `bg-input`.
+
+Esto causó que las clases `text-muted-foreground` (usadas en 515 locations) y
+`bg-card`/`.bg-popover` no fueran generadas en el CSS compilado, provocando:
+
+- **ThemeToggle dark mode contrast violation:** el texto `#0F1724` (valor por
+  defecto de Tailwind) se renderizaba sobre fondo `#0B1220`, con contraste de
+  solo 1.04:1.
+- **DisponibilidadBadge warning variant contrast violation:** `text-warning`
+  (`#F59E0B`) sobre `bg-warning/10` (fondo amarillo muy claro) = 1.98:1 en light
+  mode.
+
+**Solución:**
+- Añadidas las variables `--color-muted-foreground`, `--color-card`,
+  `--color-card-foreground`, `--color-popover`, `--color-popover-foreground`,
+  `--color-foreground`, `--color-input` a los tres bloques de tema (light,
+  `[data-theme="dark"]`, `@media (prefers-color-scheme: dark)`).
+- Todas las variables semánticas resuelven a las variables de color existentes
+  mediante referencias anidadas (`var(--color-text-muted)`, etc.), manteniendo
+  la coherencia entre light/dark modes.
+- En `Badge.tsx`, la variante `warning` cambió de `text-warning` a
+  `text-warning-foreground` (resuelve a `#0F1724` en light mode, `#0B1220` en
+  dark mode), alcanzando contraste > 3:1 en ambos modos.
+- `StatusBadge` ahora extiende `React.HTMLAttributes<HTMLSpanElement>` y
+  propaga props (`...props`) para permitir `data-testid` en tests.
+
+### 2. Imágenes `<img>` sin optimización
+
+**Problema:** 5 etiquetas `<img>` raw en el código utilizaban `src` directamente,
+sin `width`/`height` (causando CLS) ni el optimizador de imágenes de Next.js.
+
+**Solución:**
+- Migradas todas las `<img>` a `next/image` (`Image`) con `width`, `height` y
+  `alt` apropiados.
+- Configuradas `remotePatterns` en `next.config.ts` para dominios de imágenes
+  externas (Cloudinary, Supabase, Google, GitHub, Vercel, Unsplash, Imgur, AWS).
+- `next.config.ts` ahora incluye `@next/bundle-analyzer` y configuración
+  `images`.
+
+### 3. Tests de accesibilidad y rendimiento
+
+**Añadidos:**
+- `src/tests/badge-accessibility.test.tsx` — 20 tests de regresión para Badge y
+  DisponibilidadBadge (todos los variants, contraste de colores, atributos
+  ARIA, navegación por teclado).
+- `visual-tests/accessibility.test.mjs` — tests de página ampliados con:
+  - ThemeToggle contrast en light y dark mode (usando `cat.color`).
+  - DisponibilidadBadge color contrast regression test.
+  - All images have alt text test.
+  - Color contrast dark mode test.
+- `visual-tests/performance.test.mjs` — tests de rendimiento:
+  - LCP < 3.5s en todas las páginas críticas.
+  - CLS < 0.1 en todas las páginas críticas.
+  - Console error monitoring (sin errores críticos).
+  - Core Web Vitals (LCP < 2.5s, CLS < 0.1, FID < 100ms).
+  - Resource loading (imágenes con dimensiones explícitas).
+- `tests/bundle-size.test.mjs` — tests de tamaño de bundle:
+  - Tamaño total de assets estáticos < 400 MB.
+  - No single JS chunk > 100 MB.
+  - CSS < 100 MB.
+
+### 4. Configuración de Lighthouse CI
+
+**Actualizada `.lighthouserc.js`:**
+- Thresholds cambiados de `warn` a `error` para todas las categorías.
+- URLs ampliadas (added missing pages: checkout-detail, perfil, servicios detalle,
+  admin pagos/facturas).
+- `numberOfRuns` de 1 a 3 (más estable).
+- Añadidos assertions específicos: `speed-index`, `max-potential-fid`,
+  `uses-rel-preload`, `font-size-is-readable`, `viewport`, `document-title`,
+  `image-alt`, `link-name`, `button-name`.
+
+### 5. Optimización de bundle
+
+**Añadido `next/dynamic` para componentes no críticos:**
+- `GlobalSearchBar` en `Navbar.tsx` se carga perdidos lazy (SSR disabled) con
+  un placeholder de loading, reduciendo el bundle inicial.
+
+## Comandos de test
+
+```bash
+# Tests unitarios (vitest)
+npm run test
+
+# Tests de accesibilidad (Playwright + Axe)
+npm run test:a11y
+
+# Tests de rendimiento (Playwright)
+npm run test:performance
+
+# Tests de bundle size
+npm run test:bundle
+
+# Lighthouse CI
+npm run test:lighthouse
+
+# Bundle analyzer
+npm run build:analyze
+
+# Todos los tests
+npm run test:visual:all  # incluye test:a11y y test:visual:comprehensive
+```
+
+## Convenciones de testing
+
+- **Vitest** (`src/tests/*.test.{ts,tsx}`): tests unitarios y de regresión de
+  componentes. Se ejecutan con `npm run test`.
+- **Playwright** (`visual-tests/*.test.mjs`): tests de integración y accesibilidad
+  en browser real. Se ejecutan con `npm run test:a11y`.
+- **E2E** (`tests/*.mjs`, `e2e/`): flujos completos de usuario. Se ejecutan con
+  `npm run test:e2e`.
+- **Performance** (`visual-tests/performance.test.mjs`): métricas Core Web Vitals.
+- **Bundle size** (`tests/bundle-size.test.mjs`): límites de tamaño de assets.

@@ -42,45 +42,46 @@ export default async function globalSetup() {
     where: { email: "e2e-cliente-negocio@test.com" },
   });
 
-  if (!existingClienteNegocio) {
-    const negocioOwner = await prisma.user.create({
-      data: {
-        email: "e2e-cliente-negocio@test.com",
-        username: "e2e_cliente_negocio",
-        password: clienteNegocioPassword,
-        nombre: "Cliente Negocio Test",
-        rol: Rol.CLIENTE,
-        mustChangePassword: false,
-        isActive: true,
-      },
-    });
+  await prisma.user.upsert({
+    where: { email: "e2e-cliente-negocio@test.com" },
+    update: {
+      password: clienteNegocioPassword,
+      isActive: true,
+      mustChangePassword: false,
+    },
+    create: {
+      email: "e2e-cliente-negocio@test.com",
+      username: "e2e_cliente_negocio",
+      password: clienteNegocioPassword,
+      nombre: "Cliente Negocio Test",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+    },
+  });
 
-    const area = await prisma.area.findFirst({});
-    if (area) {
-      const negocio = await prisma.negocio.create({
-        data: {
-          nombre: "Negocio Cliente Test",
-          slug: "negocio-cliente-test",
-          activo: true,
-          areaId: area.id,
-          regimenFiscal: "GENERAL",
-          tasaIVA: 10,
-          modoPrecio: "IVA_INCLUIDO",
-          nit: "E2E-NEGOCIO-001",
-        },
-      });
-
-      await prisma.negocio.update({
-        where: { id: negocio.id },
-        data: { userId: negocioOwner.id },
-      });
-    }
-  } else {
-    await prisma.user.update({
-      where: { email: "e2e-cliente-negocio@test.com" },
-      data: { password: clienteNegocioPassword },
-    });
-  }
+  const lastLoginPassword = await bcrypt.hash("lastlogin123", 12);
+  await prisma.user.upsert({
+    where: { email: "e2e-lastlogin@test.com" },
+    update: {
+      password: lastLoginPassword,
+      nombre: "E2E LastLogin Test",
+      username: "e2e_lastlogin",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+      lastLoginAt: null,
+    },
+    create: {
+      email: "e2e-lastlogin@test.com",
+      username: "e2e_lastlogin",
+      password: lastLoginPassword,
+      nombre: "E2E LastLogin Test",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+    },
+  });
 
   const existingInactive = await prisma.user.findUnique({
     where: { email: "e2e-inactive@test.com" },

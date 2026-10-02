@@ -76,6 +76,7 @@
 - **OBLIGATORIO** normalizar emails y usernames a lowercase antes de guardar o buscar.
 
 - **OBLIGATORIO** que los tests de auth cubran casos de escalada de privilegios y acceso no autorizado.
+- **OBLIGATORIO**: al añadir un campo de auditoría a `User` (ej. `lastLoginAt`), implementar su escritura en el mismo PR. No dejar campos huérfanos.
 
 ## Convenciones
 
@@ -103,3 +104,5 @@ Cada uno con `TODO` en el código correspondiente y referencia en `SERVICE_ARCHI
 1. `npm run test` — todos los tests pasan.
 2. `npx tsc --noEmit` — sin errores de tipo.
 3. `npm run lint` — sin errores de lint.
+4. `npm run test:a11y` — tests de accesibilidad pasan (light + dark mode).
+5. Si el PR toca UI: verifica contraste de colores y accesibilidad con axe-core.

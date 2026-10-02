@@ -23,7 +23,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   primary: "bg-primary/10 text-primary",
   secondary: "bg-secondary/10 text-secondary",
   success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
+  warning: "bg-warning/10 text-warning-foreground",
   error: "bg-destructive/10 text-destructive",
   info: "bg-info/10 text-info",
   outline: "border border-border bg-transparent text-foreground",
@@ -77,7 +77,8 @@ export function Badge({
 
 Badge.displayName = "Badge";
 
-export interface StatusBadgeProps {
+export interface StatusBadgeProps
+  extends React.HTMLAttributes<HTMLSpanElement> {
   status: "pending" | "active" | "completed" | "cancelled" | "failed" | "draft";
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -101,9 +102,9 @@ const statusLabels: Record<StatusBadgeProps["status"], string> = {
   draft: "Borrador",
 };
 
-export function StatusBadge({ status, size = "md", className }: StatusBadgeProps) {
+export function StatusBadge({ status, size = "md", className, ...props }: StatusBadgeProps) {
   return (
-    <Badge variant={statusMap[status]} size={size} className={className}>
+    <Badge variant={statusMap[status]} size={size} className={className} {...props}>
       {statusLabels[status]}
     </Badge>
   );

@@ -7,6 +7,7 @@
 
 import { Service } from "./Service";
 import prisma from "@/lib/db/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { ICache, getCache } from "@/infrastructure";
 import { cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { BusinessError } from "@/shared/types";
@@ -18,6 +19,7 @@ const RESERVA_TTL_MS = 15 * 60 * 1000;
 export interface CrearReservaParams {
   servicioId: string;
   fechaHoraInicio: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ListarReservasParams {
@@ -107,6 +109,7 @@ export class ReservaService extends Service {
         fechaHoraFin: fechaFin,
         venceEn,
         estado: "pendiente",
+        metadata: datos.metadata as Prisma.InputJsonValue | undefined,
       },
     });
 

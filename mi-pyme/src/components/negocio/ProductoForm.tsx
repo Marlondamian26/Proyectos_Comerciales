@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
@@ -194,7 +195,7 @@ export default function ProductosPanel({ negocioId, productos, areas, subareasIn
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       {p.imagenUrl ? (
-                        <img src={p.imagenUrl} alt={p.nombre} className="w-10 h-10 rounded-lg object-cover" />
+                        <Image src={p.imagenUrl} alt={p.nombre} width={40} height={40} className="w-10 h-10 rounded-lg object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                           <span className="text-xs text-muted-foreground">Sin img</span>

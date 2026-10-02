@@ -10,9 +10,12 @@ import prisma from "@/lib/db/prisma";
 import { ICache, getCache, cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { BusinessError } from "@/shared/types";
 import { DisponibilidadService } from "./DisponibilidadService";
+import { NotificacionService } from "./NotificacionService";
 import { assertPertenencia } from "./utils/permisos";
 import { logAudit } from "./utils/audit";
 import { Prisma, TratamientoIVA } from "@/generated/prisma/client";
+import { CODIGO_VALIDACION } from "@/core/constants";
+import type { EventoNotificacion } from "@/shared/notificaciones.types";
 import type {
   Area,
   Subarea,
@@ -64,6 +67,7 @@ export interface ListarServiciosParams {
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
+  tipo?: "SERVICIO_GENERAL" | "TRANSPORTE";
   [key: string]: unknown;
 }
 
@@ -86,11 +90,13 @@ export interface ServicioConCupos extends Servicio {
 export class CatalogService extends Service {
   private dispService: DisponibilidadService;
   private cache: ICache;
+  private notificacionService: NotificacionService;
 
   constructor(cache?: ICache) {
     super();
     this.cache = cache ?? getCache();
     this.dispService = new DisponibilidadService(this.cache);
+    this.notificacionService = new NotificacionService(this.cache);
   }
 
   async listarAreas(params: ListarAreasParams = {}): Promise<Area[]> {
@@ -203,6 +209,7 @@ export class CatalogService extends Service {
       ...(params.activo !== undefined
         ? { activo: params.activo }
         : { activo: true }),
+      ...(params.tipo && { tipo: params.tipo }),
     };
 
     if (params.negocioId) {
@@ -421,8 +428,31 @@ export class CatalogService extends Service {
       );
     }
 
-    if (datos.capacidad <= 0) {
+     if (datos.capacidad <= 0) {
       throw new BusinessError("La capacidad debe ser positiva", "VALIDACION", 400);
+    }
+
+    if (datos.precio < 0) {
+      throw new BusinessError("El precio debe ser positivo", "VALIDACION", 400);
+    }
+
+    if (datos.tipo === "TRANSPORTE") {
+      if (!datos.tipoTransporte) {
+        throw new BusinessError(
+          "El tipo de transporte es requerido para servicios de transporte",
+          CODIGO_VALIDACION,
+          400
+        );
+      }
+      if (datos.origenBase && datos.destinoBase) {
+        if (datos.origenBase === datos.destinoBase) {
+          throw new BusinessError(
+            "El origen y destino base no pueden ser iguales",
+            CODIGO_VALIDACION,
+            400
+          );
+        }
+      }
     }
 
     const servicio = await prisma.servicio.create({
@@ -433,12 +463,20 @@ export class CatalogService extends Service {
         descripcion: datos.descripcion ?? undefined,
         duracionMinutos: datos.duracionMinutos,
         horariosDisponibles: datos.horariosDisponibles as unknown as Prisma.InputJsonValue,
-        capacidad: datos.capacidad,
+        capacidad: datos.tipo === "TRANSPORTE" ? 1 : datos.capacidad,
+        precio: datos.precio ?? 0,
         imagenUrl: datos.imagenUrl,
         activo: datos.activo ?? true,
-        permiteReservas: true,
+        permiteReservas: datos.permiteReservas ?? true,
         tratamientoIVA: datos.tratamientoIVA ?? TratamientoIVA.GRAVADO,
         tasaIVAOverride: datos.tasaIVAOverride != null ? new Prisma.Decimal(datos.tasaIVAOverride) : undefined,
+        tipo: datos.tipo ?? "SERVICIO_GENERAL",
+        tipoTransporte: datos.tipoTransporte ?? undefined,
+        pesoMaximo: datos.pesoMaximo != null ? new Prisma.Decimal(datos.pesoMaximo) : undefined,
+        dimensionesMaximas: datos.dimensionesMaximas ?? undefined,
+        origenBase: datos.origenBase ?? undefined,
+        destinoBase: datos.destinoBase ?? undefined,
+        alcanceNacional: datos.alcanceNacional ?? false,
       },
       include: { negocio: true, subarea: true },
     });
@@ -456,7 +494,7 @@ export class CatalogService extends Service {
   ): Promise<ServicioConRelaciones> {
     const servicio = await prisma.servicio.findUnique({
       where: { id },
-      select: { negocioId: true },
+      select: { negocioId: true, tipo: true },
     });
 
     if (!servicio) {
@@ -464,6 +502,31 @@ export class CatalogService extends Service {
     }
 
     await assertPertenencia(userId, servicio.negocioId, rolActual);
+
+    const tipoFinal = datos.tipo ?? servicio.tipo;
+
+    if (tipoFinal === "TRANSPORTE") {
+      if (datos.tipoTransporte === null || (datos.tipoTransporte !== undefined && !datos.tipoTransporte)) {
+        const existing = await prisma.servicio.findUnique({
+          where: { id },
+          select: { tipoTransporte: true },
+        });
+        if (!existing?.tipoTransporte) {
+          throw new BusinessError(
+            "El tipo de transporte es requerido para servicios de transporte",
+            CODIGO_VALIDACION,
+            400
+          );
+        }
+      }
+      if (datos.origenBase && datos.destinoBase && datos.origenBase === datos.destinoBase) {
+        throw new BusinessError(
+          "El origen y destino base no pueden ser iguales",
+          CODIGO_VALIDACION,
+          400
+        );
+      }
+    }
 
     const result = await prisma.servicio.update({
       where: { id },
@@ -475,7 +538,12 @@ export class CatalogService extends Service {
         ...(datos.duracionMinutos !== undefined && {
           duracionMinutos: datos.duracionMinutos,
         }),
-        ...(datos.capacidad !== undefined && { capacidad: datos.capacidad }),
+        ...(datos.capacidad !== undefined && {
+          capacidad: tipoFinal === "TRANSPORTE" ? 1 : datos.capacidad,
+        }),
+        ...(datos.precio !== undefined && {
+          precio: datos.precio,
+        }),
         ...(datos.horariosDisponibles && {
           horariosDisponibles: datos.horariosDisponibles as unknown as Prisma.InputJsonValue,
         }),
@@ -484,6 +552,25 @@ export class CatalogService extends Service {
         ...(datos.activo !== undefined && { activo: datos.activo }),
         ...(datos.permiteReservas !== undefined && {
           permiteReservas: datos.permiteReservas,
+        }),
+        ...(datos.tipo !== undefined && { tipo: datos.tipo }),
+        ...(datos.tipoTransporte !== undefined && { tipoTransporte: datos.tipoTransporte }),
+        ...(datos.pesoMaximo !== undefined && {
+          pesoMaximo: datos.pesoMaximo != null
+            ? new Prisma.Decimal(datos.pesoMaximo)
+            : null,
+        }),
+        ...(datos.dimensionesMaximas !== undefined && {
+          dimensionesMaximas: datos.dimensionesMaximas ?? undefined,
+        }),
+        ...(datos.origenBase !== undefined && {
+          origenBase: datos.origenBase ?? undefined,
+        }),
+        ...(datos.destinoBase !== undefined && {
+          destinoBase: datos.destinoBase ?? undefined,
+        }),
+        ...(datos.alcanceNacional !== undefined && {
+          alcanceNacional: datos.alcanceNacional,
         }),
         ...(datos.tratamientoIVA !== undefined && {
           tratamientoIVA: datos.tratamientoIVA,
@@ -534,7 +621,7 @@ export class CatalogService extends Service {
   ): Promise<Inventario> {
     const producto = await prisma.producto.findUnique({
       where: { id: productoId },
-      select: { negocioId: true, id: true },
+      select: { negocioId: true, id: true, nombre: true },
     });
 
     if (!producto) {
@@ -569,6 +656,21 @@ export class CatalogService extends Service {
     await logAudit("INVENTARIO_ACTUALIZADO", userId, productoId, {});
     this.invalidateCache("productos");
     this.invalidateCache("inventario");
+
+    // Notificación: STOCK_BAJO → al negocio dueño (stock < puntoReorden)
+    const puntoReorden = datos.puntoReorden ?? 0;
+    if (datos.cantidadActual < puntoReorden && puntoReorden > 0) {
+      void this.notificacionService.emitir({
+        tipo: "STOCK_BAJO",
+        titulo: "Stock bajo",
+        mensaje: `El producto "${producto.nombre ?? ""}" está cerca de agotarse (stock: ${datos.cantidadActual}).`,
+        enlace: "/negocio/inventario",
+        metadata: { productoId, negocioId: producto.negocioId, cantidadActual: datos.cantidadActual },
+        actorId: userId,
+        destinatarioNegocioId: producto.negocioId,
+      } as EventoNotificacion);
+    }
+
     return result;
   }
 
@@ -584,6 +686,75 @@ export class CatalogService extends Service {
       include: { producto: true },
       orderBy: { cantidadActual: "asc" },
     });
+  }
+
+  async listarCombos(negocioId?: string): Promise<
+    Array<{
+      id: string;
+      nombre: string;
+      descripcion: string | null;
+      imagen: string | null;
+      precio: number;
+      negocioId: string | null;
+      activo: boolean;
+      fechaInicio: Date | null;
+      fechaFin: Date | null;
+      usosMaximos: number | null;
+      usosActuales: number;
+      items: Array<{ id: string; comboId: string; productoId: string | null; servicioId: string | null; cantidad: number }>;
+      createdAt: Date;
+      updatedAt: Date;
+    }>
+  > {
+    const cacheKey = cacheKeys.descuentos.combos(negocioId ? { negocioId } : undefined);
+    const cached = await this.cache.get<
+      Array<{
+        id: string;
+        nombre: string;
+        descripcion: string | null;
+        imagen: string | null;
+        precio: number;
+        negocioId: string | null;
+        activo: boolean;
+        fechaInicio: Date | null;
+        fechaFin: Date | null;
+        usosMaximos: number | null;
+        usosActuales: number;
+        items: Array<{ id: string; comboId: string; productoId: string | null; servicioId: string | null; cantidad: number }>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>
+    >(cacheKey);
+    if (cached) return cached;
+
+    const where: Record<string, unknown> = {};
+    if (negocioId) where.negocioId = negocioId;
+
+    const combos = await prisma.combo.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const result = combos.map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      descripcion: c.descripcion,
+      imagen: c.imagen,
+      precio: Number(c.precio),
+      negocioId: c.negocioId,
+      activo: c.activo,
+      fechaInicio: c.fechaInicio,
+      fechaFin: c.fechaFin,
+      usosMaximos: c.usosMaximos,
+      usosActuales: c.usosActuales,
+      items: c.items,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+
+    await this.cache.set(cacheKey, result, cacheTTL.descuentos);
+    return result;
   }
 
   async invalidateCache(pattern?: string): Promise<void> {

@@ -100,11 +100,35 @@ Mi-Pyme incluye un panel completo para que los usuarios con rol **NEGOCIO**
 # Tests unitarios (Vitest)
 npm run test
 
-# Tests de integración
-npm run test:integration
+# Tests de accesibilidad y regresión visual (Playwright + Axe)
+npm run test:a11y
 
-# Tests visuales y de accesibilidad (Playwright)
-npx playwright test --config=visual-tests/playwright.config.mjs
+# Tests de rendimiento (LCP, CLS, console errors)
+npm run test:performance
+
+# Tests de tamaño de bundle
+npm run test:bundle
+
+# Tests de registro visual
+npm run test:visual
+
+# Tests de registro visual comprensivos
+npm run test:visual:comprehensive
+
+# Tests E2E (flujo de auth, pagos)
+npm run test:e2e
+
+# Lighthouse CI
+npm run test:lighthouse
+
+# Bundle analyzer
+npm run build:analyze
+
+# Type check
+npx tsc --noEmit
+
+# Lint
+npm run lint
 ```
 
 ### Facturación e IVA (10%)
@@ -158,4 +182,70 @@ npx tsx -e "import { PrismaClient } from './src/generated/prisma/client'; const 
 ```
 
 Los usuarios con tokens válidos deben solicitar uno nuevo.
+
+## Seed de datos de prueba
+
+El seed puebla la BD con datos realistas para desarrollo y tests. Es **idempotente**: puede ejecutarse N veces sin duplicar.
+
+```bash
+npx prisma db seed
+# o: npm run db:seed
+```
+
+### Qué crea
+
+| Entidad | Cantidad | Detalles |
+|---------|----------|----------|
+| Usuarios | 15 | 2 ADMIN (1 genérico), 5 NEGOCIO, 7 CLIENTE (3 + 3 test + 1 preexistente), 1 LOGISTICA |
+| Negocios | 5 (seed) + 1 preexistente | 3 en Pinar del Río (municipio), 1 en Viñales, 1 en Consolación del Sur |
+| Áreas | 7 (seed) | Aseo y Limpieza, Alimentos, Electrodomésticos, Salud y Belleza, Comida y Restaurantes, Servicios Profesionales, Tecnología |
+| Subáreas | 23 | 2-6 por área |
+| Productos | 27 | 5-6 por negocio, con tratamientoIVA variado |
+| Servicios | 11 | 2-3 por negocio |
+| Inventario | 27 | 1 por producto |
+| DisponibilidadProducto | 189 | 7 días × 27 productos |
+| Proveedores logísticos | 3 | Envíos Pinar, Envíos Viñales, Logística Nacional |
+| Opciones logísticas | hasta 35 | 2-3 por negocio por proveedor |
+| Horarios | 35 | 7 días × 5 negocios seed |
+| Solicitudes alta | 1 | "Confitería La Esquina" (PENDIENTE_APROBACION) |
+| Tokens de reset | 2 (seed) + 1 preexistente | 1 válido, 2 expirados |
+| Usuarios de test auth | 3 | inactive@test.com, mustchange@test.com, locked@test.com |
+
+### Régimen fiscal
+
+| Régimen | Negocios | IVA aplica | Productos |
+|---------|----------|------------|-----------|
+| GENERAL | 3 | Sí (10%) | GRAVADO / EXENTO |
+| SIMPLIFICADO | 1 | No | NO_SUJETO |
+| EXENTO | 1 | No | EXENTO |
+
+### Variables de entorno
+
+```bash
+GENERIC_ADMIN_PASSWORD=12345678    # Password del admin genérico
+NEGOCIO_PASSWORD=negocio123      # Passwords de usuarios NEGOCIO
+CLIENTE_PASSWORD=cliente123      # Passwords de usuarios CLIENTE
+LOGISTICA_PASSWORD=logistica123  # Password de usuario LOGISTICA
+TEST_PASSWORD=test1234           # Passwords de usuarios de test auth
+```
+
+### Usuarios de prueba
+
+| Email | Rol | Password | Notas |
+|-------|-----|----------|-------|
+| admin@mi-pyme.local | ADMIN | GENERIC_ADMIN_PASSWORD | mustChangePassword: true |
+| admin2@test.com | ADMIN | admin2pass | |
+| panaderia@test.com | NEGOCIO | NEGOCIO_PASSWORD | Negocio: Panadería La Espiga |
+| carniceria@test.com | NEGOCIO | NEGOCIO_PASSWORD | Negocio: Carnicería El Rincón |
+| barberia@test.com | NEGOCIO | NEGOCIO_PASSWORD | Negocio: Barbería El Corte |
+| reposteria@test.com | NEGOCIO | NEGOCIO_PASSWORD | Negocio: Repostería Dulce Sueño |
+| techstore@test.com | NEGOCIO | NEGOCIO_PASSWORD | Negocio: TechStore Express |
+| cliente1@test.com | CLIENTE | CLIENTE_PASSWORD | Token de reset válido |
+| cliente2@test.com | CLIENTE | CLIENTE_PASSWORD | Token de reset expirado |
+| cliente3@test.com | CLIENTE | CLIENTE_PASSWORD | Solicitante de alta |
+| logistica@test.com | LOGISTICA | LOGISTICA_PASSWORD | Dueño de proveedores |
+| inactive@test.com | CLIENTE | TEST_PASSWORD | isActive: false |
+| mustchange@test.com | CLIENTE | TEST_PASSWORD | mustChangePassword: true |
+| locked@test.com | CLIENTE | TEST_PASSWORD | lockedUntil +1h |
+| cliente@test.com | CLIENTE | — | Preexistente (no password)
 

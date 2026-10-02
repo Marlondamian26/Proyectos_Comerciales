@@ -81,6 +81,7 @@ export interface ServicioNegocioDTO {
   descripcion?: string | null;
   duracionMinutos: number;
   capacidad: number;
+  precio: number;
   imagenUrl: string;
   horariosDisponibles: Record<string, string[]>;
   subareaId: string;
@@ -88,6 +89,13 @@ export interface ServicioNegocioDTO {
   permiteReservas?: boolean;
   tratamientoIVA?: TratamientoIVA;
   tasaIVAOverride?: number | string | null;
+  tipo?: "SERVICIO_GENERAL" | "TRANSPORTE";
+  tipoTransporte?: "ENVIO_PAQUETE" | "MUDANZA" | "TRASLADO_MUEBLE" | "TRANSPORTE_PERSONAS" | "OTRO" | null;
+  pesoMaximo?: number | string | null;
+  dimensionesMaximas?: string | null;
+  origenBase?: string | null;
+  destinoBase?: string | null;
+  alcanceNacional?: boolean;
 }
 
 export interface InventarioDTO {

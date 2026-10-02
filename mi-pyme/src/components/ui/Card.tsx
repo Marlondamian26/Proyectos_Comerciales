@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 
@@ -79,9 +80,11 @@ export function Card({
     >
       {image && (
         <div className="relative aspect-video w-full overflow-hidden rounded-t-xl">
-          <img
+          <Image
             src={image.src}
             alt={image.alt}
+            width={400}
+            height={225}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />

@@ -18,6 +18,9 @@ export async function GET(request: Request) {
       ...(searchParams.get("activo") !== null && {
         activo: searchParams.get("activo") === "true",
       }),
+      ...(searchParams.get("tipo") && {
+        tipo: searchParams.get("tipo")!,
+      }),
     };
 
     const servicios = await listarServiciosConCupos(filtros);

@@ -29,6 +29,32 @@ Antes de commitear, verifica:
 
 4. **Verifica con `tsc --noEmit`** que no hay errores de tipo tras los cambios.
 
+## Testing
+
+```bash
+# Tests unitarios (vitest)
+npm run test
+
+# Tests de accesibilidad y regresión visual (Playwright + Axe)
+npm run test:a11y
+
+# Tests de rendimiento (LCP, CLS, console errors)
+npm run test:performance
+
+# Tests de tamaño de bundle
+npm run test:bundle
+
+# Lighthouse CI
+npm run test:lighthouse
+
+# Todos los tests visuales
+npm run test:visual:all
+```
+
+**Verificación de calidad:** Antes de commitear, ejecuta `npm run test`,
+`npx tsc --noEmit`, `npm run lint`, y `npm run test:a11y`. Los tests de
+accesibilidad deben pasar en light y dark mode para todas las páginas críticas.
+
 ## Autenticación y seguridad
 
 > **Reglas completas en `CLAUDE.md` → "Reglas de Autenticación y Seguridad (Etapa 5)"**

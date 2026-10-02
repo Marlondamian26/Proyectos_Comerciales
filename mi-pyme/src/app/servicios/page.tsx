@@ -11,14 +11,25 @@ import type { ServicioConCupos } from "@/services/CatalogService";
 
 export const dynamic = "force-dynamic";
 
+function tipoTransporteLabel(tipo: string): string {
+  const labels: Record<string, string> = {
+    ENVIO_PAQUETE: "Envío de paquetes",
+    MUDANZA: "Mudanza",
+    TRASLADO_MUEBLE: "Traslado de muebles",
+    TRANSPORTE_PERSONAS: "Transporte de personas",
+    OTRO: "Otro",
+  };
+  return labels[tipo] ?? tipo;
+}
+
 export default async function ServiciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ negocioId?: string }>;
+  searchParams: Promise<{ negocioId?: string; tipo?: string }>;
 }) {
-  const { negocioId } = await searchParams;
+  const { negocioId, tipo } = await searchParams;
   const servicios = (await listarServiciosConCupos(
-    negocioId ? { negocioId } : undefined
+    (negocioId ? { negocioId } : undefined) ?? (tipo ? { tipo } : { activo: true })
   )) as ServicioConCupos[];
 
   return (
@@ -59,6 +70,7 @@ export default async function ServiciosPage({
                 const cupos = servicio.cuposDisponiblesHoy;
                 const disponible = cupos?.disponible ?? servicio.activo;
                 const cantidadCupos = cupos?.cuposDisponibles ?? 0;
+                const isTransporte = servicio.tipo === "TRANSPORTE";
                 return (
                   <Card
                     key={servicio.id}
@@ -67,8 +79,8 @@ export default async function ServiciosPage({
                       alt: servicio.nombre,
                     }}
                     badge={{
-                      text: disponible ? "Disponible" : "Sin cupos",
-                      variant: disponible ? "success" : "error",
+                      text: disponible ? (isTransporte ? "Transporte" : "Disponible") : "Sin cupos",
+                      variant: disponible ? (isTransporte ? "info" : "success") : "error",
                     }}
                     footer={
                       <div className="flex items-center justify-between">
@@ -77,10 +89,16 @@ export default async function ServiciosPage({
                             <Clock className="h-3.5 w-3.5" />
                             {servicio.duracionMinutos} min
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="h-3.5 w-3.5" />
-                            {servicio.capacidad}
-                          </span>
+                          {isTransporte ? (
+                            <span className="flex items-center gap-1 font-medium text-foreground">
+                              {servicio.precio != null ? `$${Number(servicio.precio).toFixed(2)}` : "Consultar"}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3.5 w-3.5" />
+                              {servicio.capacidad}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs text-muted-foreground">
                           {servicio.negocio.nombre}
@@ -93,6 +111,11 @@ export default async function ServiciosPage({
                     {servicio.descripcion && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                         {servicio.descripcion}
+                      </p>
+                    )}
+                    {isTransporte && servicio.tipoTransporte && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Tipo: {tipoTransporteLabel(servicio.tipoTransporte)}
                       </p>
                     )}
                     <div className="mb-3">
@@ -126,7 +149,7 @@ export default async function ServiciosPage({
                           }
                         }}
                       >
-                        Reservar ahora
+                        {isTransporte ? "Contratar transporte" : "Reservar ahora"}
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Link>
                     </Button>

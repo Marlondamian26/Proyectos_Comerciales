@@ -6,6 +6,7 @@ import { BusinessError } from "@/shared/types";
 import prisma from "@/lib/db/prisma";
 import { DisponibilidadService } from "@/services/DisponibilidadService";
 import { normalizarFecha } from "@/shared/utils/fecha";
+import { Prisma } from "@/generated/prisma/client";
 
 const dispService = new DisponibilidadService();
 
@@ -34,6 +35,7 @@ export async function PATCH(
 
     const body = await request.json();
     const cantidad = body.cantidad;
+    const metadata = body.metadata;
 
     if (!cantidad || cantidad < 1) {
       return NextResponse.json(
@@ -74,7 +76,12 @@ export async function PATCH(
 
     await prisma.carritoItem.update({
       where: { id: itemId },
-      data: { cantidad },
+      data: {
+        cantidad,
+        ...(metadata
+          ? { metadata: metadata as Prisma.InputJsonValue }
+          : {}),
+      },
     });
 
     return NextResponse.json({ success: true, cantidad });

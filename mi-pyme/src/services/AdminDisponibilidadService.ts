@@ -18,6 +18,10 @@ import {
 } from "@/shared/utils/fecha";
 import { CODIGO_FECHA_INVALIDA } from "@/core/constants";
 import { DisponibilidadService } from "./DisponibilidadService";
+import { NotificacionService } from "./NotificacionService";
+import type { EventoNotificacion } from "@/shared/notificaciones.types";
+
+const notificacionService = new NotificacionService();
 
 export class AdminDisponibilidadService extends Service {
   private dispService: DisponibilidadService;
@@ -99,11 +103,30 @@ export class AdminDisponibilidadService extends Service {
     });
 
     await this.dispService.invalidateProductoCache(productoId, fechaNorm);
+
+    // Notificación: DISPONIBILIDAD_AGOTADA → al negocio dueño (cantidad = 0)
+    if (cantidad === 0) {
+      const producto = await prisma.producto.findUnique({
+        where: { id: productoId },
+        select: { negocioId: true, nombre: true },
+      });
+      if (producto) {
+        void notificacionService.emitir({
+          tipo: "DISPONIBILIDAD_AGOTADA",
+          titulo: "Disponibilidad agotada",
+          mensaje: `La disponibilidad de "${producto.nombre}" está en cero para la fecha seleccionada.`,
+          enlace: "/negocio/disponibilidad",
+          metadata: { productoId, negocioId: producto.negocioId },
+          actorId: null,
+          destinatarioNegocioId: producto.negocioId,
+        } as EventoNotificacion);
+      }
+    }
   }
 
   /**
     * Aplica la misma cantidad a varios días. Idempotente: upsert por día.
-   */
+    */
   async bulkSetDisponibilidad(
     productoId: string,
     fechas: Array<Date | string | number>,

@@ -19,7 +19,9 @@ export const cacheTTL = {
   logistica: 3600,
   checkout: 1800,
   reportes: 600,
-  usuarios: 600,
-  solicitudes: 600,
-  default: 600,
+   usuarios: 600,
+   solicitudes: 600,
+   descuentos: 300,
+   notificaciones: 30,
+   default: 600,
 } as const;

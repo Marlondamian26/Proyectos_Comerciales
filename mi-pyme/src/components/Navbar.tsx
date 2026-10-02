@@ -2,12 +2,21 @@
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { GlobalSearchBar } from "@/components/GlobalSearchBar";
+import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Search } from "lucide-react";
+
+const GlobalSearchBar = dynamic(
+  () => import("@/components/GlobalSearchBar").then((mod) => mod.GlobalSearchBar),
+  {
+    ssr: false,
+    loading: () => <div className="w-64 h-9" />,
+  }
+);
 
 export interface NavItem {
   label: string;
@@ -133,7 +142,8 @@ export function Navbar({ userRol, esDuenoDeNegocio }: NavbarProps) {
             <SearchDropdown userRol={userRol} />
           )}
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center gap-1">
+          <NotificacionBell />
           <ThemeToggle />
         </div>
       </nav>

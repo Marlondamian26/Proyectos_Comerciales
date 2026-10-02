@@ -11,7 +11,15 @@ import { ICache, getCache } from "@/infrastructure";
 import { cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { BusinessError } from "@/shared/types";
 import { normalizarFecha } from "@/shared/utils/fecha";
+import {
+  CODIGO_METADATA_REQUERIDA,
+  CODIGO_FECHA_INVALIDA,
+  CODIGO_RUTA_NO_CUBIERTA,
+  CODIGO_PESO_EXCEDIDO,
+} from "@/core/constants";
+import { Prisma } from "@/generated/prisma/client";
 import type { Carrito, CarritoItem } from "@/generated/prisma/client";
+import type { TipoServicio } from "@/generated/prisma/client";
 import { DisponibilidadService } from "./DisponibilidadService";
 import type { ValidacionCarritoItem } from "@/shared/disponibilidad.types";
 
@@ -19,7 +27,7 @@ export type CarritoConItems = Carrito & {
   items: Array<
     CarritoItem & {
       producto?: { nombre: string; negocioId: string } | null;
-      servicio?: { nombre: string; negocioId: string } | null;
+      servicio?: { nombre: string; negocioId: string; tipo: string } | null;
     }
   >;
 };
@@ -29,6 +37,7 @@ export interface AddItemParams {
   servicioId?: string;
   cantidad?: number;
   fechaEntrega?: Date | string | number;
+  metadata?: Record<string, unknown>;
 }
 
 export class CartService extends Service {
@@ -99,10 +108,24 @@ export class CartService extends Service {
     } else if (datos.servicioId) {
       const servicio = await prisma.servicio.findUnique({
         where: { id: datos.servicioId },
-        select: { activo: true },
+        select: {
+          activo: true,
+          tipo: true,
+          tipoTransporte: true,
+          pesoMaximo: true,
+          origenBase: true,
+          destinoBase: true,
+          alcanceNacional: true,
+          precio: true,
+        },
       });
       if (!servicio || !servicio.activo) {
         throw new BusinessError("Servicio no encontrado o no disponible");
+      }
+
+      if (servicio.tipo === "TRANSPORTE") {
+        await this.validarTransporteMetadata(servicio, datos.metadata);
+        precioUnitario = Number(servicio.precio ?? 0);
       }
     } else {
       throw new BusinessError("Se requiere productoId o servicioId");
@@ -147,17 +170,23 @@ export class CartService extends Service {
         fechaEntrega
       );
     } else if (datos.servicioId) {
-      await this.dispService.puedeReservarServicio(
-        datos.servicioId,
-        fechaEntrega,
-        cantidadTotal
-      );
+      const servicio = await prisma.servicio.findUnique({
+        where: { id: datos.servicioId },
+        select: { tipo: true },
+      });
+      if (servicio?.tipo !== "TRANSPORTE") {
+        await this.dispService.puedeReservarServicio(
+          datos.servicioId,
+          fechaEntrega,
+          cantidadTotal
+        );
+      }
     }
 
     if (existingItem) {
       await prisma.carritoItem.update({
         where: { id: existingItem.id },
-        data: { cantidad: cantidadTotal, fechaEntrega },
+        data: { cantidad: cantidadTotal, fechaEntrega, metadata: datos.metadata as Prisma.InputJsonValue | undefined },
       });
     } else {
       await prisma.carritoItem.create({
@@ -169,6 +198,7 @@ export class CartService extends Service {
           precioUnitario,
           tipo,
           fechaEntrega,
+          metadata: datos.metadata as Prisma.InputJsonValue | undefined,
         },
       });
     }
@@ -193,6 +223,90 @@ export class CartService extends Service {
 
     await this.cache.set(cacheKeys.carrito.usuario(userId), updatedCart, cacheTTL.carrito);
     return updatedCart;
+  }
+
+  private async validarTransporteMetadata(
+    servicio: {
+      tipo: TipoServicio;
+      tipoTransporte: string | null;
+      pesoMaximo: { toNumber(): number } | null;
+      origenBase: string | null;
+      destinoBase: string | null;
+      alcanceNacional: boolean;
+    },
+    metadata: Record<string, unknown> | undefined
+  ): Promise<void> {
+    if (!metadata) {
+      throw new BusinessError(
+        "Se requieren datos de origen, destino y fecha para servicios de transporte",
+        CODIGO_METADATA_REQUERIDA,
+        400
+      );
+    }
+
+    const origen = metadata.origen as string | undefined;
+    const destino = metadata.destino as string | undefined;
+    const fecha = metadata.fecha as string | undefined;
+    const peso = metadata.peso as number | string | undefined;
+
+    if (!origen || !destino) {
+      throw new BusinessError(
+        "Origen y destino son requeridos para servicios de transporte",
+        CODIGO_METADATA_REQUERIDA,
+        400
+      );
+    }
+
+    if (!fecha) {
+      throw new BusinessError(
+        "La fecha es requerida para servicios de transporte",
+        CODIGO_METADATA_REQUERIDA,
+        400
+      );
+    }
+
+    const fechaDate = new Date(fecha);
+    if (isNaN(fechaDate.getTime()) || fechaDate <= new Date()) {
+      throw new BusinessError(
+        "La fecha debe ser futura para servicios de transporte",
+        CODIGO_FECHA_INVALIDA,
+        400
+      );
+    }
+
+    if (servicio.alcanceNacional) {
+      void origen;
+      void destino;
+    } else {
+      const origenServicio = servicio.origenBase;
+      const destinoServicio = servicio.destinoBase;
+      if (origenServicio && origen !== origenServicio) {
+        throw new BusinessError(
+          `El origen debe ser ${origenServicio} para este servicio de transporte`,
+          CODIGO_RUTA_NO_CUBIERTA,
+          400
+        );
+      }
+      if (destinoServicio && destino !== destinoServicio) {
+        throw new BusinessError(
+          `El destino debe ser ${destinoServicio} para este servicio de transporte`,
+          CODIGO_RUTA_NO_CUBIERTA,
+          400
+        );
+      }
+    }
+
+    if (peso !== undefined && servicio.pesoMaximo) {
+      const pesoNum = typeof peso === "string" ? Number(peso) : peso;
+      const pesoMax = Number(servicio.pesoMaximo.toNumber?.() ?? servicio.pesoMaximo);
+      if (pesoNum > pesoMax) {
+        throw new BusinessError(
+          `El peso (${pesoNum}) excede el máximo permitido (${pesoMax}) para este servicio de transporte`,
+          CODIGO_PESO_EXCEDIDO,
+          400
+        );
+      }
+    }
   }
 
   async eliminarCarritoItem(
@@ -270,7 +384,7 @@ export class CartService extends Service {
             fechaItem
           );
           const valido =
-            cupos.disponible && cupos.cuposDisponibles + item.cantidad <= cupos.capacidad;
+            cupos.disponible && cupos.cuposDisponibles >= item.cantidad;
           if (!valido) {
             problema = `No hay cupos suficientes (cupos: ${cupos.cuposDisponibles})`;
           }

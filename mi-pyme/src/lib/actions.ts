@@ -1,6 +1,7 @@
 "use server";
 
-import { Prisma, TratamientoIVA, type MetodoPago } from "@/generated/prisma/client";
+import { Prisma, TratamientoIVA } from "@/generated/prisma/client";
+import type { MetodoPago } from "@/generated/prisma/client";
 
 import prisma from "@/lib/db/prisma";
 import { cachedQuery } from "@/lib/db/prisma";
@@ -26,7 +27,27 @@ import IVAService, { type GrupoItemInput } from "@/services/IVAService";
 import FacturaService from "@/services/FacturaService";
 import { assertPertenencia } from "@/services/utils/permisos";
 import { normalizarFecha } from "@/shared/utils/fecha";
-import { CODIGO_SIN_DISPONIBILIDAD } from "@/core/constants";
+import { PromocionService } from "@/services/PromocionService";
+import { CuponService } from "@/services/CuponService";
+import { ComboService } from "@/services/ComboService";
+import { DescuentoService } from "@/services/DescuentoService";
+import { NotificacionService } from "@/services/NotificacionService";
+import type {
+  EventoNotificacion,
+  TipoNotificacion,
+  EstadoNotificacion,
+} from "@/shared/notificaciones.types";
+export type { TipoNotificacion, EstadoNotificacion } from "@/shared/notificaciones.types";
+export type { CategoriaNotificacion, CATEGORIA_NOTIFICACION, ETIQUETA_CATEGORIA } from "@/shared/notificaciones.types";
+import { CODIGO_SIN_DISPONIBILIDAD, CODIGO_METADATA_REQUERIDA, CODIGO_FECHA_INVALIDA, CODIGO_CUPON_INVALIDO } from "@/core/constants";
+import type {
+  CrearPromocionParams,
+  ActualizarPromocionParams,
+  CrearCuponParams,
+  ActualizarCuponParams,
+  CrearComboParams,
+  ActualizarComboParams,
+} from "@/shared/descuentos.types";
 import type { ConfirmarCheckoutPayload, RecalcularSeleccion } from "@/shared/checkout.types";
 
 const RESERVA_TTL_MS = 15 * 60 * 1000;
@@ -38,6 +59,57 @@ const pagoService = new PagoService();
 const ivaService = new IVAService();
 const facturaService = new FacturaService();
 facturaService.setPagoService(pagoService);
+const promocionService = new PromocionService();
+const cuponService = new CuponService();
+const comboService = new ComboService();
+const descuentoService = new DescuentoService();
+const notificacionService = new NotificacionService();
+
+/**
+ * Emite una notificación de forma NO BLOQUEANTE.
+ *
+ * `NotificacionService.emitir` ya envuelve todo en try/catch interno y nunca
+ * relanza; además el envío de email es asíncrono (EmailQueue). El `void` aquí
+ * garantiza que, incluso en el peor caso, la promesa no se propague al caller.
+ * Si `emitir` falla, el flujo principal continúa sin interrupciones.
+ */
+function emitirNotificacionSafe(evento: EventoNotificacion): void {
+  void notificacionService.emitir(evento);
+}
+
+/**
+ * Obtiene el negocio asociado al pedido de un pago.
+ */
+async function getNegocioDelPago(pagoId: string): Promise<{ id: string; nombre: string; userId?: string | null } | null> {
+  const pago = await prisma.pago.findUnique({
+    where: { id: pagoId },
+    select: {
+      pedido: {
+        select: {
+          negocio: { select: { id: true, nombre: true, userId: true } },
+        },
+      },
+    },
+  });
+  return pago?.pedido?.negocio ?? null;
+}
+
+/**
+ * Obtiene el cliente (usuario) asociado a un pedido de un pago.
+ */
+async function getUsuarioDelPago(pagoId: string): Promise<{ id: string; email?: string | null; nombre?: string | null } | null> {
+  const pago = await prisma.pago.findUnique({
+    where: { id: pagoId },
+    select: {
+      pedido: {
+        select: {
+          usuario: { select: { id: true, email: true, nombre: true } },
+        },
+      },
+    },
+  });
+  return pago?.pedido?.usuario ?? null;
+}
 
 async function logAudit(
   eventType: string,
@@ -180,6 +252,7 @@ export async function listarServicios(options?: {
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
+  tipo?: string;
 }) {
   const cacheKey = cacheKeys.catalogo.servicios(options);
 
@@ -199,6 +272,7 @@ export async function listarServicios(options?: {
         ...(options?.negocioId && { negocioId: options.negocioId }),
         ...(options?.subareaId && { subareaId: options.subareaId }),
         ...(options?.areaId && { negocio: { areaId: options.areaId } }),
+        ...(options?.tipo && { tipo: options.tipo as "SERVICIO_GENERAL" | "TRANSPORTE" }),
       },
       include: {
         negocio: true,
@@ -234,6 +308,7 @@ export async function anadirItemCarrito(
     servicioId?: string;
     cantidad?: number;
     fechaEntrega?: Date | string | number;
+    metadata?: Record<string, unknown>;
   }
 ) {
   const cantidad = datos.cantidad ?? 1;
@@ -266,11 +341,31 @@ export async function anadirItemCarrito(
   } else if (datos.servicioId) {
     const servicio = await prisma.servicio.findUnique({
       where: { id: datos.servicioId },
-      select: { activo: true },
+      select: { activo: true, tipo: true, precio: true },
     });
     if (!servicio || !servicio.activo) {
       throw new Error("Servicio no encontrado o no disponible");
     }
+    if (servicio.tipo === "TRANSPORTE") {
+      if (!datos.metadata?.origen || !datos.metadata?.destino || !datos.metadata?.fecha) {
+        throw new BusinessError(
+          "Se requieren origen, destino y fecha para servicios de transporte",
+          CODIGO_METADATA_REQUERIDA,
+          400
+        );
+      }
+      const fechaTransporte = new Date(datos.metadata.fecha as string);
+      if (isNaN(fechaTransporte.getTime()) || fechaTransporte <= new Date()) {
+        throw new BusinessError(
+          "La fecha debe ser futura para servicios de transporte",
+          CODIGO_FECHA_INVALIDA,
+          400
+        );
+      }
+      precioUnitario = Number(servicio.precio ?? 0);
+    }
+  } else {
+    throw new Error("Se requiere productoId o servicioId");
   }
 
   const existingItem = await prisma.carritoItem.findFirst({
@@ -291,17 +386,23 @@ export async function anadirItemCarrito(
       fechaEntrega
     );
   } else if (datos.servicioId) {
-    await disponibilidadService.puedeReservarServicio(
-      datos.servicioId,
-      fechaEntrega,
-      cantidadTotal
-    );
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: datos.servicioId },
+      select: { tipo: true },
+    });
+    if (servicio?.tipo !== "TRANSPORTE") {
+      await disponibilidadService.puedeReservarServicio(
+        datos.servicioId,
+        fechaEntrega,
+        cantidadTotal
+      );
+    }
   }
 
   if (existingItem) {
     await prisma.carritoItem.update({
       where: { id: existingItem.id },
-      data: { cantidad: cantidadTotal, fechaEntrega },
+      data: { cantidad: cantidadTotal, fechaEntrega, metadata: datos.metadata as Prisma.InputJsonValue | undefined },
     });
   } else {
     await prisma.carritoItem.create({
@@ -313,11 +414,12 @@ export async function anadirItemCarrito(
         precioUnitario,
         tipo,
         fechaEntrega,
+        metadata: datos.metadata as Prisma.InputJsonValue | undefined,
       },
     });
   }
 
-  await getCache().del(cacheKeys.carrito.usuario(usuarioId))
+  await getCache().del(cacheKeys.carrito.usuario(usuarioId));
 
   const updatedCart = await prisma.carrito.findUnique({
     where: { id: carrito.id },
@@ -354,6 +456,7 @@ export async function agregarAlCarrito(
     servicioId?: string;
     cantidad?: number;
     fechaEntrega?: Date | string | number;
+    metadata?: Record<string, unknown>;
   }
 ) {
   await requireRole([Rol.CLIENTE, Rol.ADMIN]);
@@ -416,7 +519,13 @@ export async function cancelarReserva(reservaId: string, usuarioId?: string) {
 
   const reserva = await prisma.reserva.findUnique({
     where: { id: reservaId },
-    select: { servicioId: true, fechaHoraInicio: true },
+    select: {
+      servicioId: true,
+      fechaHoraInicio: true,
+      negocioId: true,
+      usuarioId: true,
+      servicio: { select: { nombre: true, negocio: { select: { nombre: true } } } },
+    },
   });
 
   await prisma.reserva.update({
@@ -433,6 +542,40 @@ export async function cancelarReserva(reservaId: string, usuarioId?: string) {
       reserva.fechaHoraInicio
     );
   }
+
+  // Notificación: RESERVA_CANCELADA → al negocio dueño y al cliente
+  void (async () => {
+    if (!reserva?.negocioId) return;
+    const negocio = await prisma.negocio.findUnique({
+      where: { id: reserva.negocioId },
+      select: { userId: true },
+    });
+    const negocioOwnerId = negocio?.userId;
+
+    if (negocioOwnerId) {
+      emitirNotificacionSafe({
+        tipo: "RESERVA_CANCELADA",
+        titulo: `Reserva cancelada`,
+        mensaje: `Una reserva de ${reserva.servicio.nombre ?? ""} fue cancelada.`,
+        enlace: "/negocio/reservas",
+        metadata: { reservaId, negocioId: reserva.negocioId, servicioId: reserva.servicioId },
+        actorId: usuarioId ?? null,
+        destinatarioUserId: negocioOwnerId,
+      });
+    }
+
+    if (reserva.usuarioId && !usuarioId) {
+      emitirNotificacionSafe({
+        tipo: "RESERVA_CANCELADA",
+        titulo: `Reserva cancelada`,
+        mensaje: `Tu reserva fue cancelada.`,
+        enlace: "/reservas",
+        metadata: { reservaId, negocioId: reserva.negocioId, servicioId: reserva.servicioId },
+        actorId: usuarioId ?? null,
+        destinatarioUserId: reserva.usuarioId,
+      });
+    }
+  })();
 }
 
 export async function crearReserva(
@@ -440,6 +583,7 @@ export async function crearReserva(
   datos: {
     servicioId: string;
     fechaHoraInicio: string;
+    metadata?: Record<string, unknown>;
   }
 ) {
   await requireRole([Rol.CLIENTE, Rol.ADMIN]);
@@ -452,6 +596,7 @@ export async function crearReserva(
       duracionMinutos: true,
       capacidad: true,
       negocioId: true,
+      tipo: true,
     },
   });
 
@@ -485,16 +630,28 @@ export async function crearReserva(
       fechaHoraFin: fechaFin,
       venceEn,
       estado: "pendiente",
+      metadata: datos.metadata as Prisma.InputJsonValue | undefined,
     },
   });
 
     await getCache().del(cacheKeys.reservas.usuario(usuarioId))
     await disponibilidadService.invalidateServicioCache(
-    datos.servicioId,
-    fechaInicio
-  );
+      datos.servicioId,
+      fechaInicio
+    );
 
-  return reserva;
+    // Notificación: RESERVA_CREADA → al negocio dueño (actor: cliente)
+    emitirNotificacionSafe({
+      tipo: "RESERVA_CREADA",
+      titulo: `Nueva reserva`,
+      mensaje: `Hay una nueva reserva para tu servicio.`,
+      enlace: "/negocio/reservas",
+      metadata: { servicioId: datos.servicioId, negocioId: servicio.negocioId, reservaId: reserva.id },
+      actorId: usuarioId,
+      destinatarioNegocioId: servicio.negocioId,
+    });
+
+    return reserva;
 }
 
 export async function listarPedidos(usuarioId: string, options?: { page?: number; limit?: number; search?: string; estado?: string }) {
@@ -740,6 +897,32 @@ export async function crearPedido(
     }
   }
 
+  // Notificación: PEDIDO_CREADO → al negocio dueño (no al cliente creador)
+  emitirNotificacionSafe({
+    tipo: "PEDIDO_CREADO",
+    titulo: `Nuevo pedido #${pedido.id.substring(0, 8)}`,
+    mensaje: `Hay un nuevo pedido. Revisa tu panel de negocio.`,
+    enlace: "/negocio/pedidos",
+    metadata: { negocioId: pedido.negocioId, pedidoId: pedido.id },
+    actorId: usuarioId,
+    destinatarioNegocioId: pedido.negocioId,
+  });
+
+  // Notificación: TRANSPORTE_CONTRATADO → al negocio proveedor de servicios de transporte
+  for (const item of carrito.items) {
+    if (item.servicio?.tipo === "TRANSPORTE") {
+      emitirNotificacionSafe({
+        tipo: "TRANSPORTE_CONTRATADO",
+        titulo: "Transporte contratado",
+        mensaje: `Se contrató tu servicio de transporte para un pedido.`,
+        enlace: "/logistica",
+        metadata: { pedidoId: pedido.id, servicioId: item.servicioId },
+        actorId: usuarioId,
+        destinatarioNegocioId: item.servicio.negocioId,
+      });
+    }
+  }
+
   return pedido;
 }
 
@@ -830,6 +1013,17 @@ export async function actualizarEstadoPedido(
   if (pedido) {
     await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + pedido.usuarioId + ":");
     await getCache().invalidatePrefix(cachePrefixes.logisticaPedidos);
+
+    // Notificación: PEDIDO_ESTADO_CAMBIADO → al cliente (actor: LOGISTICA/ADMIN)
+    emitirNotificacionSafe({
+      tipo: "PEDIDO_ESTADO_CAMBIADO",
+      titulo: `Estado del pedido actualizado`,
+      mensaje: `Tu pedido cambió a: ${estado}.`,
+      enlace: "/pedidos",
+      metadata: { pedidoId, pedidoEstado: estado, negocioId: pedido.negocioId },
+      actorId: null,
+      destinatarioUserId: pedido.usuarioId,
+    });
   }
 
   return pedido;
@@ -863,16 +1057,35 @@ export async function asignarLogistica(
     },
   });
 
-   await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + pedido.usuarioId + ":");
-   await getCache().invalidatePrefix(cachePrefixes.logisticaPedidos);
+    await getCache().invalidatePrefix(cachePrefixes.pedidosUsuario + pedido.usuarioId + ":");
+    await getCache().invalidatePrefix(cachePrefixes.logisticaPedidos);
 
-   return pedido;
+    // Notificación: PEDIDO_ASIGNADO_LOGISTICA → al proveedor logístico
+    void (async () => {
+      const proveedor = await prisma.proveedorLogistico.findUnique({
+        where: { id: opcionLogistica.proveedorId },
+        select: { usuarioId: true },
+      });
+      if (proveedor?.usuarioId) {
+        emitirNotificacionSafe({
+          tipo: "PEDIDO_ASIGNADO_LOGISTICA",
+          titulo: `Pedido asignado #${pedido.id.substring(0, 8)}`,
+          mensaje: `Se te asignó un pedido para gestionar su envío (${pedido.opcionLogistica?.nombre ?? ""}).`,
+          enlace: "/logistica",
+          metadata: { pedidoId, negocioId: pedido.negocioId, clienteId: pedido.usuarioId },
+          actorId: null,
+          destinatarioUserId: proveedor.usuarioId,
+        });
+      }
+    })();
+
+    return pedido;
   }
 
   export async function asignarLogisticaForm(
    prevState: { error?: string; ok?: boolean } | undefined,
-   data: FormData
-) {
+    data: FormData
+  ) {
     const pedidoId = data.get("pedidoId") as string;
     const opcionLogisticaId = data.get("opcionLogisticaId") as string;
 
@@ -1723,6 +1936,17 @@ export async function registrarUsuario(
       },
     });
 
+    // Notificación: BIENVENIDA → al nuevo usuario (no hay actor, no auto-skip)
+    emitirNotificacionSafe({
+      tipo: "BIENVENIDA",
+      titulo: "¡Bienvenido a Mi-Pyme!",
+      mensaje: "Gracias por registrarte. Explora el catálogo y comienza a pedir.",
+      enlace: "/catalogo",
+      metadata: { userId: user.id, nombre: user.nombre },
+      actorId: null,
+      destinatarioUserId: user.id,
+    });
+
     return { success: true, userId: user.id };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -1846,6 +2070,17 @@ export async function cambiarPassword(
   }
 
   await logAudit("PASSWORD_CAMBIADO", usuarioId, usuarioId, {});
+
+  // Notificación: PASSWORD_CAMBIADO → email only (al usuario)
+  emitirNotificacionSafe({
+    tipo: "PASSWORD_CAMBIADO",
+    titulo: "Contraseña actualizada",
+    mensaje: "Se cambió la contraseña de tu cuenta recientemente.",
+    enlace: "/perfil",
+    metadata: { usuarioId },
+    actorId: null,
+    destinatarioUserId: usuarioId,
+  });
 
   return { success: true };
 }
@@ -2211,6 +2446,7 @@ export async function listarServiciosConCupos(filtros?: {
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
+  tipo?: string;
 }) {
   const cacheKey = cacheKeys.catalogo.servicios(filtros);
   return cachedQuery(cacheKey, async () => {
@@ -2222,6 +2458,7 @@ export async function listarServiciosConCupos(filtros?: {
         ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
         ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
         ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(filtros?.tipo && { tipo: filtros.tipo as "SERVICIO_GENERAL" | "TRANSPORTE" }),
       },
       include: {
         negocio: true,
@@ -2580,6 +2817,7 @@ export async function crearServicioAction(
     descripcion?: string | null;
     duracionMinutos: number;
     capacidad: number;
+    precio: number;
     imagenUrl: string;
     horariosDisponibles: Record<string, string[]>;
     subareaId: string;
@@ -2587,6 +2825,13 @@ export async function crearServicioAction(
     permiteReservas?: boolean;
     tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
     tasaIVAOverride?: number | string | null;
+    tipo?: "SERVICIO_GENERAL" | "TRANSPORTE";
+    tipoTransporte?: "ENVIO_PAQUETE" | "MUDANZA" | "TRASLADO_MUEBLE" | "TRANSPORTE_PERSONAS" | "OTRO" | null;
+    pesoMaximo?: number | string | null;
+    dimensionesMaximas?: string | null;
+    origenBase?: string | null;
+    destinoBase?: string | null;
+    alcanceNacional?: boolean;
   }
 ) {
   const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
@@ -2609,6 +2854,7 @@ export async function actualizarServicioAction(
     descripcion?: string | null;
     duracionMinutos: number;
     capacidad: number;
+    precio: number;
     imagenUrl: string;
     horariosDisponibles: Record<string, string[]>;
     subareaId: string;
@@ -2616,6 +2862,13 @@ export async function actualizarServicioAction(
     permiteReservas?: boolean;
     tratamientoIVA?: "GRAVADO" | "EXENTO" | "NO_SUJETO";
     tasaIVAOverride?: number | string | null;
+    tipo?: "SERVICIO_GENERAL" | "TRANSPORTE";
+    tipoTransporte?: "ENVIO_PAQUETE" | "MUDANZA" | "TRASLADO_MUEBLE" | "TRANSPORTE_PERSONAS" | "OTRO" | null;
+    pesoMaximo?: number | string | null;
+    dimensionesMaximas?: string | null;
+    origenBase?: string | null;
+    destinoBase?: string | null;
+    alcanceNacional?: boolean;
   }>
 ) {
   const session = await requireRole([Rol.NEGOCIO, Rol.ADMIN]);
@@ -2754,6 +3007,18 @@ export async function crearSolicitudAltaAction(datos: {
   const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
   const result = await solicitudAltaService.crearSolicitud(session.id, datos);
   revalidatePath("/admin/solicitudes");
+
+  // Notificación: SOLICITUD_ALTA_CREADA → al admin
+  emitirNotificacionSafe({
+    tipo: "SOLICITUD_ALTA_CREADA",
+    titulo: "Nueva solicitud de alta",
+    mensaje: `${datos.nombreNegocio} solicitó ser dado de alta.`,
+    enlace: "/admin/solicitudes",
+    metadata: { negocioNombre: datos.nombreNegocio, solicitanteId: session.id },
+    actorId: session.id,
+    destinatarioRol: "ADMIN",
+  });
+
   return result;
 }
 
@@ -2786,12 +3051,26 @@ export async function listarSolicitudesAction(estado?: string) {
 
 export async function aprobarNegocioAction(solicitudId: string) {
   const session = await requireRole([Rol.ADMIN]);
-  const result = await solicitudAltaService.aprobarSolicitud(
+   const result = await solicitudAltaService.aprobarSolicitud(
     solicitudId,
     session.id
   );
   revalidatePath("/admin/solicitudes");
   revalidatePath("/negocio");
+
+  // Notificación: SOLICITUD_ALTA_APROBADA → al solicitante
+  if (result.negocio) {
+    emitirNotificacionSafe({
+      tipo: "SOLICITUD_ALTA_APROBADA",
+      titulo: "¡Tu negocio fue aprobado!",
+      mensaje: "Tu negocio ha sido aprobado. Ya puedes comenzar a vender.",
+      enlace: "/negocio",
+      metadata: { negocioId: result.negocio.id, negocioNombre: result.negocio.nombre },
+      actorId: session.id,
+      destinatarioUserId: result.solicitud.userId,
+    });
+  }
+
   return result;
 }
 
@@ -2803,6 +3082,18 @@ export async function rechazarNegocioAction(solicitudId: string, motivo: string)
     motivo
   );
   revalidatePath("/admin/solicitudes");
+
+  // Notificación: SOLICITUD_ALTA_RECHAZADA → al solicitante
+  emitirNotificacionSafe({
+    tipo: "SOLICITUD_ALTA_RECHAZADA",
+    titulo: "Solicitud rechazada",
+    mensaje: `Tu solicitud fue rechazada: ${motivo.substring(0, 80)}`,
+    enlace: "/mis-solicitudes",
+    metadata: { solicitudId, motivo },
+    actorId: session.id,
+    destinatarioUserId: result.userId,
+  });
+
   return result;
 }
 
@@ -3067,6 +3358,23 @@ export async function confirmarPagoAction(pagoId: string, datos?: { notasNegocio
     revalidatePath("/dashboard/negocio/pagos");
     revalidatePath("/admin/pagos");
     revalidatePath(`/pagos/${pagoId}`);
+
+    // Notificación: PAGO_CONFIRMADO → al cliente
+    void (async () => {
+      const usuario = await getUsuarioDelPago(pagoId);
+      if (usuario) {
+        emitirNotificacionSafe({
+          tipo: "PAGO_CONFIRMADO",
+          titulo: "Pago confirmado",
+          mensaje: "Tu pago ha sido confirmado exitosamente.",
+          enlace: "/pagos",
+          metadata: { pagoId, pedidoId: result.pedidoId },
+          actorId: session.id,
+          destinatarioUserId: usuario.id,
+        });
+      }
+    })();
+
     return result;
   } catch (err: unknown) {
     if (err instanceof BusinessError) {
@@ -3089,6 +3397,23 @@ export async function rechazarPagoAction(pagoId: string, motivo: string) {
     revalidatePath("/dashboard/negocio/pagos");
     revalidatePath("/admin/pagos");
     revalidatePath(`/pagos/${pagoId}`);
+
+    // Notificación: PAGO_RECHAZADO → al cliente
+    void (async () => {
+      const usuario = await getUsuarioDelPago(pagoId);
+      if (usuario) {
+        emitirNotificacionSafe({
+          tipo: "PAGO_RECHAZADO",
+          titulo: "Pago rechazado",
+          mensaje: "Tu pago fue rechazado. Contacta con el negocio para más información.",
+          enlace: "/pagos",
+          metadata: { pagoId, pedidoId: result.pedidoId },
+          actorId: session.id,
+          destinatarioUserId: usuario.id,
+        });
+      }
+    })();
+
     return result;
   } catch (err: unknown) {
     if (err instanceof BusinessError) {
@@ -3110,6 +3435,23 @@ export async function reembolsarPagoAction(
     revalidatePath("/dashboard/negocio/pagos");
     revalidatePath("/admin/pagos");
     revalidatePath(`/pagos/${pagoId}`);
+
+    // Notificación: PAGO_REEMBOLSADO → al cliente
+    void (async () => {
+      const usuario = await getUsuarioDelPago(pagoId);
+      if (usuario) {
+        emitirNotificacionSafe({
+          tipo: "PAGO_REEMBOLSADO",
+          titulo: "Pago reembolsado",
+          mensaje: "Tu pago ha sido reembolsado. El dinero será devuelto a tu cuenta.",
+          enlace: "/pagos",
+          metadata: { pagoId, pedidoId: result.pedidoId },
+          actorId: session.id,
+          destinatarioUserId: usuario.id,
+        });
+      }
+    })();
+
     return result;
   } catch (err: unknown) {
     if (err instanceof BusinessError) {
@@ -3197,6 +3539,33 @@ export async function subirComprobanteAction(
     revalidatePath("/pagos");
     revalidatePath("/dashboard/negocio/pagos");
     revalidatePath(`/pagos/${pagoId}`);
+
+    // Notificación: PAGO_COMPROBANTE_SUBIDO → al negocio dueño + admin
+    void (async () => {
+      const negocio = await getNegocioDelPago(pagoId);
+      if (negocio) {
+        emitirNotificacionSafe({
+          tipo: "PAGO_COMPROBANTE_SUBIDO",
+          titulo: "Comprobante subido",
+          mensaje: `El cliente subió el comprobante para el pedido.`,
+          enlace: "/negocio/pagos",
+          metadata: { pagoId, negocioId: negocio.id, pedidoId: result.pedidoId },
+          actorId: session.id,
+          destinatarioNegocioId: negocio.id,
+        });
+      }
+      // A los admins
+      emitirNotificacionSafe({
+        tipo: "PAGO_COMPROBANTE_SUBIDO",
+        titulo: "Comprobante subido",
+        mensaje: `Un cliente subió el comprobante de pago para revisión.`,
+        enlace: "/admin/pagos",
+        metadata: { pagoId, negocioId: negocio?.id ?? null, pedidoId: result.pedidoId },
+        actorId: session.id,
+        destinatarioRol: "ADMIN",
+      });
+    })();
+
     return result;
   } catch (err: unknown) {
     if (err instanceof BusinessError) {
@@ -3274,6 +3643,25 @@ export async function regenerarCodigoEntregaAction(pagoId: string, motivo: strin
   try {
     const result = await pagoService.regenerarCodigoEntrega(pagoId, session.id, motivo);
     revalidatePath(`/pagos/${pagoId}`);
+
+    // Notificación: CODIGO_ENTREGA_REGENERADO → al cliente.
+    // No se pasa actorId para no bloquear auto-notificación (el cliente
+    // necesita saber que su código fue regenerado).
+    void (async () => {
+      const usuario = await getUsuarioDelPago(pagoId);
+      if (usuario) {
+        emitirNotificacionSafe({
+          tipo: "CODIGO_ENTREGA_REGENERADO",
+          titulo: "Código de entrega regenerado",
+          mensaje: "Se ha regenerado tu código de entrega.",
+          enlace: "/pagos",
+          metadata: { pagoId },
+          actorId: null,
+          destinatarioUserId: usuario.id,
+        });
+      }
+    })();
+
     return { codigo: result };
   } catch (err: unknown) {
     if (err instanceof BusinessError) {
@@ -3321,4 +3709,318 @@ export async function validarCodigoEntregaAction(pagoId: string, codigo: string)
     }
     return { error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Promociones (Multi-negocio Avanzado - Punto 12)
+// ---------------------------------------------------------------------------
+
+export async function listarPromocionesAction(negocioId?: string, filtros?: { estado?: string; search?: string }) {
+  try {
+    const result = await promocionService.listPromociones(negocioId, filtros);
+    return { promociones: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function crearPromocionAction(datos: CrearPromocionParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await promocionService.crearPromocion(datos.negocioId, datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/promociones");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { promocion: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function actualizarPromocionAction(id: string, datos: ActualizarPromocionParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await promocionService.actualizarPromocion(id, datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/promociones");
+    revalidatePath("/dashboard/admin/descuentos");
+    revalidatePath(`/dashboard/negocio/promociones/${id}`);
+    return { promocion: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function eliminarPromocionAction(id: string) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    await promocionService.eliminarPromocion(id, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/promociones");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { ok: true };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function pausarPromocionAction(id: string) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await promocionService.pausarPromocion(id, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/promociones");
+    return { promocion: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function reactivarPromocionAction(id: string) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await promocionService.reactivarPromocion(id, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/promociones");
+    return { promocion: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cupones (Multi-negocio Avanzado - Punto 12)
+// ---------------------------------------------------------------------------
+
+export async function listarCuponesAction(negocioId?: string, filtros?: { estado?: string; search?: string }) {
+  try {
+    const result = await cuponService.listCupones(negocioId, filtros);
+    return { cupones: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function crearCuponAction(datos: CrearCuponParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await cuponService.crearCupon(datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/cupones");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { cupon: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function actualizarCuponAction(id: string, datos: ActualizarCuponParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await cuponService.actualizarCupon(id, datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/cupones");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { cupon: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function eliminarCuponAction(id: string) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    await cuponService.eliminarCupon(id, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/cupones");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { ok: true };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function validarCuponAction(codigo: string, items: import("@/shared/descuentos.types").ItemCarritoParaDescuento[]) {
+  const session = await requireRole([Rol.CLIENTE, Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await cuponService.validarCupon(codigo, session.id, items);
+    return result;
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Combos (Multi-negocio Avanzado - Punto 12)
+// ---------------------------------------------------------------------------
+
+export async function listarCombosAction(filtros?: { negocioId?: string; activo?: boolean; search?: string }) {
+  try {
+    const result = await comboService.listCombos(filtros);
+    return { combos: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function crearComboAction(datos: CrearComboParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await comboService.crearCombo(datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/combos");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { combo: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function actualizarComboAction(id: string, datos: ActualizarComboParams) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    const result = await comboService.actualizarCombo(id, datos, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/combos");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { combo: result };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function eliminarComboAction(id: string) {
+  const session = await requireRole([Rol.ADMIN, Rol.NEGOCIO]);
+  try {
+    await comboService.eliminarCombo(id, session.id, session.rol);
+    revalidatePath("/dashboard/negocio/combos");
+    revalidatePath("/dashboard/admin/descuentos");
+    return { ok: true };
+  } catch (err: unknown) {
+    if (err instanceof BusinessError) {
+      return { error: err.message, codigo: err.code, statusCode: err.status };
+    }
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// -- Notificaciones --
+
+export async function listarNotificacionesAction(
+  options?: {
+    tipo?: TipoNotificacion[];
+    estado?: EstadoNotificacion[];
+    page?: number;
+    limit?: number;
+  }
+) {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  return notificacionService.listar(session.id, {
+    tipo: options?.tipo,
+    estado: options?.estado,
+    page: options?.page,
+    limit: options?.limit,
+  });
+}
+
+export async function contarNoLeidasAction() {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  return { count: await notificacionService.contarNoLeidas(session.id) };
+}
+
+export async function marcarLeidaAction(id: string) {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  await notificacionService.marcarLeida(id, session.id);
+  revalidatePath("/notificaciones");
+  return { ok: true };
+}
+
+export async function marcarTodasLeidasAction() {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  const count = await notificacionService.marcarTodasLeidas(session.id);
+  return { ok: true, count };
+}
+
+export async function archivarNotificacionAction(id: string) {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  await notificacionService.archivar(id, session.id);
+  revalidatePath("/notificaciones");
+  return { ok: true };
+}
+
+export async function eliminarNotificacionAction(id: string) {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  await notificacionService.eliminar(id, session.id);
+  revalidatePath("/notificaciones");
+  return { ok: true };
+}
+
+export async function getPreferenciasNotificacionAction() {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  return notificacionService.getPreferencias(session.id);
+}
+
+export async function actualizarPreferenciasNotificacionAction(
+  preferencias: Array<{ tipo: string; inApp: boolean; email: boolean }>
+) {
+  const session = await requireRole(
+    [Rol.ADMIN, Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]
+  );
+  const result = await notificacionService.actualizarPreferencias(
+    session.id,
+    preferencias as Array<{ tipo: TipoNotificacion; inApp: boolean; email: boolean }>
+  );
+  return result;
+}
+
+export async function emitirNotificacionAction(evento: EventoNotificacion) {
+  await requireRole([Rol.ADMIN]);
+  await notificacionService.emitirOrThrow(evento);
+  return { ok: true };
 }

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { EstadoPagoBadge } from "./EstadoPagoBadge";
 import { Badge } from "@/components/ui/Badge";
+import Image from "next/image";
 import type { PagoConRelacionesDTO } from "@/shared/pagos.types";
 
 export interface ReciboPagoProps {
@@ -98,9 +99,11 @@ export function ReciboPago({ pago, className }: ReciboPagoProps) {
           <span className="text-sm text-muted-foreground">Comprobante</span>
           <div className="mt-2">
             {pago.comprobanteUrl.match(/\.(png|jpg|jpeg)$/i) ? (
-              <img
+              <Image
                 src={pago.comprobanteUrl}
                 alt="Comprobante de pago"
+                width={320}
+                height={240}
                 className="max-w-xs rounded-md border border-border"
               />
             ) : (

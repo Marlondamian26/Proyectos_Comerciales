@@ -112,10 +112,14 @@ export default function CheckoutPage() {
           setCheckout(result);
           const inicial: Record<string, SeleccionEntregaGrupo> = {};
           result.grupos.forEach((g: GrupoCheckoutDTO) => {
+            const tipoEntrega = g.tieneTransporte ? "RECOGIDA_TIENDA" : "DOMICILIO";
             inicial[g.negocioId] = {
               negocioId: g.negocioId,
-              tipoEntrega: "DOMICILIO",
-              direccionEntrega: result.direccionUsuario ?? undefined,
+              tipoEntrega,
+              direccionEntrega: tipoEntrega === "DOMICILIO" ? result.direccionUsuario ?? undefined : undefined,
+              ...(tipoEntrega === "DOMICILIO" && g.opcionesLogistica.length > 0
+                ? { opcionLogisticaId: g.opcionesLogistica[0]?.id }
+                : {}),
             };
           });
           setSeleccion(inicial);

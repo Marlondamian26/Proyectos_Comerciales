@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -348,7 +349,7 @@ export default function PerfilPage() {
             <div className="relative">
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                 {profile?.image ? (
-                  <img src={profile.image} alt={profile.nombre || "Avatar"} className="w-full h-full object-cover" />
+                   <Image src={profile.image} alt={profile.nombre || "Avatar"} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
                   <User className="h-10 w-10 text-muted-foreground" />
                 )}

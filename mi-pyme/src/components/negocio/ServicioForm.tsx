@@ -35,11 +35,34 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
   const [descripcion, setDescripcion] = useState("");
   const [duracionMinutos, setDuracionMinutos] = useState("");
   const [capacidad, setCapacidad] = useState("");
+  const [precio, setPrecio] = useState("");
   const [imagenUrl, setImagenUrl] = useState("");
   const [subareaId, setSubareaId] = useState("");
   const [activo, setActivo] = useState(true);
   const [areaSeleccionada, setAreaSeleccionada] = useState("");
   const [tratamientoIVA, setTratamientoIVA] = useState<"GRAVADO" | "EXENTO" | "NO_SUJETO">("GRAVADO");
+  const [tipoServicio, setTipoServicio] = useState<"SERVICIO_GENERAL" | "TRANSPORTE">("SERVICIO_GENERAL");
+  const [tipoTransporte, setTipoTransporte] = useState<string>("");
+  const [pesoMaximo, setPesoMaximo] = useState("");
+  const [dimensionesMaximas, setDimensionesMaximas] = useState("");
+  const [origenBase, setOrigenBase] = useState("");
+  const [destinoBase, setDestinoBase] = useState("");
+  const [alcanceNacional, setAlcanceNacional] = useState(false);
+
+  const TIPO_SERVICIO_OPTIONS = [
+    { value: "SERVICIO_GENERAL", label: "Servicio general" },
+    { value: "TRANSPORTE", label: "Transporte (comercializable)" },
+  ];
+
+  const TIPO_TRANSPORTE_OPTIONS = [
+    { value: "ENVIO_PAQUETE", label: "Envío de paquetes" },
+    { value: "MUDANZA", label: "Mudanza" },
+    { value: "TRASLADO_MUEBLE", label: "Traslado de muebles" },
+    { value: "TRANSPORTE_PERSONAS", label: "Transporte de personas" },
+    { value: "OTRO", label: "Otro" },
+  ];
+
+  const isTransporte = tipoServicio === "TRANSPORTE";
 
   const TRATAMIENTO_OPTIONS = [
     { value: "GRAVADO", label: "Gravado (10% IVA)" },
@@ -52,11 +75,19 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
     setDescripcion("");
     setDuracionMinutos("");
     setCapacidad("");
+    setPrecio("");
     setImagenUrl("");
     setSubareaId("");
     setActivo(true);
     setAreaSeleccionada("");
     setTratamientoIVA("GRAVADO");
+    setTipoServicio("SERVICIO_GENERAL");
+    setTipoTransporte("");
+    setPesoMaximo("");
+    setDimensionesMaximas("");
+    setOrigenBase("");
+    setDestinoBase("");
+    setAlcanceNacional(false);
   };
 
   const openCrear = () => {
@@ -71,12 +102,20 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
     setDescripcion(s.descripcion ?? "");
     setDuracionMinutos(String(s.duracionMinutos));
     setCapacidad(String(s.capacidad));
+    setPrecio(s.precio != null ? String(s.precio) : "");
     setImagenUrl(s.imagenUrl);
     setSubareaId(s.subareaId);
     setActivo(s.activo);
     const areaId = s.subarea?.areaId ?? "";
     setAreaSeleccionada(areaId);
     setTratamientoIVA((s.tratamientoIVA as "GRAVADO" | "EXENTO" | "NO_SUJETO") ?? "GRAVADO");
+    setTipoServicio((s.tipo as "SERVICIO_GENERAL" | "TRANSPORTE" | null) ?? "SERVICIO_GENERAL");
+    setTipoTransporte(s.tipoTransporte ?? "");
+    setPesoMaximo(s.pesoMaximo != null ? String(s.pesoMaximo) : "");
+    setDimensionesMaximas(s.dimensionesMaximas ?? "");
+    setOrigenBase(s.origenBase ?? "");
+    setDestinoBase(s.destinoBase ?? "");
+    setAlcanceNacional(s.alcanceNacional ?? false);
     cargarSubareas(areaId);
     setServicioEditando(s);
     setEditMode(true);
@@ -102,31 +141,46 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
     setLoading(true);
     try {
       const horariosDisponibles: Record<string, string[]> = {};
+      const datosBase = {
+        nombre,
+        descripcion: descripcion || null,
+        duracionMinutos: Number(duracionMinutos),
+        capacidad: Number(capacidad),
+        precio: Number(precio) || 0,
+        imagenUrl,
+        subareaId,
+        activo,
+        horariosDisponibles,
+        tratamientoIVA,
+      };
+
+      const datosTransporte = isTransporte
+        ? {
+            tipo: "TRANSPORTE" as const,
+            tipoTransporte: (tipoTransporte || null) as "ENVIO_PAQUETE" | "MUDANZA" | "TRASLADO_MUEBLE" | "TRANSPORTE_PERSONAS" | "OTRO" | null,
+            pesoMaximo: pesoMaximo ? Number(pesoMaximo) : null,
+            dimensionesMaximas: dimensionesMaximas || null,
+            origenBase: origenBase || null,
+            destinoBase: destinoBase || null,
+            alcanceNacional,
+          }
+        : {
+            tipo: "SERVICIO_GENERAL" as const,
+            tipoTransporte: null,
+            pesoMaximo: null,
+            dimensionesMaximas: null,
+            origenBase: null,
+            destinoBase: null,
+            alcanceNacional: false,
+          };
+
+      const datos = { ...datosBase, ...datosTransporte };
+
       if (editMode && servicioEditando) {
-        await actualizarServicioAction(servicioEditando.id, {
-          nombre,
-          descripcion: descripcion || null,
-          duracionMinutos: Number(duracionMinutos),
-          capacidad: Number(capacidad),
-          imagenUrl,
-          subareaId,
-          activo,
-          horariosDisponibles,
-          tratamientoIVA,
-        });
+        await actualizarServicioAction(servicioEditando.id, datos);
         success("Servicio actualizado correctamente");
       } else {
-        await crearServicioAction(negocioId, {
-          nombre,
-          descripcion: descripcion || null,
-          duracionMinutos: Number(duracionMinutos),
-          capacidad: Number(capacidad),
-          imagenUrl,
-          subareaId,
-          activo,
-          horariosDisponibles,
-          tratamientoIVA,
-        });
+        await crearServicioAction(negocioId, datos);
         success("Servicio creado correctamente");
       }
       setModalOpen(false);
@@ -255,8 +309,60 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
               onChange={(e) => setCapacidad(e.target.value)}
               required
               placeholder="5"
+              disabled={isTransporte}
             />
           </div>
+          <Input
+            label="Precio"
+            type="number"
+            min="0"
+            step="0.01"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            required
+            placeholder="0.00"
+          />
+          {isTransporte && (
+            <>
+              <Input
+                label="Peso máximo (kg)"
+                type="number"
+                min="0"
+                step="0.1"
+                value={pesoMaximo}
+                onChange={(e) => setPesoMaximo(e.target.value)}
+                placeholder="20"
+              />
+              <Input
+                label="Dimensiones máximas"
+                value={dimensionesMaximas}
+                onChange={(e) => setDimensionesMaximas(e.target.value)}
+                placeholder="100x60x60 cm"
+              />
+              <Input
+                label="Origen base"
+                value={origenBase}
+                onChange={(e) => setOrigenBase(e.target.value)}
+                disabled={alcanceNacional}
+                placeholder="Pinar del Río"
+              />
+              <Input
+                label="Destino base"
+                value={destinoBase}
+                onChange={(e) => setDestinoBase(e.target.value)}
+                disabled={alcanceNacional}
+                placeholder="La Habana"
+              />
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="alcanceNacional"
+                  checked={alcanceNacional}
+                  onChange={(e) => setAlcanceNacional(e.target.checked)}
+                />
+                <label htmlFor="alcanceNacional" className="text-sm font-medium">Alcance nacional</label>
+              </div>
+            </>
+          )}
           <Input
             label="URL de imagen"
             value={imagenUrl}
@@ -279,12 +385,28 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
              disabled={subareaOptions.length === 0}
            />
            <Select
-             label="Tratamiento IVA"
-             value={tratamientoIVA}
-             onChange={(e) => setTratamientoIVA(e.target.value as "GRAVADO" | "EXENTO" | "NO_SUJETO")}
-             options={TRATAMIENTO_OPTIONS}
-             required
-           />
+              label="Tratamiento IVA"
+              value={tratamientoIVA}
+              onChange={(e) => setTratamientoIVA(e.target.value as "GRAVADO" | "EXENTO" | "NO_SUJETO")}
+              options={TRATAMIENTO_OPTIONS}
+              required
+            />
+            <Select
+              label="Tipo de servicio"
+              value={tipoServicio}
+              onChange={(e) => setTipoServicio(e.target.value as "SERVICIO_GENERAL" | "TRANSPORTE")}
+              options={TIPO_SERVICIO_OPTIONS}
+              required
+            />
+            {isTransporte && (
+              <Select
+                label="Tipo de transporte"
+                value={tipoTransporte}
+                onChange={(e) => setTipoTransporte(e.target.value)}
+                options={TIPO_TRANSPORTE_OPTIONS}
+                required
+              />
+            )}
           <div className="flex items-center gap-2">
             <Checkbox
               id="activo-servicio"

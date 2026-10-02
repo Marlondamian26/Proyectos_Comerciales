@@ -25,6 +25,19 @@ export function SelectorEntrega({
   const showDomicilioFields = seleccion.tipoEntrega === "DOMICILIO";
   const permiteEnvio = grupo.negocio.permiteEnvio;
 
+  if (grupo.tieneTransporte) {
+    return (
+      <fieldset className="space-y-3" id={fieldsetId}>
+        <legend className="text-sm font-semibold text-foreground">
+          Tipo de entrega para {grupo.negocio.nombre}
+        </legend>
+        <div className="rounded-lg bg-info/10 border border-info/20 p-3 text-sm text-info">
+          <p>Transporte incluido en el servicio.</p>
+        </div>
+      </fieldset>
+    );
+  }
+
   const opcionesSelect = grupo.opcionesLogistica.map((op) => ({
     value: op.id,
     label: `${op.nombre} — $${op.costo.toFixed(2)} (${op.tiempoEstimado})`,

@@ -72,7 +72,7 @@ export const cacheKeys = {
     cache: (pagoId: string) => `pago:${pagoId}:codigo-entrega`,
     intentos: (pagoId: string) => `pago:${pagoId}:codigo-intentos`,
   },
-   negocio: {
+  negocio: {
     detalle: (negocioId: string) => `negocio:${negocioId}`,
     horarios: (negocioId: string) => `negocio:${negocioId}:horarios`,
     dashboardFiscal: (negocioId: string, rango?: { desde?: Date; hasta?: Date }) =>
@@ -113,6 +113,23 @@ export const cacheKeys = {
     productosVendidos: (negocioId: string) => `reporte:productos-vendidos:${negocioId}`,
     inventivoEstado: (negocioId: string) => `reporte:inventario-estado:${negocioId}`,
   },
+  descuentos: {
+    promociones: (negocioId?: string, filtros?: Record<string, unknown>) =>
+      buildKey(`descuentos:promociones:${negocioId ?? "all"}`, hashFiltros(filtros)),
+    promocion: (id: string) => `descuentos:promocion:${id}`,
+    cupones: (negocioId?: string, filtros?: Record<string, unknown>) =>
+      buildKey(`descuentos:cupones:${negocioId ?? "all"}`, hashFiltros(filtros)),
+    cupon: (idOrCodigo: string) => `descuentos:cupon:${idOrCodigo}`,
+    combos: (filtros?: Record<string, unknown>) =>
+      buildKey("descuentos:combos", hashFiltros(filtros)),
+    combo: (id: string) => `descuentos:combo:${id}`,
+  },
+  notificaciones: {
+    noLeidas: (userId: string) => `notificaciones:no-leidas:${userId}`,
+    lista: (userId: string, filtros?: Record<string, unknown>) =>
+      buildKey(`notificaciones:lista:${userId}`, hashFiltros(filtros)),
+    preferencias: (userId: string) => `notificaciones:preferencias:${userId}`,
+  },
 };
 
 /**
@@ -140,8 +157,10 @@ export const cachePrefixes = {
   solicitudesPending: "solicitudes:pending",
   usuario: "usuario:",
   usuarios: "usuarios",
-  checkout: "checkout:",
-  codigoEntrega: "pago:codigo-entrega:",
-  dashboard: "dashboard:",
+   checkout: "checkout:",
+   codigoEntrega: "pago:codigo-entrega:",
+   notificaciones: "notificaciones:",
+   dashboard: "dashboard:",
   reporte: "reporte:",
+  descuentos: "descuentos:",
 } as const;

@@ -16,6 +16,7 @@ import { BusinessError } from "@/shared/types";
 import { CartService } from "./CartService";
 import { DisponibilidadService } from "./DisponibilidadService";
 import { LogisticaService } from "./LogisticaService";
+import { DescuentoService } from "./DescuentoService";
 import { logAudit } from "./utils/audit";
 import { normalizarFecha, formatFechaISO } from "@/shared/utils/fecha";
 import {
@@ -32,6 +33,7 @@ import {
   CODIGO_DIAS_EXPIRACION,
 } from "@/core/constants";
 import {
+  Prisma,
   Negocio,
   OpcionLogistica,
   TratamientoIVA,
@@ -61,6 +63,7 @@ export class CheckoutService extends Service {
   private logisticaService: LogisticaService;
   private pagoService: PagoService;
   private ivaService: IVAService;
+  private descuentoService: DescuentoService;
   private cache: ICache;
 
   constructor(cache?: ICache) {
@@ -71,6 +74,7 @@ export class CheckoutService extends Service {
     this.logisticaService = new LogisticaService(this.cache);
     this.pagoService = new PagoService(this.cache);
     this.ivaService = new IVAService();
+    this.descuentoService = new DescuentoService(this.cache);
   }
 
   private generarCheckoutToken(): string {
@@ -84,7 +88,7 @@ export class CheckoutService extends Service {
    */
   async prepararCheckout(
     userId: string,
-    options?: { direccionEntrega?: string }
+    options?: { direccionEntrega?: string; cuponCodigo?: string }
   ): Promise<CheckoutPreparadoDTO> {
     const carrito = await this.cartService.obtenerCarrito(userId);
 
@@ -127,6 +131,9 @@ export class CheckoutService extends Service {
                   negocioId: true,
                   tratamientoIVA: true,
                   tasaIVAOverride: true,
+                  tipo: true,
+                  tipoTransporte: true,
+                  precio: true,
                 },
               })
             : null;
@@ -141,6 +148,7 @@ export class CheckoutService extends Service {
           precioUnitario: item.precioUnitario,
           tipo: item.tipo,
           fechaEntrega: item.fechaEntrega ?? null,
+          metadata: item.metadata ?? null,
           negocioId: resolvedNegocioId,
           producto: producto
             ? {
@@ -159,6 +167,9 @@ export class CheckoutService extends Service {
                 imagenUrl: servicio.imagenUrl ?? undefined,
                 tratamientoIVA: servicio.tratamientoIVA ?? TratamientoIVA.GRAVADO,
                 tasaIVAOverride: servicio.tasaIVAOverride ?? null,
+                tipo: servicio.tipo,
+                tipoTransporte: servicio.tipoTransporte,
+                precio: servicio.precio,
               }
             : null,
         };
@@ -188,10 +199,73 @@ export class CheckoutService extends Service {
         regimenFiscal: true,
         tasaIVA: true,
         modoPrecio: true,
+        permiteAcumularDescuentos: true,
       },
     });
 
     const negocioMap = new Map(negocios.map((n) => [n.id, n]));
+
+    // Aplicar descuentos (promociones, cupones, combos)
+    const itemsParaDescuento: import("@/shared/descuentos.types").ItemCarritoParaDescuento[] =
+      itemsEnriquecidos.map((i) => ({
+        id: i.id,
+        productoId: i.productoId,
+        servicioId: i.servicioId,
+        cantidad: i.cantidad,
+        precioUnitario: i.precioUnitario,
+        tipo: i.tipo,
+        negocioId: i.negocioId,
+        producto: i.producto
+          ? {
+              id: i.producto.id,
+              nombre: i.producto.nombre,
+              precio: i.precioUnitario,
+              imagenUrl: i.producto.imagenUrl ?? undefined,
+              tratamientoIVA: i.producto.tratamientoIVA,
+              tasaIVAOverride: i.producto.tasaIVAOverride != null ? String(i.producto.tasaIVAOverride) : null,
+            }
+          : null,
+        servicio: i.servicio
+          ? {
+              id: i.servicio.id,
+              nombre: i.servicio.nombre,
+              imagenUrl: i.servicio.imagenUrl ?? undefined,
+              tratamientoIVA: i.servicio.tratamientoIVA,
+              tasaIVAOverride: i.servicio.tasaIVAOverride != null ? String(i.servicio.tasaIVAOverride) : null,
+              tipo: i.servicio.tipo,
+              tipoTransporte: (i.servicio.tipoTransporte as string) ?? null,
+              precio: i.servicio.precio,
+            }
+          : null,
+        metadata: i.metadata ?? undefined,
+      }));
+
+    const resultadoDescuentos = await this.descuentoService.aplicarDescuentos(
+      userId,
+      itemsParaDescuento,
+      options?.cuponCodigo
+    );
+
+    // Mapa de itemId -> precioConDescuento (post-promoción)
+    const preciosConDescuento = new Map<string, number>();
+    for (const g of resultadoDescuentos.grupos) {
+      for (const item of g.itemsOriginales) {
+        preciosConDescuento.set(item.id, item.precioConDescuento);
+      }
+    }
+    // Sobrescribir con items de combo si aplica
+    if (resultadoDescuentos.comboAplicado) {
+      for (const item of resultadoDescuentos.comboAplicado.itemsDescompuestos) {
+        const id = item.productoId ?? item.servicioId ?? "";
+        if (id) preciosConDescuento.set(id, item.precioConDescuento);
+      }
+    }
+
+    // Mapa de negocioId -> info de descuentos
+    const descuentosPorNegocio = new Map<string, import("@/shared/descuentos.types").DescuentoPorNegocio>();
+    for (const g of resultadoDescuentos.grupos) {
+      descuentosPorNegocio.set(g.negocioId, g);
+    }
 
     // Validar disponibilidad de todos los items
     const validaciones = await this.cartService.validarCarritoCompleto(userId);
@@ -240,71 +314,93 @@ export class CheckoutService extends Service {
         modoPrecio: negocio.modoPrecio ?? ModoPrecio.IVA_INCLUIDO,
       };
 
-      const itemsFiscales: GrupoItemInput[] = items.map((i) => ({
-        precio: i.precioUnitario,
-        cantidad: i.cantidad,
-        tratamientoIVA:
-          i.producto?.tratamientoIVA ?? i.servicio?.tratamientoIVA ?? TratamientoIVA.GRAVADO,
-        tasaOverride:
-          i.producto?.tasaIVAOverride ?? i.servicio?.tasaIVAOverride ?? null,
-      }));
+      const itemsFiscales: GrupoItemInput[] = items.map((i) => {
+        const precioConDescuento = preciosConDescuento.get(i.id) ?? i.precioUnitario;
+        return {
+          precio: precioConDescuento / Math.max(i.cantidad, 1),
+          cantidad: i.cantidad,
+          tratamientoIVA:
+            i.producto?.tratamientoIVA ?? i.servicio?.tratamientoIVA ?? TratamientoIVA.GRAVADO,
+          tasaOverride:
+            i.producto?.tasaIVAOverride ?? i.servicio?.tasaIVAOverride ?? null,
+        };
+      });
 
       const calculoGrupo = this.ivaService.calcularGrupo(itemsFiscales, negocioFiscal);
       gruposCalculados.push(calculoGrupo);
 
-      grupos.push({
-        negocioId: negocio.id,
-        negocio: {
-          id: negocio.id,
-          nombre: negocio.nombre,
-          direccion: negocio.direccion,
-          provincia: negocio.provincia,
-          municipio: negocio.municipio,
-          permiteEnvio: negocio.permiteEnvio,
+      const descuentoNegocio = descuentosPorNegocio.get(negocioId);
+
+        grupos.push({
+          negocioId: negocio.id,
+          negocio: {
+            id: negocio.id,
+            nombre: negocio.nombre,
+            direccion: negocio.direccion,
+            provincia: negocio.provincia,
+            municipio: negocio.municipio,
+            permiteEnvio: negocio.permiteEnvio,
+            regimenFiscal: negocio.regimenFiscal,
+            tasaIVA: Number(negocio.tasaIVA),
+            modoPrecio: negocio.modoPrecio,
+          },
+          items: items.map((i, idx) => {
+            const calcItem = calculoGrupo.items[idx];
+            const precioConDesc = preciosConDescuento.get(i.id);
+            return {
+              id: i.id,
+              productoId: i.productoId,
+              servicioId: i.servicioId,
+              cantidad: i.cantidad,
+              precioUnitario: i.precioUnitario,
+              tipo: i.tipo,
+              fechaEntrega: i.fechaEntrega,
+              metadata: i.metadata ?? null,
+              producto: i.producto,
+              servicio: i.servicio,
+              tratamientoIVA: calcItem.tratamientoIVA,
+              tasaIVA: Number(calcItem.tasaAplicada),
+              precioUnitarioBase: Number(calcItem.precioUnitarioBase.toFixed(2)),
+              precioUnitarioConIVA: Number(calcItem.precioUnitarioConIVA.toFixed(2)),
+              baseImponible: Number(calcItem.baseImponible.toFixed(2)),
+              montoIVA: Number(calcItem.montoIVA.toFixed(2)),
+              subtotal: Number(calcItem.subtotal.toFixed(2)),
+              precioConDescuento:
+                precioConDesc !== undefined ? Number(precioConDesc.toFixed(2)) : undefined,
+              descuentoItem:
+                precioConDesc !== undefined
+                  ? Number((i.precioUnitario - precioConDesc).toFixed(2))
+                  : null,
+            };
+          }),
+          subtotal: Number(calculoGrupo.totalConIVA.toFixed(2)),
+          iva: Number(calculoGrupo.montoIVA.toFixed(2)),
+          baseImponible: Number(calculoGrupo.baseImponible.toFixed(2)),
+          montoIVA: Number(calculoGrupo.montoIVA.toFixed(2)),
+          totalConIVA: Number(calculoGrupo.totalConIVA.toFixed(2)),
           regimenFiscal: negocio.regimenFiscal,
           tasaIVA: Number(negocio.tasaIVA),
           modoPrecio: negocio.modoPrecio,
-        },
-        items: items.map((i, idx) => {
-          const calcItem = calculoGrupo.items[idx];
-          return {
-            id: i.id,
-            productoId: i.productoId,
-            servicioId: i.servicioId,
-            cantidad: i.cantidad,
-            precioUnitario: i.precioUnitario,
-            tipo: i.tipo,
-            fechaEntrega: i.fechaEntrega,
-            producto: i.producto,
-            servicio: i.servicio,
-            tratamientoIVA: calcItem.tratamientoIVA,
-            tasaIVA: Number(calcItem.tasaAplicada),
-            precioUnitarioBase: Number(calcItem.precioUnitarioBase.toFixed(2)),
-            precioUnitarioConIVA: Number(calcItem.precioUnitarioConIVA.toFixed(2)),
-            baseImponible: Number(calcItem.baseImponible.toFixed(2)),
-            montoIVA: Number(calcItem.montoIVA.toFixed(2)),
-            subtotal: Number(calcItem.subtotal.toFixed(2)),
-          };
-        }),
-        subtotal: Number(calculoGrupo.totalConIVA.toFixed(2)),
-        iva: Number(calculoGrupo.montoIVA.toFixed(2)),
-        baseImponible: Number(calculoGrupo.baseImponible.toFixed(2)),
-        montoIVA: Number(calculoGrupo.montoIVA.toFixed(2)),
-        totalConIVA: Number(calculoGrupo.totalConIVA.toFixed(2)),
-        regimenFiscal: negocio.regimenFiscal,
-        tasaIVA: Number(negocio.tasaIVA),
-        modoPrecio: negocio.modoPrecio,
-        opcionesLogistica: ops.map((o) => ({
-          id: o.id,
-          nombre: o.nombre,
-          tipo: o.tipo,
-          costo: Number(o.tarifaBase),
-          tiempoEstimado: o.tiempoEstimado,
-        })),
-        puedeRecogerEnTienda: true,
-        disponibilidadOk,
-        erroresDisponibilidad,
-      });
+          opcionesLogistica: ops.map((o) => ({
+            id: o.id,
+            nombre: o.nombre,
+            tipo: o.tipo,
+            costo: Number(o.tarifaBase),
+            tiempoEstimado: o.tiempoEstimado,
+          })),
+          puedeRecogerEnTienda: true,
+          disponibilidadOk,
+          erroresDisponibilidad,
+          tieneTransporte: items.some((i) => i.servicio?.tipo === "TRANSPORTE"),
+          descuentoTotal: descuentoNegocio?.descuentoTotal ?? 0,
+          envioGratis: descuentoNegocio?.envioGratis ?? false,
+          promocionesAplicadas: descuentoNegocio?.promocionesAplicadas.map((p) => ({
+            id: p.id,
+            nombre: p.nombre,
+            tipo: p.tipo as string,
+            descuento: p.descuento,
+          })) ?? [],
+        });
     }
 
     // Los envíos se calculan en recalcularTotales cuando el cliente elige.
@@ -325,6 +421,7 @@ export class CheckoutService extends Service {
           : undefined,
       regimenFiscal: undefined,
       modoPrecio: undefined,
+      descuentoTotal: resultadoDescuentos.descuentoTotal,
     };
 
     // Generar y almacenar token de checkout para idempotencia
@@ -339,16 +436,53 @@ export class CheckoutService extends Service {
         servicioId: i.servicioId,
         cantidad: i.cantidad,
         fechaEntrega: i.fechaEntrega,
+        metadata: i.metadata ?? null,
       })),
+      cuponCodigo: options?.cuponCodigo ?? null,
+      descuentoTotal: resultadoDescuentos.descuentoTotal,
       expiresAt: Date.now() + cacheTTL.checkout * 1000,
     };
     await this.cache.set(cacheKeys.checkout.token(checkoutToken), tokenData, cacheTTL.checkout);
+
+    // Construir info de combo/cupón para el DTO
+    const comboAplicado = resultadoDescuentos.comboAplicado
+      ? {
+          comboId: resultadoDescuentos.comboAplicado.comboId,
+          nombre: resultadoDescuentos.comboAplicado.nombre,
+          descuentoTotal: resultadoDescuentos.comboAplicado.descuentoTotal,
+          repartoNegocios: resultadoDescuentos.comboAplicado.repartoNegocios.map((rn) => ({
+            negocioId: rn.negocioId,
+            descuentoAsignado: rn.descuentoAsignado,
+            items: rn.items.map((i) => ({
+              id: i.id,
+              productoId: i.productoId ?? null,
+              servicioId: i.servicioId ?? null,
+              cantidad: i.cantidad,
+              precioOriginal: i.precioOriginal,
+              precioConDescuento: i.precioConDescuento,
+            })),
+          })),
+        }
+      : null;
+
+    const cuponAplicado = resultadoDescuentos.cuponAplicado
+      ? {
+          cuponId: resultadoDescuentos.cuponAplicado.cuponId,
+          codigo: resultadoDescuentos.cuponAplicado.codigo,
+          tipo: resultadoDescuentos.cuponAplicado.tipo as string,
+          valor: resultadoDescuentos.cuponAplicado.valor,
+          descuentoTotal: resultadoDescuentos.cuponAplicado.descuentoTotal,
+        }
+      : null;
 
     return {
       checkoutToken,
       grupos,
       totales,
       direccionUsuario: options?.direccionEntrega ?? undefined,
+      cuponCodigo: options?.cuponCodigo ?? null,
+      cuponAplicado,
+      comboAplicado,
     };
   }
 
@@ -359,7 +493,8 @@ export class CheckoutService extends Service {
    */
   async recalcularTotales(
     userId: string,
-    seleccion: RecalcularSeleccion
+    seleccion: RecalcularSeleccion,
+    cuponCodigo?: string
   ): Promise<TotalesCheckoutDTO> {
     const carrito = await this.cartService.obtenerCarrito(userId);
     if (!carrito || carrito.items.length === 0) {
@@ -402,7 +537,6 @@ export class CheckoutService extends Service {
     const servicioIds = carrito.items
       .filter((i) => i.servicioId)
       .map((i) => i.servicioId!);
-
     const productos =
       productoIds.length > 0
         ? await prisma.producto.findMany({
@@ -414,11 +548,69 @@ export class CheckoutService extends Service {
       servicioIds.length > 0
         ? await prisma.servicio.findMany({
             where: { id: { in: servicioIds } },
-            select: { id: true, tratamientoIVA: true, tasaIVAOverride: true },
+            select: { id: true, tratamientoIVA: true, tasaIVAOverride: true, tipo: true, tipoTransporte: true },
           })
         : [];
     const productoMap = new Map(productos.map((p) => [p.id, p]));
     const servicioMap = new Map(servicios.map((s) => [s.id, s]));
+
+    // Aplicar descuentos (promociones, cupones, combos)
+    const itemsParaDescuento: import("@/shared/descuentos.types").ItemCarritoParaDescuento[] = [];
+    for (const item of carrito.items) {
+      const negocioId = item.producto?.negocioId ?? item.servicio?.negocioId ?? "";
+      const prod = item.productoId ? productoMap.get(item.productoId) : null;
+      const serv = item.servicioId ? servicioMap.get(item.servicioId) : null;
+      itemsParaDescuento.push({
+        id: item.id,
+        productoId: item.productoId,
+        servicioId: item.servicioId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        tipo: item.tipo,
+        negocioId,
+        producto: prod
+          ? {
+              id: prod.id,
+              nombre: prod.id,
+              precio: item.precioUnitario,
+              imagenUrl: undefined,
+              tratamientoIVA: prod.tratamientoIVA,
+              tasaIVAOverride: prod.tasaIVAOverride != null ? String(prod.tasaIVAOverride) : null,
+            }
+          : null,
+        servicio: serv
+          ? {
+              id: serv.id,
+              nombre: serv.id,
+              imagenUrl: undefined,
+              tratamientoIVA: serv.tratamientoIVA,
+              tasaIVAOverride: serv.tasaIVAOverride != null ? String(serv.tasaIVAOverride) : null,
+              tipo: serv.tipo as string,
+              tipoTransporte: serv.tipoTransporte ? String(serv.tipoTransporte) : undefined,
+              precio: item.precioUnitario,
+            }
+          : null,
+        metadata: item.metadata ?? undefined,
+      });
+    }
+
+    const resultadoDescuentos = cuponCodigo
+      ? await this.descuentoService.aplicarDescuentos(userId, itemsParaDescuento, cuponCodigo)
+      : await this.descuentoService.aplicarDescuentos(userId, itemsParaDescuento);
+
+    // Mapa de itemId -> precioConDescuento
+    const preciosConDescuento = new Map<string, number>();
+    for (const g of resultadoDescuentos.grupos) {
+      for (const item of g.itemsOriginales) {
+        preciosConDescuento.set(item.id, item.precioConDescuento);
+      }
+    }
+    if (resultadoDescuentos.comboAplicado) {
+      for (const item of resultadoDescuentos.comboAplicado.itemsDescompuestos) {
+        const id = item.productoId ?? item.servicioId ?? "";
+        if (id) preciosConDescuento.set(id, item.precioConDescuento);
+      }
+    }
 
     const gruposCalculados: CalculoGrupoIVA[] = [];
     let envioTotal = 0;
@@ -436,8 +628,9 @@ export class CheckoutService extends Service {
       const itemsFiscales: GrupoItemInput[] = items.map((i) => {
         const prod = i.productoId ? productoMap.get(i.productoId) : null;
         const serv = i.servicioId ? servicioMap.get(i.servicioId) : null;
+        const precioConDescuento = preciosConDescuento.get(i.id) ?? i.precioUnitario;
         return {
-          precio: i.precioUnitario,
+          precio: precioConDescuento / Math.max(i.cantidad, 1),
           cantidad: i.cantidad,
           tratamientoIVA:
             prod?.tratamientoIVA ?? serv?.tratamientoIVA ?? TratamientoIVA.GRAVADO,
@@ -448,9 +641,22 @@ export class CheckoutService extends Service {
       const calculoGrupo = this.ivaService.calcularGrupo(itemsFiscales, negocioFiscal);
       gruposCalculados.push(calculoGrupo);
 
+      // Verificar envío gratis por promoción/cupón
+      const descuentoNegocio = resultadoDescuentos.grupos.find((g) => g.negocioId === negocioId);
+      const envioGratisPromo = descuentoNegocio?.envioGratis ?? false;
+      const envioGratisCupon = resultadoDescuentos.cuponAplicado?.tipo === "ENVIO_GRATIS";
+
       // Calcular envío para este negocio
       const grupo = seleccion.grupos.find((g) => g.negocioId === negocioId);
-      if (grupo && grupo.tipoEntrega === "DOMICILIO") {
+      const tieneTransporte = items.some((i) => {
+        if (i.servicioId) {
+          const s = servicioMap.get(i.servicioId);
+          return s?.tipo === "TRANSPORTE";
+        }
+        return false;
+      });
+
+      if (grupo && grupo.tipoEntrega === "DOMICILIO" && !tieneTransporte) {
         const ops = await this.logisticaService.listOpcionesParaCheckout(negocioId);
         const opcion = ops.find((o) => o.id === grupo.opcionLogisticaId);
         if (!opcion) {
@@ -460,16 +666,17 @@ export class CheckoutService extends Service {
             400
           );
         }
-        const costo = Number(opcion.tarifaBase);
-        const subtotalGrupo = Number(calculoGrupo.totalConIVA.toFixed(2));
-        const envioNeto =
-          ENVIO_GRATIS_DESDE > 0 && subtotalGrupo >= ENVIO_GRATIS_DESDE
-            ? 0
-            : costo;
-        envioTotal += envioNeto;
+         const costo = Number(opcion.tarifaBase);
+         const subtotalGrupo = Number(calculoGrupo.totalConIVA.toFixed(2));
+         const envioNeto =
+           envioGratisPromo || envioGratisCupon || (ENVIO_GRATIS_DESDE > 0 && subtotalGrupo >= ENVIO_GRATIS_DESDE)
+             ? 0
+             : costo;
+         envioTotal += envioNeto;
       }
 
       // RECOGIDA_TIENDA → envío = 0
+      // Transporte (TRANSPORTE) → envío = 0 (el transporte incluido en el precio del servicio)
     }
 
     const checkoutCalculado = this.ivaService.calcularCheckout(gruposCalculados);
@@ -492,6 +699,7 @@ export class CheckoutService extends Service {
           : undefined,
       regimenFiscal: undefined,
       modoPrecio: undefined,
+      descuentoTotal: resultadoDescuentos.descuentoTotal,
     };
   }
 
@@ -575,7 +783,11 @@ export class CheckoutService extends Service {
         );
       }
 
-      if (grupo.tipoEntrega === "DOMICILIO") {
+      const tieneTransporte = itemsDelGrupo.some(
+        (i) => i.servicio?.tipo === "TRANSPORTE"
+      );
+
+      if (grupo.tipoEntrega === "DOMICILIO" && !tieneTransporte) {
         if (!grupo.opcionLogisticaId) {
           throw new BusinessError(
             `No se seleccionó opción de logística para el negocio ${grupo.negocioId}`,
@@ -628,6 +840,7 @@ export class CheckoutService extends Service {
         regimenFiscal: true,
         tasaIVA: true,
         modoPrecio: true,
+        permiteAcumularDescuentos: true,
       },
     });
     const negocioFiscalMap = new Map(
@@ -653,7 +866,7 @@ export class CheckoutService extends Service {
       servicioIds.length > 0
         ? await prisma.servicio.findMany({
             where: { id: { in: servicioIds } },
-            select: { id: true, tratamientoIVA: true, tasaIVAOverride: true },
+            select: { id: true, tratamientoIVA: true, tasaIVAOverride: true, tipo: true, tipoTransporte: true },
           })
         : [];
     const productoFiscalMap = new Map(
@@ -662,6 +875,77 @@ export class CheckoutService extends Service {
     const servicioFiscalMap = new Map(
       serviciosFiscales.map((s) => [s.id, s])
     );
+
+    // Aplicar descuentos (promociones, cupones, combos)
+    const cuponCodigoDelToken = (tokenData as { cuponCodigo?: string }).cuponCodigo;
+    const cuponCodigo = payload.cuponCodigo ?? cuponCodigoDelToken;
+
+    const itemsParaDescuento: import("@/shared/descuentos.types").ItemCarritoParaDescuento[] = [];
+    for (const item of carrito.items) {
+      const negocioId = item.producto?.negocioId ?? item.servicio?.negocioId ?? "";
+      const prod = item.productoId ? productoFiscalMap.get(item.productoId) : null;
+      const serv = item.servicioId ? servicioFiscalMap.get(item.servicioId) : null;
+      itemsParaDescuento.push({
+        id: item.id,
+        productoId: item.productoId,
+        servicioId: item.servicioId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        tipo: item.tipo,
+        negocioId,
+        producto: prod
+          ? {
+              id: prod.id,
+              nombre: "",
+              precio: item.precioUnitario,
+              imagenUrl: undefined,
+              tratamientoIVA: prod.tratamientoIVA,
+              tasaIVAOverride: prod.tasaIVAOverride != null ? String(prod.tasaIVAOverride) : null,
+            }
+          : null,
+        servicio: serv
+          ? {
+              id: serv.id,
+              nombre: "",
+              imagenUrl: undefined,
+              tratamientoIVA: serv.tratamientoIVA,
+              tasaIVAOverride: serv.tasaIVAOverride != null ? String(serv.tasaIVAOverride) : null,
+              tipo: serv.tipo as string,
+              tipoTransporte: serv.tipoTransporte ? String(serv.tipoTransporte) : undefined,
+              precio: item.precioUnitario,
+            }
+          : null,
+        metadata: item.metadata ?? undefined,
+      });
+    }
+
+    const resultadoDescuentos = await this.descuentoService.aplicarDescuentos(
+      userId,
+      itemsParaDescuento,
+      cuponCodigo
+    );
+
+    // Mapas de descuento por negocio
+    const descuentosPorNegocio = new Map<string, number>();
+    const promocionesPorNegocio = new Map<string, string | null>();
+    for (const g of resultadoDescuentos.grupos) {
+      descuentosPorNegocio.set(g.negocioId, g.descuentoTotal);
+      promocionesPorNegocio.set(g.negocioId, g.promocionesAplicadas[0]?.id ?? null);
+    }
+
+    // Mapa de itemId -> precioConDescuento
+    const preciosConDescuento = new Map<string, number>();
+    for (const g of resultadoDescuentos.grupos) {
+      for (const item of g.itemsOriginales) {
+        preciosConDescuento.set(item.id, item.precioConDescuento);
+      }
+    }
+    if (resultadoDescuentos.comboAplicado) {
+      for (const item of resultadoDescuentos.comboAplicado.itemsDescompuestos) {
+        const id = item.productoId ?? item.servicioId ?? "";
+        if (id) preciosConDescuento.set(id, item.precioConDescuento);
+      }
+    }
 
     // Ejecutar transacción: crear un Pedido por negocio
     const pedidosCreados = await prisma.$transaction(async (tx) => {
@@ -678,12 +962,13 @@ export class CheckoutService extends Service {
           modoPrecio: negocioFiscal?.modoPrecio ?? ModoPrecio.IVA_INCLUIDO,
         };
 
-        // Construir items fiscales para el cálculo
+        // Construir items fiscales para el cálculo (con precios post-descuento)
         const itemsFiscales: GrupoItemInput[] = itemsDelGrupo.map((i) => {
           const prod = i.productoId ? productoFiscalMap.get(i.productoId) : null;
           const serv = i.servicioId ? servicioFiscalMap.get(i.servicioId) : null;
+          const precioConDescuento = preciosConDescuento.get(i.id) ?? i.precioUnitario;
           return {
-            precio: i.precioUnitario,
+            precio: precioConDescuento / Math.max(i.cantidad, 1),
             cantidad: i.cantidad,
             tratamientoIVA:
               prod?.tratamientoIVA ?? serv?.tratamientoIVA ?? TratamientoIVA.GRAVADO,
@@ -764,9 +1049,17 @@ export class CheckoutService extends Service {
             modoPrecio: nf.modoPrecio,
             regimenFiscalNegocio: nf.regimenFiscal,
             tasaIVANegocio: Number(nf.tasaIVA),
+            descuentoTotal: Number((descuentosPorNegocio.get(grupo.negocioId) ?? 0).toFixed(2)),
+            promocionId: promocionesPorNegocio.get(grupo.negocioId) ?? null,
+            cuponId:
+              payload.cuponCodigo && resultadoDescuentos.cuponAplicado
+                ? resultadoDescuentos.cuponAplicado.cuponId
+                : null,
+            comboId: resultadoDescuentos.comboAplicado?.comboId ?? null,
             items: {
-              create: itemsDelGrupo.map((item, idx) => {
+            create: itemsDelGrupo.map((item, idx) => {
                 const calc = calculoGrupo.items[idx];
+                const precioConDesc = preciosConDescuento.get(item.id) ?? item.precioUnitario;
                 return {
                   productoId: item.productoId,
                   servicioId: item.servicioId,
@@ -781,6 +1074,7 @@ export class CheckoutService extends Service {
                   subtotal: Number(calc.subtotal.toFixed(2)),
                   negocioId: item.negocioId,
                   fechaEntrega: item.fechaEntrega ?? undefined,
+                  metadata: item.metadata ?? undefined,
                 };
               }),
             },
@@ -799,6 +1093,69 @@ export class CheckoutService extends Service {
           estado: pedido.estado,
           codigoEntrega: null,
         });
+      }
+
+      // Registrar usos de cupón, combo y promoción
+      if (resultadoDescuentos.cuponAplicado) {
+        await tx.cuponUso.create({
+          data: {
+            cuponId: resultadoDescuentos.cuponAplicado.cuponId,
+            userId,
+            pedidoId: result[0]?.id ?? "",
+            descuento: new Prisma.Decimal(resultadoDescuentos.cuponAplicado.descuentoTotal),
+          },
+        });
+        await tx.cupon.update({
+          where: { id: resultadoDescuentos.cuponAplicado.cuponId },
+          data: { usosActuales: { increment: 1 } },
+        });
+      }
+
+      if (resultadoDescuentos.comboAplicado) {
+        for (const grp of payload.grupos) {
+          const pedidoDelGrupo = result.find((p) => p.negocioId === grp.negocioId);
+          if (pedidoDelGrupo) {
+            await tx.comboUso.create({
+              data: {
+                comboId: resultadoDescuentos.comboAplicado.comboId,
+                userId,
+                pedidoId: pedidoDelGrupo.id,
+                descuento: new Prisma.Decimal(
+                  resultadoDescuentos.comboAplicado.repartoNegocios.find(
+                    (r) => r.negocioId === grp.negocioId
+                  )?.descuentoAsignado ?? 0
+                ),
+              },
+            });
+          }
+        }
+        await tx.combo.update({
+          where: { id: resultadoDescuentos.comboAplicado.comboId },
+          data: { usosActuales: { increment: 1 } },
+        });
+      }
+
+      // Registrar promoción usos
+      for (const g of resultadoDescuentos.grupos) {
+        if (g.promocionesAplicadas.length > 0) {
+          const pedidoDelGrupo = result.find((p) => p.negocioId === g.negocioId);
+          if (pedidoDelGrupo) {
+            for (const promo of g.promocionesAplicadas) {
+              await tx.promocionUso.create({
+                data: {
+                  promocionId: promo.id,
+                  userId,
+                  pedidoId: pedidoDelGrupo.id,
+                  descuento: new Prisma.Decimal(promo.descuento),
+                },
+              });
+            }
+            await tx.promocion.update({
+              where: { id: g.promocionesAplicadas[0]?.id ?? "" },
+              data: { usosActuales: { increment: 1 } },
+            });
+          }
+        }
       }
 
       // Vaciar carrito
