@@ -6,3 +6,4 @@ package-lock.json
 /data/mipyme.db
 /data/*.db
 /data/cache/*
+.vercel
