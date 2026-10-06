@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && DATABASE_URL=\"file:$(pwd)/data/mipyme.db\" prisma db push --schema prisma/schema.test.prisma && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint",

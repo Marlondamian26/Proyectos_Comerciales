@@ -1,0 +1,158 @@
+[
+  {
+    "url": "http://localhost:3000/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost--2026_10_02_15_02_01.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost--2026_10_02_15_02_01.report.json",
+    "summary": {
+      "performance": 0.64,
+      "accessibility": 1,
+      "best-practices": 1,
+      "seo": 0.92
+    }
+  },
+  {
+    "url": "http://localhost:3000/auth/login",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-auth_login-2026_10_02_15_02_23.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-auth_login-2026_10_02_15_02_23.report.json",
+    "summary": {
+      "performance": 0.65,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/auth/registro",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-auth_registro-2026_10_02_15_02_43.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-auth_registro-2026_10_02_15_02_43.report.json",
+    "summary": {
+      "performance": 0.76,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/catalogo",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-catalogo-2026_10_02_15_03_02.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-catalogo-2026_10_02_15_03_02.report.json",
+    "summary": {
+      "performance": 0.86,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.92
+    }
+  },
+  {
+    "url": "http://localhost:3000/carrito",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-carrito-2026_10_02_15_03_18.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-carrito-2026_10_02_15_03_18.report.json",
+    "summary": {
+      "performance": 0.74,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/reservas",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-reservas-2026_10_02_15_03_37.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-reservas-2026_10_02_15_03_37.report.json",
+    "summary": {
+      "performance": 0.78,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/pedidos",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-pedidos-2026_10_02_15_03_56.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-pedidos-2026_10_02_15_03_56.report.json",
+    "summary": {
+      "performance": 0.72,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/negocio",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-negocio-2026_10_02_15_04_15.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-negocio-2026_10_02_15_04_15.report.json",
+    "summary": {
+      "performance": 0.71,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/cliente",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-cliente-2026_10_02_15_04_34.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-cliente-2026_10_02_15_04_34.report.json",
+    "summary": {
+      "performance": 0.74,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/logistica",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-logistica-2026_10_02_15_04_53.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-logistica-2026_10_02_15_04_53.report.json",
+    "summary": {
+      "performance": 0.71,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/admin",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-admin-2026_10_02_15_05_12.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-admin-2026_10_02_15_05_12.report.json",
+    "summary": {
+      "performance": 0.7,
+      "accessibility": 0.96,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/contacto",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-contacto-2026_10_02_15_05_30.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-contacto-2026_10_02_15_05_30.report.json",
+    "summary": {
+      "performance": 0.83,
+      "accessibility": 0.98,
+      "best-practices": 1,
+      "seo": 0.91
+    }
+  },
+  {
+    "url": "http://localhost:3000/servicios",
+    "isRepresentativeRun": true,
+    "htmlPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-servicios-2026_10_02_15_05_45.report.html",
+    "jsonPath": "/workspaces/Proyectos_Comerciales/mi-pyme/.lighthouseci/localhost-servicios-2026_10_02_15_05_45.report.json",
+    "summary": {
+      "performance": 0.66,
+      "accessibility": 1,
+      "best-practices": 0.96,
+      "seo": 0.91
+    }
+  }
+]

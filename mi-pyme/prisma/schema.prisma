@@ -4,56 +4,57 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id                                                            String                 @id @default(cuid())
+  id                                                            String                    @id @default(cuid())
   name                                                          String?
-  username                                                      String?                @unique
-  email                                                         String                 @unique
+  username                                                      String?                   @unique
+  email                                                         String                    @unique
   emailVerified                                                 DateTime?
   image                                                         String?
   password                                                      String?
   nombre                                                        String?
-  rol                                                           Rol                    @default(CLIENTE)
+  rol                                                           Rol                       @default(CLIENTE)
   provincia                                                     String?
   municipio                                                     String?
-  isGenericAdmin                                                Boolean                @default(false)
-  mustChangePassword                                            Boolean                @default(false)
-  isActive                                                      Boolean                @default(true)
-   deletedAt                                                     DateTime?
+  isGenericAdmin                                                Boolean                   @default(false)
+  mustChangePassword                                            Boolean                   @default(false)
+  isActive                                                      Boolean                   @default(true)
+  deletedAt                                                     DateTime?
   deletedBy                                                     String?
   deletedReason                                                 String?
   lastLoginAt                                                   DateTime?
-  failedLoginAttempts                                           Int        @default(0)
+  failedLoginAttempts                                           Int                       @default(0)
   lockedUntil                                                   DateTime?
-  sessionVersion                                                Int        @default(0)
-  createdAt                                                     DateTime               @default(now())
-  updatedAt                                                     DateTime               @updatedAt
+  sessionVersion                                                Int                       @default(0)
+  createdAt                                                     DateTime                  @default(now())
+  updatedAt                                                     DateTime                  @updatedAt
   accounts                                                      Account[]
   auditLogs                                                     AuditLog[]
   carritos                                                      Carrito[]
+  combosCreados                                                 Combo[]                   @relation("ComboCreadoPor")
+  comboUsos                                                     ComboUso[]
+  cuponesCreados                                                Cupon[]                   @relation("CuponCreadoPor")
+  cuponUsos                                                     CuponUso[]
   facturas                                                      Factura[]
-  Negocio_Negocio_aprobadoPorIdToUser                           Negocio[]              @relation("Negocio_aprobadoPorIdToUser")
+  Negocio_Negocio_aprobadoPorIdToUser                           Negocio[]                 @relation("Negocio_aprobadoPorIdToUser")
   negocios                                                      Negocio[]
   NegocioUsuario                                                NegocioUsuario[]
+  notificaciones                                                Notificacion[]
   Pago                                                          Pago[]
   pedidos                                                       Pedido[]
+  preferenciasNotificacion                                      PreferenciaNotificacion[]
+  promocionesCreadas                                            Promocion[]               @relation("PromocionCreadaPor")
+  promocionUsos                                                 PromocionUso[]
   proveedoresLogisticos                                         ProveedorLogistico[]
   reservas                                                      Reserva[]
   sessions                                                      Session[]
-  SolicitudAltaNegocio_SolicitudAltaNegocio_revisadoPorIdToUser SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
-   SolicitudAltaNegocio_SolicitudAltaNegocio_userIdToUser        SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_userIdToUser")
-   promocionesCreadas                                             Promocion[]            @relation("PromocionCreadaPor")
-   cuponesCreados                                                 Cupon[]                @relation("CuponCreadoPor")
-   combosCreados                                                  Combo[]                @relation("ComboCreadoPor")
-   promocionUsos                                                  PromocionUso[]
-   cuponUsos                                                      CuponUso[]
-   comboUsos                                                      ComboUso[]
-   notificaciones                                                  Notificacion[]
-   preferenciasNotificacion                                        PreferenciaNotificacion[]
+  SolicitudAltaNegocio_SolicitudAltaNegocio_revisadoPorIdToUser SolicitudAltaNegocio[]    @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
+  SolicitudAltaNegocio_SolicitudAltaNegocio_userIdToUser        SolicitudAltaNegocio[]    @relation("SolicitudAltaNegocio_userIdToUser")
 
   @@index([rol])
   @@index([isGenericAdmin])
@@ -109,53 +110,53 @@ model VerificationToken {
 }
 
 model Negocio {
-  id                       String            @id @default(cuid())
-  nombre                   String
-  descripcion              String?
-  slug                     String            @unique
-  activo                   Boolean           @default(true)
-  estado                   String            @default("PENDIENTE_APROBACION")
-  motivoRechazo            String?
-  aprobadoPorId            String?
-  aprobadoEn               DateTime?
-  areaId                   String?
-  userId                   String?
-  provincia                String?
-  municipio                String?
-  telefono                 String?
-  emailContacto            String?
-  direccion                String?
-  permiteReservas          Boolean           @default(true)
-  permiteEnvio             Boolean           @default(false)
-  createdAt                DateTime          @default(now())
-  updatedAt                DateTime          @updatedAt
-  regimenFiscal            RegimenFiscal     @default(GENERAL)
-  tasaIVA                  Decimal           @default(10.00)
-  modoPrecio               ModoPrecio        @default(IVA_INCLUIDO)
-  nit                      String?
-   direccionFiscal          String?
-   telefonoFiscal           String?
-   emailFiscal              String?
-   numeroFacturaConsecutivo Int               @default(0)
-   prefijoFactura           String            @default("PR")
-   permiteAcumularDescuentos Boolean          @default(false)
-   facturas                 Factura[]
-   horarios                 HorarioNegocio[]
-   aprobadoPor              User?             @relation("Negocio_aprobadoPorIdToUser", fields: [aprobadoPorId], references: [id])
-   user                     User?             @relation(fields: [userId], references: [id])
-   area                     Area?             @relation(fields: [areaId], references: [id])
-   subareas                 NegocioSubarea[]
-   negocioUsuarios          NegocioUsuario[]
-   opcionesLogisticas       OpcionLogistica[]
-   pedidos                  Pedido[]
-   pedidosItems             PedidoItem[]
-   productos                Producto[]
-   reportesVentas           ReporteVenta[]
-   reservas                 Reserva[]
-   servicios                Servicio[]
-   promociones              Promocion[]
-   cupones                  Cupon[]
-   combos                   Combo[]
+  id                        String            @id @default(cuid())
+  nombre                    String
+  descripcion               String?
+  slug                      String            @unique
+  activo                    Boolean           @default(true)
+  estado                    String            @default("PENDIENTE_APROBACION")
+  motivoRechazo             String?
+  aprobadoPorId             String?
+  aprobadoEn                DateTime?
+  areaId                    String?
+  userId                    String?
+  provincia                 String?
+  municipio                 String?
+  telefono                  String?
+  emailContacto             String?
+  direccion                 String?
+  permiteReservas           Boolean           @default(true)
+  permiteEnvio              Boolean           @default(false)
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  regimenFiscal             RegimenFiscal     @default(GENERAL)
+  tasaIVA                   Decimal           @default(10.00)
+  modoPrecio                ModoPrecio        @default(IVA_INCLUIDO)
+  nit                       String?
+  direccionFiscal           String?
+  telefonoFiscal            String?
+  emailFiscal               String?
+  numeroFacturaConsecutivo  Int               @default(0)
+  prefijoFactura            String            @default("PR")
+  permiteAcumularDescuentos Boolean           @default(false)
+  combos                    Combo[]
+  cupones                   Cupon[]
+  facturas                  Factura[]
+  horarios                  HorarioNegocio[]
+  aprobadoPor               User?             @relation("Negocio_aprobadoPorIdToUser", fields: [aprobadoPorId], references: [id])
+  area                      Area?             @relation(fields: [areaId], references: [id])
+  user                      User?             @relation(fields: [userId], references: [id])
+  subareas                  NegocioSubarea[]
+  negocioUsuarios           NegocioUsuario[]
+  opcionesLogisticas        OpcionLogistica[]
+  pedidos                   Pedido[]
+  pedidosItems              PedidoItem[]
+  productos                 Producto[]
+  promociones               Promocion[]
+  reportesVentas            ReporteVenta[]
+  reservas                  Reserva[]
+  servicios                 Servicio[]
 
   @@index([regimenFiscal])
   @@index([estado])
@@ -191,8 +192,8 @@ model NegocioSubarea {
   id        String  @id @default(cuid())
   negocioId String
   subareaId String
-  subarea   Subarea @relation(fields: [subareaId], references: [id], onDelete: Cascade)
   negocio   Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  subarea   Subarea @relation(fields: [subareaId], references: [id], onDelete: Cascade)
 
   @@unique([negocioId, subareaId])
 }
@@ -212,20 +213,20 @@ model Producto {
   tasaIVAOverride  Decimal?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
-   carritoItems     CarritoItem[]
-   comboItems       ComboItem[]
-   disponibilidades DisponibilidadProducto[]
+  carritoItems     CarritoItem[]
+  comboItems       ComboItem[]
+  disponibilidades DisponibilidadProducto[]
   facturaItems     FacturaItem[]
   inventario       Inventario[]
   pedidoItems      PedidoItem[]
-  subarea          Subarea                  @relation(fields: [subareaId], references: [id])
   negocio          Negocio                  @relation(fields: [negocioId], references: [id])
+  subarea          Subarea                  @relation(fields: [subareaId], references: [id])
 
   @@index([tratamientoIVA])
 }
 
 model Servicio {
-  id                  String         @id @default(cuid())
+  id                  String          @id @default(cuid())
   negocioId           String
   subareaId           String
   nombre              String
@@ -234,27 +235,27 @@ model Servicio {
   horariosDisponibles Json
   capacidad           Int
   imagenUrl           String
-  precio              Float          @default(0)
-  activo              Boolean        @default(true)
-  permiteReservas     Boolean        @default(true)
-  tratamientoIVA      TratamientoIVA @default(GRAVADO)
+  precio              Float           @default(0)
+  activo              Boolean         @default(true)
+  permiteReservas     Boolean         @default(true)
+  tratamientoIVA      TratamientoIVA  @default(GRAVADO)
   tasaIVAOverride     Decimal?
-  tipo                TipoServicio   @default(SERVICIO_GENERAL)
+  tipo                TipoServicio    @default(SERVICIO_GENERAL)
   tipoTransporte      TipoTransporte?
   pesoMaximo          Decimal?
   dimensionesMaximas  String?
   origenBase          String?
   destinoBase         String?
-  alcanceNacional     Boolean        @default(false)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-   carritoItems        CarritoItem[]
-   facturaItems        FacturaItem[]
-   pedidoItems         PedidoItem[]
-   reservas            Reserva[]
-   comboItems          ComboItem[]
-   subarea             Subarea        @relation(fields: [subareaId], references: [id])
-  negocio             Negocio        @relation(fields: [negocioId], references: [id])
+  alcanceNacional     Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  carritoItems        CarritoItem[]
+  comboItems          ComboItem[]
+  facturaItems        FacturaItem[]
+  pedidoItems         PedidoItem[]
+  reservas            Reserva[]
+  negocio             Negocio         @relation(fields: [negocioId], references: [id])
+  subarea             Subarea         @relation(fields: [subareaId], references: [id])
 
   @@index([tratamientoIVA])
   @@index([tipo])
@@ -293,9 +294,9 @@ model CarritoItem {
   tipo           String
   fechaEntrega   DateTime?
   metadata       Json?
-  servicio       Servicio? @relation(fields: [servicioId], references: [id])
-  producto       Producto? @relation(fields: [productoId], references: [id])
   carrito        Carrito   @relation(fields: [carritoId], references: [id], onDelete: Cascade)
+  producto       Producto? @relation(fields: [productoId], references: [id])
+  servicio       Servicio? @relation(fields: [servicioId], references: [id])
 }
 
 model Reserva {
@@ -338,8 +339,8 @@ model OpcionLogistica {
   tiempoEstimado     String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  proveedor          ProveedorLogistico @relation(fields: [proveedorId], references: [id])
   negocio            Negocio            @relation(fields: [negocioId], references: [id])
+  proveedor          ProveedorLogistico @relation(fields: [proveedorId], references: [id])
   Pedido             Pedido[]
 }
 
@@ -357,28 +358,28 @@ model Pedido {
   estado               String           @default("pendiente")
   tipo                 String
   tipoEntrega          String           @default("DOMICILIO")
-   negocioIds           Json
-   opcionLogisticaId    String?
-   costoEnvio           Decimal          @default(0)
-   direccionEntrega     String?
-   fechaEntrega         DateTime?
-   notas                String?
-   fechaCreacion        DateTime         @default(now())
-   updatedAt            DateTime         @updatedAt
-   estadoPago           String           @default("PENDIENTE")
-   promocionId          String?
-   cuponId              String?
-   comboId              String?
-   descuentoTotal       Decimal          @default(0)
-   factura              Factura?
-   pago                 Pago?
-   usuario              User             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-   negocio              Negocio          @relation(fields: [negocioId], references: [id])
-   opcionLogistica      OpcionLogistica? @relation(fields: [opcionLogisticaId], references: [id])
-   items                PedidoItem[]
-   promocionUsos        PromocionUso[]
-   cuponUsos            CuponUso[]
-   comboUsos            ComboUso[]
+  negocioIds           Json
+  opcionLogisticaId    String?
+  costoEnvio           Decimal          @default(0)
+  direccionEntrega     String?
+  fechaEntrega         DateTime?
+  notas                String?
+  fechaCreacion        DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  estadoPago           String           @default("PENDIENTE")
+  promocionId          String?
+  cuponId              String?
+  comboId              String?
+  descuentoTotal       Decimal          @default(0)
+  comboUsos            ComboUso[]
+  cuponUsos            CuponUso[]
+  factura              Factura?
+  pago                 Pago?
+  negocio              Negocio          @relation(fields: [negocioId], references: [id])
+  opcionLogistica      OpcionLogistica? @relation(fields: [opcionLogisticaId], references: [id])
+  usuario              User             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items                PedidoItem[]
+  promocionUsos        PromocionUso[]
 
   @@index([estadoPago])
   @@index([estado])
@@ -403,10 +404,10 @@ model PedidoItem {
   negocioId            String
   fechaEntrega         DateTime?
   metadata             Json?
+  negocio              Negocio        @relation(fields: [negocioId], references: [id])
   pedido               Pedido         @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   producto             Producto?      @relation(fields: [productoId], references: [id])
   servicio             Servicio?      @relation(fields: [servicioId], references: [id])
-  negocio              Negocio        @relation(fields: [negocioId], references: [id])
 }
 
 model Factura {
@@ -427,9 +428,9 @@ model Factura {
   desgloseIVA   Json?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  usuario       User          @relation(fields: [usuarioId], references: [id])
   negocio       Negocio?      @relation(fields: [negocioId], references: [id])
   pedido        Pedido        @relation(fields: [pedidoId], references: [id])
+  usuario       User          @relation(fields: [usuarioId], references: [id])
   items         FacturaItem[]
   Pago          Pago?
 }
@@ -509,50 +510,44 @@ model HorarioNegocio {
 
 /// Promoción de descuento para un negocio (automática)
 model Promocion {
-  id            String          @id @default(cuid())
-  negocioId     String
-  negocio       Negocio         @relation(fields: [negocioId], references: [id], onDelete: Cascade)
-  nombre        String
-  descripcion   String?
-  tipo          TipoDescuento
-  valor         Decimal?         // % o monto fijo; null para DOS_POR_UNO y ENVIO_GRATIS
-  // Condiciones
-  productoIds   String           @default("[]")
-  servicioIds   String           @default("[]")
-  subareaIds    String           @default("[]")
-  montoMinimo   Decimal?
-  // Vigencia
-  fechaInicio   DateTime?
-  fechaFin      DateTime?
-  // Límites
-  usosMaximos   Int?
+  id             String          @id @default(cuid())
+  negocioId      String
+  nombre         String
+  descripcion    String?
+  tipo           TipoDescuento
+  valor          Decimal?
+  productoIds    String          @default("[]")
+  servicioIds    String          @default("[]")
+  subareaIds     String          @default("[]")
+  montoMinimo    Decimal?
+  fechaInicio    DateTime?
+  fechaFin       DateTime?
+  usosMaximos    Int?
   usosPorUsuario Int?
-  usosActuales  Int              @default(0)
-  exclusiva     Boolean          @default(false)
-  // Estado
-  estado        EstadoPromocion  @default(ACTIVA)
-  // Auditoría
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  creadaPorId   String?
-  creadaPor     User?            @relation("PromocionCreadaPor", fields: [creadaPorId], references: [id])
-
-  usos          PromocionUso[]
+  usosActuales   Int             @default(0)
+  exclusiva      Boolean         @default(false)
+  estado         EstadoPromocion @default(ACTIVA)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  creadaPorId    String?
+  creadaPor      User?           @relation("PromocionCreadaPor", fields: [creadaPorId], references: [id])
+  negocio        Negocio         @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  usos           PromocionUso[]
 
   @@index([negocioId, estado])
   @@index([fechaInicio, fechaFin])
 }
 
 model PromocionUso {
-  id           String    @id @default(cuid())
-  promocionId  String
-  promocion    Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pedidoId     String
-  pedido       Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  descuento    Decimal
-  createdAt    DateTime  @default(now())
+  id          String    @id @default(cuid())
+  promocionId String
+  userId      String
+  pedidoId    String
+  descuento   Decimal
+  createdAt   DateTime  @default(now())
+  pedido      Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  promocion   Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([promocionId, userId])
   @@index([userId])
@@ -560,33 +555,27 @@ model PromocionUso {
 
 /// Cupón con código ingresable por el cliente
 model Cupon {
-  id                String   @id @default(cuid())
-  codigo            String   @unique
-  descripcion       String?
-  tipo              TipoDescuento
-  valor             Decimal? // % o monto fijo; null para ENVIO_GRATIS
-  negocioId         String?  // null = cupón de plataforma
-  negocio           Negocio? @relation(fields: [negocioId], references: [id], onDelete: Cascade)
-  // Condiciones
-  montoMinimo       Decimal?
-  // Vigencia
-  fechaInicio       DateTime?
-  fechaFin          DateTime?
-  // Límites
-  usosMaximos       Int?
-  usosPorUsuario    Int?
-  usosActuales      Int      @default(0)
-  unaVezPorUsuario  Boolean  @default(false)
-  primeraCompra     Boolean  @default(false)
-  // Estado
-  estado            EstadoCupon @default(ACTIVO)
-  // Auditoría
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  creadoPorId       String?
-  creadoPor         User?    @relation("CuponCreadoPor", fields: [creadoPorId], references: [id])
-
-  usos              CuponUso[]
+  id               String        @id @default(cuid())
+  codigo           String        @unique
+  descripcion      String?
+  tipo             TipoDescuento
+  valor            Decimal?
+  negocioId        String?
+  montoMinimo      Decimal?
+  fechaInicio      DateTime?
+  fechaFin         DateTime?
+  usosMaximos      Int?
+  usosPorUsuario   Int?
+  usosActuales     Int           @default(0)
+  unaVezPorUsuario Boolean       @default(false)
+  primeraCompra    Boolean       @default(false)
+  estado           EstadoCupon   @default(ACTIVO)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  creadoPorId      String?
+  creadoPor        User?         @relation("CuponCreadoPor", fields: [creadoPorId], references: [id])
+  negocio          Negocio?      @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  usos             CuponUso[]
 
   @@index([codigo])
   @@index([negocioId, estado])
@@ -594,15 +583,15 @@ model Cupon {
 }
 
 model CuponUso {
-  id           String   @id @default(cuid())
-  cuponId      String
-  cupon        Cupon    @relation(fields: [cuponId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pedidoId     String
-  pedido       Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  descuento    Decimal
-  createdAt    DateTime @default(now())
+  id        String   @id @default(cuid())
+  cuponId   String
+  userId    String
+  pedidoId  String
+  descuento Decimal
+  createdAt DateTime @default(now())
+  cupon     Cupon    @relation(fields: [cuponId], references: [id], onDelete: Cascade)
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([cuponId, userId])
   @@index([userId])
@@ -610,54 +599,53 @@ model CuponUso {
 
 /// Combo: producto virtual que agrupa items (puede cruzar negocios)
 model Combo {
-  id            String   @id @default(cuid())
-  nombre        String
-  descripcion   String?
-  imagen        String?
-  precio        Decimal
-  negocioId     String?  // null = combo de plataforma (cross-negocio)
-  negocio       Negocio? @relation(fields: [negocioId], references: [id], onDelete: Cascade)
-  activo        Boolean  @default(true)
-  fechaInicio   DateTime?
-  fechaFin      DateTime?
-  usosMaximos   Int?
-  usosActuales  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  creadoPorId   String?
-  creadoPor     User?    @relation("ComboCreadoPor", fields: [creadoPorId], references: [id])
-
-  items         ComboItem[]
-  usos          ComboUso[]
+  id           String      @id @default(cuid())
+  nombre       String
+  descripcion  String?
+  imagen       String?
+  precio       Decimal
+  negocioId    String?
+  activo       Boolean     @default(true)
+  fechaInicio  DateTime?
+  fechaFin     DateTime?
+  usosMaximos  Int?
+  usosActuales Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  creadoPorId  String?
+  creadoPor    User?       @relation("ComboCreadoPor", fields: [creadoPorId], references: [id])
+  negocio      Negocio?    @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  items        ComboItem[]
+  usos         ComboUso[]
 
   @@index([negocioId, activo])
   @@index([fechaInicio, fechaFin])
 }
 
 model ComboItem {
-  id          String     @id @default(cuid())
-  comboId     String
-  combo       Combo      @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  productoId  String?
-  producto    Producto?  @relation(fields: [productoId], references: [id])
-  servicioId  String?
-  servicio    Servicio?  @relation(fields: [servicioId], references: [id])
-  cantidad    Int        @default(1)
-  createdAt   DateTime   @default(now())
+  id         String    @id @default(cuid())
+  comboId    String
+  productoId String?
+  servicioId String?
+  cantidad   Int       @default(1)
+  createdAt  DateTime  @default(now())
+  combo      Combo     @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  producto   Producto? @relation(fields: [productoId], references: [id])
+  servicio   Servicio? @relation(fields: [servicioId], references: [id])
 
   @@index([comboId])
 }
 
 model ComboUso {
-  id           String   @id @default(cuid())
-  comboId      String
-  combo        Combo    @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pedidoId     String
-  pedido       Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  descuento    Decimal
-  createdAt    DateTime @default(now())
+  id        String   @id @default(cuid())
+  comboId   String
+  userId    String
+  pedidoId  String
+  descuento Decimal
+  createdAt DateTime @default(now())
+  combo     Combo    @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([comboId, userId])
   @@index([userId])
@@ -669,51 +657,46 @@ model NegocioUsuario {
   userId    String
   rol       String   @default("GESTOR")
   createdAt DateTime @default(now())
-  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Negocio   Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([negocioId, userId])
   @@index([userId])
 }
 
 model Pago {
-  id                       String     @id @default(cuid())
-  pedidoId                 String     @unique
-  facturaId                String?    @unique
-  metodo                   MetodoPago
-  estado                   EstadoPago @default(PENDIENTE)
-  monto                    Decimal
-  moneda                   String     @default("CUP")
+  id                          String     @id @default(cuid())
+  pedidoId                    String     @unique
+  facturaId                   String?    @unique
+  metodo                      MetodoPago
+  estado                      EstadoPago @default(PENDIENTE)
+  monto                       Decimal
+  moneda                      String     @default("CUP")
   /// DEPRECADO: redefinida como "nro. de tarjeta/cuenta destino". No es el ID de operación. Ver SERVICE_ARCHITECTURE.md
-  referencia               String?
-  comprobanteUrl           String?
-  notasCliente             String?
-  notasNegocio             String?
-  idTransferencia          String?    @unique
-  entidadPago              String?
-  fechaTransferencia       DateTime?
-  idTransferenciaReembolso String?
-  fechaReembolso           DateTime?
-  confirmadoPorId          String?
-  confirmadoEn             DateTime?
-  createdAt                DateTime   @default(now())
-  updatedAt                DateTime   @updatedAt
-
-  // Código de confirmación para EFECTIVO_CONTRA_ENTREGA
-  codigoEntregaHash           String? // hash bcrypt del código de 6 dígitos
-  codigoEntregaExpira         DateTime? // expiración (7 días desde generación)
-  codigoEntregaIntentos       Int       @default(0)
-  codigoEntregaRegeneraciones Int       @default(0)
+  referencia                  String?
+  comprobanteUrl              String?
+  notasCliente                String?
+  notasNegocio                String?
+  idTransferencia             String?    @unique
+  entidadPago                 String?
+  fechaTransferencia          DateTime?
+  idTransferenciaReembolso    String?
+  fechaReembolso              DateTime?
+  confirmadoPorId             String?
+  confirmadoEn                DateTime?
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @updatedAt
+  codigoEntregaHash           String?
+  codigoEntregaExpira         DateTime?
+  codigoEntregaIntentos       Int        @default(0)
+  codigoEntregaRegeneraciones Int        @default(0)
   codigoEntregaUsadoEn        DateTime?
-  codigoEntregaBloqueado      Boolean   @default(false)
-
-  // Confirmación manual (override del admin)
-  confirmacionManual       Boolean @default(false)
-  motivoConfirmacionManual String?
-
-  pedido  Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  factura Factura? @relation(fields: [facturaId], references: [id])
-  user    User?    @relation(fields: [confirmadoPorId], references: [id])
+  codigoEntregaBloqueado      Boolean    @default(false)
+  confirmacionManual          Boolean    @default(false)
+  motivoConfirmacionManual    String?
+  user                        User?      @relation(fields: [confirmadoPorId], references: [id])
+  factura                     Factura?   @relation(fields: [facturaId], references: [id])
+  pedido                      Pedido     @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
 
   @@index([pedidoId])
   @@index([metodo])
@@ -743,12 +726,50 @@ model SolicitudAltaNegocio {
   revisadoEn    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  revisadoPor   User?     @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
   area          Area?     @relation(fields: [areaId], references: [id])
+  revisadoPor   User?     @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
   user          User      @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([estado])
+}
+
+/// Notificación multicanal para usuarios (in-app + email)
+model Notificacion {
+  id             String             @id @default(cuid())
+  userId         String
+  tipo           TipoNotificacion
+  estado         EstadoNotificacion @default(NO_LEIDA)
+  titulo         String
+  mensaje        String
+  enlace         String?
+  metadata       Json?
+  leidaEn        DateTime?
+  emailEnviado   Boolean            @default(false)
+  emailEnviadoEn DateTime?
+  emailError     String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, estado])
+  @@index([userId, createdAt])
+  @@index([tipo])
+}
+
+/// Preferencias de notificación por usuario y tipo de evento
+model PreferenciaNotificacion {
+  id        String           @id @default(cuid())
+  userId    String
+  tipo      TipoNotificacion
+  inApp     Boolean          @default(true)
+  email     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tipo])
+  @@index([userId])
 }
 
 enum Rol {
@@ -878,42 +899,4 @@ enum EstadoNotificacion {
 enum CanalNotificacion {
   IN_APP
   EMAIL
-}
-
-/// Notificación multicanal para usuarios (in-app + email)
-model Notificacion {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tipo          TipoNotificacion
-  estado        EstadoNotificacion @default(NO_LEIDA)
-  titulo        String
-  mensaje       String
-  enlace        String?
-  metadata      Json?
-  leidaEn       DateTime?
-  emailEnviado  Boolean  @default(false)
-  emailEnviadoEn DateTime?
-  emailError    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([userId, estado])
-  @@index([userId, createdAt])
-  @@index([tipo])
-}
-
-/// Preferencias de notificación por usuario y tipo de evento
-model PreferenciaNotificacion {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tipo      TipoNotificacion
-  inApp     Boolean  @default(true)
-  email     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, tipo])
-  @@index([userId])
 }
