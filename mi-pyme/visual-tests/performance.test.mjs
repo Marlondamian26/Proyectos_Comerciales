@@ -11,14 +11,14 @@ const perfPages = [
 ];
 
 test.describe("Performance metrics", () => {
-  for (const page of perfPages) {
-    test(`${page.name} - LCP < 3.5s`, async ({ page }) => {
-      await page.goto(page.path);
+  for (const perfPage of perfPages) {
+    test(`${perfPage.name} - LCP < 3.5s`, async ({ page }) => {
+      await page.goto(perfPage.path);
       await page.waitForLoadState("networkidle");
 
       const metrics = await page.evaluate(() => {
         return new Promise((resolve) => {
-          const entryHandler = (list: PerformanceEntryList) => {
+          const entryHandler = (list) => {
             for (const entry of list) {
               if (entry.entryType === "largest-contentful-paint") {
                 resolve(entry);
@@ -35,25 +35,22 @@ test.describe("Performance metrics", () => {
       });
 
       if (metrics) {
-        const lcpEntry = metrics as PerformanceEntry & { startTime: number };
+        const lcpEntry = metrics;
         expect(lcpEntry.startTime).toBeLessThan(3500);
       }
     });
 
-    test(`${page.name} - CLS < 0.1`, async ({ page }) => {
-      await page.goto(page.path);
+    test(`${perfPage.name} - CLS < 0.1`, async ({ page }) => {
+      await page.goto(perfPage.path);
       await page.waitForLoadState("networkidle");
 
       const cls = await page.evaluate(() => {
         return new Promise<number>((resolve) => {
           let clsValue = 0;
-          const entryHandler = (list: PerformanceEntryList) => {
+          const entryHandler = (list) => {
             for (const entry of list) {
               if (entry.entryType === "layout-shift") {
-                const layoutShiftEntry = entry as PerformanceEntry & {
-                  hadRecentInput: boolean;
-                  value: number;
-                };
+                const layoutShiftEntry = entry;
                 if (!layoutShiftEntry.hadRecentInput) {
                   clsValue += layoutShiftEntry.value;
                 }
@@ -75,9 +72,9 @@ test.describe("Performance metrics", () => {
 });
 
 test.describe("Console error monitoring", () => {
-  for (const page of perfPages) {
-    test(`${page.name} - no console errors`, async ({ page }) => {
-      const consoleErrors: string[] = [];
+  for (const perfPage of perfPages) {
+    test(`${perfPage.name} - no console errors`, async ({ page }) => {
+      const consoleErrors = [];
 
       page.on("console", (msg) => {
         if (msg.type() === "error") {
@@ -89,7 +86,7 @@ test.describe("Console error monitoring", () => {
         consoleErrors.push(error.message);
       });
 
-      await page.goto(page.path);
+      await page.goto(perfPage.path);
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(1000);
 
@@ -111,12 +108,8 @@ test.describe("Core Web Vitals thresholds", () => {
     await page.waitForLoadState("networkidle");
 
     const vitals = await page.evaluate(() => {
-      return new Promise<{
-        lcp: number;
-        cls: number;
-        fid: number;
-      }>((resolve) => {
-        const results: { lcp: number; cls: number; fid: number } = {
+      return new Promise((resolve) => {
+        const results = {
           lcp: 0,
           cls: 0,
           fid: 0,
@@ -125,7 +118,7 @@ test.describe("Core Web Vitals thresholds", () => {
         new PerformanceObserver((list) => {
           for (const entry of list) {
             if (entry.entryType === "largest-contentful-paint") {
-              const lcpEntry = entry as PerformanceEntry & { startTime: number };
+              const lcpEntry = entry;
               results.lcp = lcpEntry.startTime;
             }
           }
@@ -134,10 +127,7 @@ test.describe("Core Web Vitals thresholds", () => {
         new PerformanceObserver((list) => {
           for (const entry of list) {
             if (entry.entryType === "layout-shift") {
-              const clsEntry = entry as PerformanceEntry & {
-                hadRecentInput: boolean;
-                value: number;
-              };
+              const clsEntry = entry;
               if (!clsEntry.hadRecentInput) {
                 results.cls += clsEntry.value;
               }
@@ -148,10 +138,7 @@ test.describe("Core Web Vitals thresholds", () => {
         new PerformanceObserver((list) => {
           for (const entry of list) {
             if (entry.entryType === "first-input") {
-              const fidEntry = entry as PerformanceEntry & {
-                processingStart: number;
-                startTime: number;
-              };
+              const fidEntry = entry;
               results.fid = fidEntry.processingStart - fidEntry.startTime;
             }
           }
@@ -197,10 +184,7 @@ test.describe("Resource loading", () => {
         new PerformanceObserver((list) => {
           for (const entry of list) {
             if (entry.entryType === "layout-shift") {
-              const clsEntry = entry as PerformanceEntry & {
-                hadRecentInput: boolean;
-                value: number;
-              };
+              const clsEntry = entry;
               if (!clsEntry.hadRecentInput) {
                 totalShift += clsEntry.value;
               }

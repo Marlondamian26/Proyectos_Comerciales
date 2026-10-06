@@ -13,8 +13,32 @@ no pueden agregar al carrito más unidades de las disponibles.
 
 - **Next.js 16** App Router
 - **TypeScript**
-- **Prisma 6.19.3** (SQLite en dev)
+- **Prisma 6.19.3** (PostgreSQL en producción/Supabase, SQLite en tests)
 - **Tailwind CSS v4**
+
+## Base de datos
+
+| Entorno | Motor | Descripción |
+|---------|-------|-------------|
+| Producción | PostgreSQL (Supabase, `us-east-1`) | Transaction pooler (puerto 6543) via `DATABASE_URL`, Session pooler (puerto 5432) via `DIRECT_URL` |
+| Desarrollo | PostgreSQL (Supabase) | Mismo `DATABASE_URL`/`DIRECT_URL` que producción |
+| Tests | SQLite | Base local `data/mipyme.db` (isolated, fast) |
+
+### Migración SQLite → PostgreSQL
+
+- `prisma/schema.prisma`: `provider = "postgresql"`, `url = env("DATABASE_URL")`, `directUrl = env("DIRECT_URL")`.
+- Migraciones SQLite antiguas: backup en `prisma/migrations.sqlite-backup/`.
+- Las migraciones de PostgreSQL se generan con `npx prisma migrate dev` (desarrollo) o `npx prisma migrate deploy` (Vercel/Producción).
+- Login queries usan `mode: "insensitive"` para case-insensitive matching en PostgreSQL.
+- Tests siguen usando SQLite local (`src/tests/setup.ts`) — sin cambios necesarios.
+
+## Deploy
+
+- **Plataforma**: Vercel (Next.js 16, App Router).
+- **Base de datos**: Supabase PostgreSQL (Session pooler + Transaction pooler).
+- **Build script**: `prisma generate && prisma migrate deploy && next build`.
+- **Postinstall**: `prisma generate` (genera cliente Prisma en CI/Vercel).
+- Ver [docs/deploy.md](./docs/deploy.md) para la guía completa.
 
 ## Componentes
 

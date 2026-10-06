@@ -21,10 +21,20 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "**.imgur.com" },
       { protocol: "https", hostname: "**.amazonaws.com" },
+      { protocol: "https", hostname: "example.com" },
+      { protocol: "https", hostname: "**.example.com" },
     ],
   },
   async headers() {
     return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
       {
         source: "/auth/resetear/:path*",
         headers: [

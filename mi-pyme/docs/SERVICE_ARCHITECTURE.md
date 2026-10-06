@@ -1,5 +1,27 @@
 # Service Architecture
 
+## Base de datos
+
+| Entorno | Motor | Descripción |
+|---------|-------|-------------|
+| Producción | PostgreSQL (Supabase, `us-east-1`) | Transaction pooler (puerto 6543) via `DATABASE_URL`, Session pooler (puerto 5432) via `DIRECT_URL` |
+| Desarrollo | PostgreSQL (Supabase) | Mismo `DATABASE_URL`/`DIRECT_URL` que producción |
+| Tests | SQLite | Base local `data/mipyme.db` (isolated, fast) |
+
+### Migración SQLite → PostgreSQL
+
+- `prisma/schema.prisma`: `provider = "postgresql"`, `url = env("DATABASE_URL")`, `directUrl = env("DIRECT_URL")`.
+- Migraciones SQLite antiguas: backup en `prisma/migrations.sqlite-backup/`.
+- Login queries usan `mode: "insensitive"` para case-insensitive matching en PostgreSQL.
+- Tests siguen usando SQLite local (`src/tests/setup.ts`).
+
+## Deploy (Vercel + Supabase)
+
+- **Build**: `prisma generate && prisma migrate deploy && next build`.
+- **Postinstall**: `prisma generate`.
+- **Admin prod seed**: `npx tsx scripts/seed-prod.ts`.
+- Ver [docs/deploy.md](./deploy.md) para la guía completa.
+
 ## Capa de autenticación
 
 ### Estrategia de sesión
@@ -24,7 +46,7 @@ Multi-rol real diferido a **Fase 4**.
 ### Flujo de login
 1. Credentials provider llama `credentialsAuthorize()` en `src/lib/auth/credentials-authorize.ts`
 2. Se normaliza el identifier (email/username) a lowercase
-3. Query busca por `email` o `username` con `isActive: true`
+3. Query busca por `email` o `username` con `isActive: true` (`mode: "insensitive"`)
 4. Comparación de password con bcrypt (12 rounds)
 5. Si `isActive: false` → login falla con "Credenciales inválidas" (anti-enumeración)
 6. Si `mustChangePassword: true` → login permitido pero session marcada

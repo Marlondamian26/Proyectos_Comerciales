@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && DATABASE_URL=\"file:$(pwd)/data/mipyme.db\" prisma db push --schema prisma/schema.test.prisma && next build",
     "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint",
@@ -21,8 +21,12 @@
     "test:reports": "tsx scripts/generate-reports.ts",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "postinstall": "prisma skills sync || exit 0",
-    "db:seed": "tsx prisma/seed.ts"
+    "postinstall": "prisma generate",
+    "pretest": "DATABASE_URL=\"file:$(pwd)/data/mipyme.db\" prisma db push --schema prisma/schema.test.prisma",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

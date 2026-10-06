@@ -29,13 +29,46 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy en producción (Vercel + Supabase)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Mi-Pyme usa **PostgreSQL (Supabase)** en producción y **SQLite** en tests.
+Ver la [guía completa de deploy](./docs/deploy.md) para detalles.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Prerequisitos
 
----
+- Proyecto en Supabase (PostgreSQL) configurado.
+- Cuenta en Vercel.
+- Variables: `DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`.
+
+### Quick start
+
+```bash
+# 1. Generar cliente Prisma
+npx prisma generate
+
+# 2. Aplicar migraciones a Supabase
+npx prisma migrate dev --name init_postgres
+
+# 3. Crear admin genérico
+npx tsx scripts/seed-prod.ts
+
+# 4. Build + test local
+npm run build && npm run test
+```
+
+### Deploy en Vercel
+
+1. Ir a [vercel.com](https://vercel.com) → **Add New → Project**.
+2. Importar `Proyectos_Comerciales`.
+3. **Root Directory**: `mi-pyme`.
+4. Framework: Next.js (auto).
+5. Configurar **Environment Variables** (ver [docs/deploy.md](./docs/deploy.md) para la tabla completa).
+6. **Deploy**.
+
+### Seed en producción
+
+- **Admin genérico**: `npx tsx scripts/seed-prod.ts`
+- **Datos de prueba** (NO en producción): `npx prisma db seed`
 
 ## Panel de autogestión de negocio
 
@@ -192,6 +225,12 @@ npx prisma db seed
 # o: npm run db:seed
 ```
 
+Para producción, usa `scripts/seed-prod.ts` que crea SOLO el admin genérico:
+
+```bash
+npx tsx scripts/seed-prod.ts
+```
+
 ### Qué crea
 
 | Entidad | Cantidad | Detalles |
@@ -222,6 +261,15 @@ npx prisma db seed
 ### Variables de entorno
 
 ```bash
+# Base de datos (Supabase PostgreSQL)
+DATABASE_URL="postgresql://..."         # Transaction pooler (runtime Vercel)
+DIRECT_URL="postgresql://..."           # Session pooler (migraciones)
+
+# Auth
+NEXTAUTH_URL="https://mi-pyme.vercel.app"  # o http://localhost:3000 en dev
+NEXTAUTH_SECRET="<openssl rand -base64 32>"  # mínimo 32 chars
+
+# Seed
 GENERIC_ADMIN_PASSWORD=12345678    # Password del admin genérico
 NEGOCIO_PASSWORD=negocio123      # Passwords de usuarios NEGOCIO
 CLIENTE_PASSWORD=cliente123      # Passwords de usuarios CLIENTE

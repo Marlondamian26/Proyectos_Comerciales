@@ -41,7 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+/src/generated/prisma-test
 prisma/data/
 /data/mipyme.db
 /data/*.db
+/data/*.db.backup-*
 /data/cache/*
+/prisma/migrations.sqlite-backup/

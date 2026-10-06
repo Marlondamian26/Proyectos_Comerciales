@@ -1,0 +1,919 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma-test"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                                                            String                 @id @default(cuid())
+  name                                                          String?
+  username                                                      String?                @unique
+  email                                                         String                 @unique
+  emailVerified                                                 DateTime?
+  image                                                         String?
+  password                                                      String?
+  nombre                                                        String?
+  rol                                                           Rol                    @default(CLIENTE)
+  provincia                                                     String?
+  municipio                                                     String?
+  isGenericAdmin                                                Boolean                @default(false)
+  mustChangePassword                                            Boolean                @default(false)
+  isActive                                                      Boolean                @default(true)
+   deletedAt                                                     DateTime?
+  deletedBy                                                     String?
+  deletedReason                                                 String?
+  lastLoginAt                                                   DateTime?
+  failedLoginAttempts                                           Int        @default(0)
+  lockedUntil                                                   DateTime?
+  sessionVersion                                                Int        @default(0)
+  createdAt                                                     DateTime               @default(now())
+  updatedAt                                                     DateTime               @updatedAt
+  accounts                                                      Account[]
+  auditLogs                                                     AuditLog[]
+  carritos                                                      Carrito[]
+  facturas                                                      Factura[]
+  Negocio_Negocio_aprobadoPorIdToUser                           Negocio[]              @relation("Negocio_aprobadoPorIdToUser")
+  negocios                                                      Negocio[]
+  NegocioUsuario                                                NegocioUsuario[]
+  Pago                                                          Pago[]
+  pedidos                                                       Pedido[]
+  proveedoresLogisticos                                         ProveedorLogistico[]
+  reservas                                                      Reserva[]
+  sessions                                                      Session[]
+  SolicitudAltaNegocio_SolicitudAltaNegocio_revisadoPorIdToUser SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
+   SolicitudAltaNegocio_SolicitudAltaNegocio_userIdToUser        SolicitudAltaNegocio[] @relation("SolicitudAltaNegocio_userIdToUser")
+   promocionesCreadas                                             Promocion[]            @relation("PromocionCreadaPor")
+   cuponesCreados                                                 Cupon[]                @relation("CuponCreadoPor")
+   combosCreados                                                  Combo[]                @relation("ComboCreadoPor")
+   promocionUsos                                                  PromocionUso[]
+   cuponUsos                                                      CuponUso[]
+   comboUsos                                                      ComboUso[]
+   notificaciones                                                  Notificacion[]
+   preferenciasNotificacion                                        PreferenciaNotificacion[]
+
+  @@index([rol])
+  @@index([isGenericAdmin])
+  @@index([isActive])
+  @@index([lockedUntil])
+}
+
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/// Modelo de NextAuth para Database strategy.
+/// Actualmente NO se usa (strategy: JWT).
+/// Reservado para migración futura a Database strategy (Fase 4).
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Usado para tokens de reset de password.
+/// Expiración: 1h. Single-use.
+/// El campo `token` guarda el hash SHA-256 del token plano.
+/// El token plano solo existe en memoria (email/link), nunca se persiste.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Negocio {
+  id                       String            @id @default(cuid())
+  nombre                   String
+  descripcion              String?
+  slug                     String            @unique
+  activo                   Boolean           @default(true)
+  estado                   String            @default("PENDIENTE_APROBACION")
+  motivoRechazo            String?
+  aprobadoPorId            String?
+  aprobadoEn               DateTime?
+  areaId                   String?
+  userId                   String?
+  provincia                String?
+  municipio                String?
+  telefono                 String?
+  emailContacto            String?
+  direccion                String?
+  permiteReservas          Boolean           @default(true)
+  permiteEnvio             Boolean           @default(false)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  regimenFiscal            RegimenFiscal     @default(GENERAL)
+  tasaIVA                  Decimal           @default(10.00)
+  modoPrecio               ModoPrecio        @default(IVA_INCLUIDO)
+  nit                      String?
+   direccionFiscal          String?
+   telefonoFiscal           String?
+   emailFiscal              String?
+   numeroFacturaConsecutivo Int               @default(0)
+   prefijoFactura           String            @default("PR")
+   permiteAcumularDescuentos Boolean          @default(false)
+   facturas                 Factura[]
+   horarios                 HorarioNegocio[]
+   aprobadoPor              User?             @relation("Negocio_aprobadoPorIdToUser", fields: [aprobadoPorId], references: [id])
+   user                     User?             @relation(fields: [userId], references: [id])
+   area                     Area?             @relation(fields: [areaId], references: [id])
+   subareas                 NegocioSubarea[]
+   negocioUsuarios          NegocioUsuario[]
+   opcionesLogisticas       OpcionLogistica[]
+   pedidos                  Pedido[]
+   pedidosItems             PedidoItem[]
+   productos                Producto[]
+   reportesVentas           ReporteVenta[]
+   reservas                 Reserva[]
+   servicios                Servicio[]
+   promociones              Promocion[]
+   cupones                  Cupon[]
+   combos                   Combo[]
+
+  @@index([regimenFiscal])
+  @@index([estado])
+}
+
+model Area {
+  id                   String                 @id @default(cuid())
+  nombre               String
+  slug                 String                 @unique
+  activo               Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  negocios             Negocio[]
+  SolicitudAltaNegocio SolicitudAltaNegocio[]
+  subareas             Subarea[]
+}
+
+model Subarea {
+  id        String           @id @default(cuid())
+  nombre    String
+  slug      String           @unique
+  activo    Boolean          @default(true)
+  areaId    String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  negocios  NegocioSubarea[]
+  productos Producto[]
+  servicios Servicio[]
+  area      Area?            @relation(fields: [areaId], references: [id])
+}
+
+model NegocioSubarea {
+  id        String  @id @default(cuid())
+  negocioId String
+  subareaId String
+  subarea   Subarea @relation(fields: [subareaId], references: [id], onDelete: Cascade)
+  negocio   Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, subareaId])
+}
+
+model Producto {
+  id               String                   @id @default(cuid())
+  negocioId        String
+  subareaId        String
+  nombre           String
+  descripcion      String?
+  precio           Float
+  unidadMedida     String
+  imagenUrl        String
+  disponibleHoy    Boolean                  @default(true)
+  activo           Boolean                  @default(true)
+  tratamientoIVA   TratamientoIVA           @default(GRAVADO)
+  tasaIVAOverride  Decimal?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+   carritoItems     CarritoItem[]
+   comboItems       ComboItem[]
+   disponibilidades DisponibilidadProducto[]
+  facturaItems     FacturaItem[]
+  inventario       Inventario[]
+  pedidoItems      PedidoItem[]
+  subarea          Subarea                  @relation(fields: [subareaId], references: [id])
+  negocio          Negocio                  @relation(fields: [negocioId], references: [id])
+
+  @@index([tratamientoIVA])
+}
+
+model Servicio {
+  id                  String         @id @default(cuid())
+  negocioId           String
+  subareaId           String
+  nombre              String
+  descripcion         String?
+  duracionMinutos     Int
+  horariosDisponibles Json
+  capacidad           Int
+  imagenUrl           String
+  precio              Float          @default(0)
+  activo              Boolean        @default(true)
+  permiteReservas     Boolean        @default(true)
+  tratamientoIVA      TratamientoIVA @default(GRAVADO)
+  tasaIVAOverride     Decimal?
+  tipo                TipoServicio   @default(SERVICIO_GENERAL)
+  tipoTransporte      TipoTransporte?
+  pesoMaximo          Decimal?
+  dimensionesMaximas  String?
+  origenBase          String?
+  destinoBase         String?
+  alcanceNacional     Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+   carritoItems        CarritoItem[]
+   facturaItems        FacturaItem[]
+   pedidoItems         PedidoItem[]
+   reservas            Reserva[]
+   comboItems          ComboItem[]
+   subarea             Subarea        @relation(fields: [subareaId], references: [id])
+  negocio             Negocio        @relation(fields: [negocioId], references: [id])
+
+  @@index([tratamientoIVA])
+  @@index([tipo])
+}
+
+model Inventario {
+  id             String   @id @default(cuid())
+  productoId     String
+  cantidadActual Int
+  puntoReorden   Int
+  ubicacion      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  producto       Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+}
+
+model Carrito {
+  id            String        @id @default(cuid())
+  usuarioId     String
+  creadoEn      DateTime      @default(now())
+  actualizadoEn DateTime      @updatedAt
+  estado        String        @default("activo")
+  usuario       User          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items         CarritoItem[]
+
+  @@unique([usuarioId, estado])
+}
+
+model CarritoItem {
+  id             String    @id @default(cuid())
+  carritoId      String
+  productoId     String?
+  servicioId     String?
+  cantidad       Int
+  precioUnitario Float
+  tipo           String
+  fechaEntrega   DateTime?
+  metadata       Json?
+  servicio       Servicio? @relation(fields: [servicioId], references: [id])
+  producto       Producto? @relation(fields: [productoId], references: [id])
+  carrito        Carrito   @relation(fields: [carritoId], references: [id], onDelete: Cascade)
+}
+
+model Reserva {
+  id              String   @id @default(cuid())
+  usuarioId       String
+  servicioId      String
+  negocioId       String
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime
+  venceEn         DateTime
+  estado          String   @default("pendiente")
+  metadata        Json?
+  negocio         Negocio  @relation(fields: [negocioId], references: [id])
+  servicio        Servicio @relation(fields: [servicioId], references: [id])
+  usuario         User     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
+
+model ProveedorLogistico {
+  id              String            @id @default(cuid())
+  usuarioId       String
+  nombre          String
+  zonaCobertura   String
+  alcanceNacional Boolean           @default(false)
+  contacto        String
+  activo          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  opciones        OpcionLogistica[]
+  usuario         User              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
+
+model OpcionLogistica {
+  id                 String             @id @default(cuid())
+  negocioId          String
+  proveedorId        String
+  nombre             String
+  tipo               String
+  tarifaBase         Float
+  tarifaPorDistancia Float
+  tiempoEstimado     String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  proveedor          ProveedorLogistico @relation(fields: [proveedorId], references: [id])
+  negocio            Negocio            @relation(fields: [negocioId], references: [id])
+  Pedido             Pedido[]
+}
+
+model Pedido {
+  id                   String           @id @default(cuid())
+  usuarioId            String
+  negocioId            String
+  total                Decimal
+  baseImponibleTotal   Decimal          @default(0)
+  montoIVATotal        Decimal          @default(0)
+  totalConIVA          Decimal          @default(0)
+  modoPrecio           ModoPrecio       @default(IVA_INCLUIDO)
+  regimenFiscalNegocio RegimenFiscal    @default(GENERAL)
+  tasaIVANegocio       Decimal          @default(10.00)
+  estado               String           @default("pendiente")
+  tipo                 String
+  tipoEntrega          String           @default("DOMICILIO")
+   negocioIds           Json
+   opcionLogisticaId    String?
+   costoEnvio           Decimal          @default(0)
+   direccionEntrega     String?
+   fechaEntrega         DateTime?
+   notas                String?
+   fechaCreacion        DateTime         @default(now())
+   updatedAt            DateTime         @updatedAt
+   estadoPago           String           @default("PENDIENTE")
+   promocionId          String?
+   cuponId              String?
+   comboId              String?
+   descuentoTotal       Decimal          @default(0)
+   factura              Factura?
+   pago                 Pago?
+   usuario              User             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+   negocio              Negocio          @relation(fields: [negocioId], references: [id])
+   opcionLogistica      OpcionLogistica? @relation(fields: [opcionLogisticaId], references: [id])
+   items                PedidoItem[]
+   promocionUsos        PromocionUso[]
+   cuponUsos            CuponUso[]
+   comboUsos            ComboUso[]
+
+  @@index([estadoPago])
+  @@index([estado])
+  @@index([usuarioId, negocioId])
+  @@index([negocioId])
+}
+
+model PedidoItem {
+  id                   String         @id @default(cuid())
+  pedidoId             String
+  productoId           String?
+  servicioId           String?
+  cantidad             Int
+  precioUnitario       Decimal
+  precioUnitarioBase   Decimal        @default(0)
+  precioUnitarioConIVA Decimal        @default(0)
+  tasaIVA              Decimal        @default(0)
+  tratamientoIVA       TratamientoIVA @default(GRAVADO)
+  baseImponible        Decimal        @default(0)
+  montoIVA             Decimal        @default(0)
+  subtotal             Decimal
+  negocioId            String
+  fechaEntrega         DateTime?
+  metadata             Json?
+  pedido               Pedido         @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto             Producto?      @relation(fields: [productoId], references: [id])
+  servicio             Servicio?      @relation(fields: [servicioId], references: [id])
+  negocio              Negocio        @relation(fields: [negocioId], references: [id])
+}
+
+model Factura {
+  id            String        @id @default(cuid())
+  pedidoId      String        @unique
+  usuarioId     String
+  negocioId     String?
+  numero        String        @unique
+  nitEmisor     String?
+  nitReceptor   String?
+  fecha         DateTime      @default(now())
+  estado        String        @default("emitida")
+  subtotal      Decimal
+  impuestos     Decimal       @default(0)
+  total         Decimal
+  baseImponible Decimal?
+  montoIVA      Decimal?
+  desgloseIVA   Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  usuario       User          @relation(fields: [usuarioId], references: [id])
+  negocio       Negocio?      @relation(fields: [negocioId], references: [id])
+  pedido        Pedido        @relation(fields: [pedidoId], references: [id])
+  items         FacturaItem[]
+  Pago          Pago?
+}
+
+model FacturaItem {
+  id                   String         @id @default(cuid())
+  facturaId            String
+  productoId           String?
+  servicioId           String?
+  cantidad             Int
+  precioUnitario       Decimal
+  precioUnitarioBase   Decimal        @default(0)
+  precioUnitarioConIVA Decimal        @default(0)
+  tasaIVA              Decimal        @default(0)
+  tratamientoIVA       TratamientoIVA @default(GRAVADO)
+  baseImponible        Decimal        @default(0)
+  montoIVA             Decimal        @default(0)
+  subtotal             Decimal
+  factura              Factura        @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  producto             Producto?      @relation(fields: [productoId], references: [id])
+  servicio             Servicio?      @relation(fields: [servicioId], references: [id])
+}
+
+model ReporteVenta {
+  id              String   @id @default(cuid())
+  negocioId       String
+  fecha           DateTime @default(now())
+  totalVentas     Float
+  cantidadPedidos Int
+  negocio         Negocio  @relation(fields: [negocioId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventType String
+  actorId   String?
+  targetId  String?
+  timestamp DateTime @default(now())
+  meta      Json?
+  user      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([eventType])
+  @@index([actorId])
+  @@index([targetId])
+  @@index([timestamp])
+}
+
+model DisponibilidadProducto {
+  id         String   @id @default(cuid())
+  productoId String
+  fecha      DateTime
+  cantidad   Int
+  notas      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, fecha])
+  @@index([productoId, fecha])
+  @@index([fecha])
+}
+
+model HorarioNegocio {
+  id           String   @id @default(cuid())
+  negocioId    String
+  diaSemana    Int
+  horaApertura String
+  horaCierre   String
+  cerrado      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  negocio      Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, diaSemana])
+  @@index([negocioId])
+}
+
+/// Promoción de descuento para un negocio (automática)
+model Promocion {
+  id            String          @id @default(cuid())
+  negocioId     String
+  negocio       Negocio         @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  nombre        String
+  descripcion   String?
+  tipo          TipoDescuento
+  valor         Decimal?         // % o monto fijo; null para DOS_POR_UNO y ENVIO_GRATIS
+  // Condiciones
+  productoIds   String           @default("[]")
+  servicioIds   String           @default("[]")
+  subareaIds    String           @default("[]")
+  montoMinimo   Decimal?
+  // Vigencia
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  // Límites
+  usosMaximos   Int?
+  usosPorUsuario Int?
+  usosActuales  Int              @default(0)
+  exclusiva     Boolean          @default(false)
+  // Estado
+  estado        EstadoPromocion  @default(ACTIVA)
+  // Auditoría
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  creadaPorId   String?
+  creadaPor     User?            @relation("PromocionCreadaPor", fields: [creadaPorId], references: [id])
+
+  usos          PromocionUso[]
+
+  @@index([negocioId, estado])
+  @@index([fechaInicio, fechaFin])
+}
+
+model PromocionUso {
+  id           String    @id @default(cuid())
+  promocionId  String
+  promocion    Promocion @relation(fields: [promocionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pedidoId     String
+  pedido       Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  descuento    Decimal
+  createdAt    DateTime  @default(now())
+
+  @@index([promocionId, userId])
+  @@index([userId])
+}
+
+/// Cupón con código ingresable por el cliente
+model Cupon {
+  id                String   @id @default(cuid())
+  codigo            String   @unique
+  descripcion       String?
+  tipo              TipoDescuento
+  valor             Decimal? // % o monto fijo; null para ENVIO_GRATIS
+  negocioId         String?  // null = cupón de plataforma
+  negocio           Negocio? @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  // Condiciones
+  montoMinimo       Decimal?
+  // Vigencia
+  fechaInicio       DateTime?
+  fechaFin          DateTime?
+  // Límites
+  usosMaximos       Int?
+  usosPorUsuario    Int?
+  usosActuales      Int      @default(0)
+  unaVezPorUsuario  Boolean  @default(false)
+  primeraCompra     Boolean  @default(false)
+  // Estado
+  estado            EstadoCupon @default(ACTIVO)
+  // Auditoría
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  creadoPorId       String?
+  creadoPor         User?    @relation("CuponCreadoPor", fields: [creadoPorId], references: [id])
+
+  usos              CuponUso[]
+
+  @@index([codigo])
+  @@index([negocioId, estado])
+  @@index([fechaInicio, fechaFin])
+}
+
+model CuponUso {
+  id           String   @id @default(cuid())
+  cuponId      String
+  cupon        Cupon    @relation(fields: [cuponId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pedidoId     String
+  pedido       Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  descuento    Decimal
+  createdAt    DateTime @default(now())
+
+  @@index([cuponId, userId])
+  @@index([userId])
+}
+
+/// Combo: producto virtual que agrupa items (puede cruzar negocios)
+model Combo {
+  id            String   @id @default(cuid())
+  nombre        String
+  descripcion   String?
+  imagen        String?
+  precio        Decimal
+  negocioId     String?  // null = combo de plataforma (cross-negocio)
+  negocio       Negocio? @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  activo        Boolean  @default(true)
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  usosMaximos   Int?
+  usosActuales  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  creadoPorId   String?
+  creadoPor     User?    @relation("ComboCreadoPor", fields: [creadoPorId], references: [id])
+
+  items         ComboItem[]
+  usos          ComboUso[]
+
+  @@index([negocioId, activo])
+  @@index([fechaInicio, fechaFin])
+}
+
+model ComboItem {
+  id          String     @id @default(cuid())
+  comboId     String
+  combo       Combo      @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  productoId  String?
+  producto    Producto?  @relation(fields: [productoId], references: [id])
+  servicioId  String?
+  servicio    Servicio?  @relation(fields: [servicioId], references: [id])
+  cantidad    Int        @default(1)
+  createdAt   DateTime   @default(now())
+
+  @@index([comboId])
+}
+
+model ComboUso {
+  id           String   @id @default(cuid())
+  comboId      String
+  combo        Combo    @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pedidoId     String
+  pedido       Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  descuento    Decimal
+  createdAt    DateTime @default(now())
+
+  @@index([comboId, userId])
+  @@index([userId])
+}
+
+model NegocioUsuario {
+  id        String   @id
+  negocioId String
+  userId    String
+  rol       String   @default("GESTOR")
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Negocio   Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@unique([negocioId, userId])
+  @@index([userId])
+}
+
+model Pago {
+  id                       String     @id @default(cuid())
+  pedidoId                 String     @unique
+  facturaId                String?    @unique
+  metodo                   MetodoPago
+  estado                   EstadoPago @default(PENDIENTE)
+  monto                    Decimal
+  moneda                   String     @default("CUP")
+  /// DEPRECADO: redefinida como "nro. de tarjeta/cuenta destino". No es el ID de operación. Ver SERVICE_ARCHITECTURE.md
+  referencia               String?
+  comprobanteUrl           String?
+  notasCliente             String?
+  notasNegocio             String?
+  idTransferencia          String?    @unique
+  entidadPago              String?
+  fechaTransferencia       DateTime?
+  idTransferenciaReembolso String?
+  fechaReembolso           DateTime?
+  confirmadoPorId          String?
+  confirmadoEn             DateTime?
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+
+  // Código de confirmación para EFECTIVO_CONTRA_ENTREGA
+  codigoEntregaHash           String? // hash bcrypt del código de 6 dígitos
+  codigoEntregaExpira         DateTime? // expiración (7 días desde generación)
+  codigoEntregaIntentos       Int       @default(0)
+  codigoEntregaRegeneraciones Int       @default(0)
+  codigoEntregaUsadoEn        DateTime?
+  codigoEntregaBloqueado      Boolean   @default(false)
+
+  // Confirmación manual (override del admin)
+  confirmacionManual       Boolean @default(false)
+  motivoConfirmacionManual String?
+
+  pedido  Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  factura Factura? @relation(fields: [facturaId], references: [id])
+  user    User?    @relation(fields: [confirmadoPorId], references: [id])
+
+  @@index([pedidoId])
+  @@index([metodo])
+  @@index([estado])
+  @@index([idTransferencia])
+  @@index([entidadPago])
+  @@index([fechaTransferencia])
+  @@index([codigoEntregaExpira])
+  @@index([codigoEntregaBloqueado])
+}
+
+model SolicitudAltaNegocio {
+  id            String    @id @default(cuid())
+  userId        String
+  nombreNegocio String
+  descripcion   String?
+  areaId        String?
+  subareaIds    String?
+  provincia     String?
+  municipio     String?
+  telefono      String?
+  emailContacto String?
+  direccion     String?
+  estado        String    @default("PENDIENTE_APROBACION")
+  motivoRechazo String?
+  revisadoPorId String?
+  revisadoEn    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  revisadoPor   User?     @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
+  area          Area?     @relation(fields: [areaId], references: [id])
+  user          User      @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([estado])
+}
+
+enum Rol {
+  ADMIN
+  CLIENTE
+  NEGOCIO
+  LOGISTICA
+}
+
+enum MetodoPago {
+  EFECTIVO_CONTRA_ENTREGA
+  TRANSFERENCIA_BANCARIA
+  PAGO_MOVIL
+  TARJETA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+  CANCELADO
+}
+
+enum TipoEntrega {
+  DOMICILIO
+  RECOGIDA_TIENDA
+  ENVIO
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  EMITIDA
+  PAGADA
+  ANULADA
+}
+
+enum RegimenFiscal {
+  GENERAL
+  SIMPLIFICADO
+  EXENTO
+  NO_SUJETO
+}
+
+enum ModoPrecio {
+  IVA_INCLUIDO
+  IVA_AGREGADO
+}
+
+enum TratamientoIVA {
+  GRAVADO
+  EXENTO
+  NO_SUJETO
+}
+
+enum TipoServicio {
+  SERVICIO_GENERAL
+  TRANSPORTE
+}
+
+enum TipoTransporte {
+  ENVIO_PAQUETE
+  MUDANZA
+  TRASLADO_MUEBLE
+  TRANSPORTE_PERSONAS
+  OTRO
+}
+
+/// Tipos de descuento para promociones, cupones y combos
+enum TipoDescuento {
+  PORCENTAJE
+  MONTO_FIJO
+  DOS_POR_UNO
+  ENVIO_GRATIS
+}
+
+/// Estados de una promoción
+enum EstadoPromocion {
+  ACTIVA
+  PAUSADA
+  EXPIRADA
+  AGOTADA
+}
+
+/// Estados de un cupón
+enum EstadoCupon {
+  ACTIVO
+  PAUSADO
+  EXPIRADO
+  AGOTADO
+}
+
+/// Tipos de evento notificable
+enum TipoNotificacion {
+  PEDIDO_CREADO
+  PEDIDO_ESTADO_CAMBIADO
+  PEDIDO_ASIGNADO_LOGISTICA
+  RESERVA_CREADA
+  RESERVA_CANCELADA
+  PAGO_COMPROBANTE_SUBIDO
+  PAGO_CONFIRMADO
+  PAGO_RECHAZADO
+  PAGO_REEMBOLSADO
+  CODIGO_ENTREGA_REGENERADO
+  SOLICITUD_ALTA_CREADA
+  SOLICITUD_ALTA_APROBADA
+  SOLICITUD_ALTA_RECHAZADA
+  DISPONIBILIDAD_AGOTADA
+  STOCK_BAJO
+  TRANSPORTE_CONTRATADO
+  CUPON_PROXIMO_A_EXPIRAR
+  PROMOCION_AGOTADA
+  BIENVENIDA
+  PASSWORD_CAMBIADO
+  LOGIN_NUEVO_DISPOSITIVO
+}
+
+/// Estados de una notificación
+enum EstadoNotificacion {
+  NO_LEIDA
+  LEIDA
+  ARCHIVADA
+}
+
+/// Canales de notificación
+enum CanalNotificacion {
+  IN_APP
+  EMAIL
+}
+
+/// Notificación multicanal para usuarios (in-app + email)
+model Notificacion {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo          TipoNotificacion
+  estado        EstadoNotificacion @default(NO_LEIDA)
+  titulo        String
+  mensaje       String
+  enlace        String?
+  metadata      Json?
+  leidaEn       DateTime?
+  emailEnviado  Boolean  @default(false)
+  emailEnviadoEn DateTime?
+  emailError    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, estado])
+  @@index([userId, createdAt])
+  @@index([tipo])
+}
+
+/// Preferencias de notificación por usuario y tipo de evento
+model PreferenciaNotificacion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo      TipoNotificacion
+  inApp     Boolean  @default(true)
+  email     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tipo])
+  @@index([userId])
+}

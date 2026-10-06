@@ -20,6 +20,12 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 
 const dbPath = path.join(process.cwd(), "data", "mipyme.db");
 
+// Ensure the app's PrismaClient (prisma.ts) uses the same SQLite DB in tests.
+// The vitest `env` sets DATABASE_URL, but we also set it here for reliability
+// since the app's PrismaClient is created at module load time.
+process.env.DATABASE_URL = `file:${dbPath}`;
+process.env.DIRECT_URL = `file:${dbPath}`;
+
 export const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -49,6 +55,10 @@ export async function setupTestData() {
   await prisma.$executeRawUnsafe(`DELETE FROM "Inventario";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Servicio";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Producto";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Pago";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "HorarioNegocio";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Notificacion";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PreferenciaNotificacion";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "NegocioSubarea";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Negocio";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "User";`);
