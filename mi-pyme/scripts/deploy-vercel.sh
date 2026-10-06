@@ -8,10 +8,10 @@ echo ""
 
 if [ "${1:-}" = "--prod" ]; then
   echo ">> Modo: PRODUCCION"
-  DEPLOY_CMD="vercel --prod"
+  DEPLOY_CMD="vercel --prod --yes"
 else
   echo ">> Modo: PREVIEW"
-  DEPLOY_CMD="vercel"
+  DEPLOY_CMD="vercel --yes"
 fi
 
 echo ">> Ejecutando: $DEPLOY_CMD"
