@@ -1,7 +1,9 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 type SortOption = "popularity-desc" | "popularity-asc" | "alpha-asc" | "alpha-desc";
 
@@ -11,7 +13,6 @@ interface SortControlsProps {
 
 export function SortControls({ currentSort }: SortControlsProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const options: { value: SortOption; label: string }[] = [
     { value: "popularity-desc", label: "Más populares" },
@@ -20,35 +21,58 @@ export function SortControls({ currentSort }: SortControlsProps) {
     { value: "alpha-desc", label: "Z - A" },
   ];
 
-  const handleSortChange = (value: SortOption) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", value);
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  };
+  const [mounted, setMounted] = useState(false);
+  const [selectedSort, setSelectedSort] = useState<SortOption>(currentSort);
+
+  useEffect(() => {
+    setMounted(true);
+    const sortParam = searchParams.get("sort") as SortOption | null;
+    if (sortParam && options.some((opt) => opt.value === sortParam)) {
+      setSelectedSort(sortParam);
+    } else {
+      setSelectedSort(currentSort);
+    }
+  }, [searchParams, currentSort, options]);
+
+  const handleSortChange = useCallback(
+    (value: SortOption) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("sort", value);
+      const query = params.toString();
+      router.push(query ? `/?${query}` : "/", { scroll: false });
+      setSelectedSort(value);
+    },
+    [router, searchParams]
+  );
 
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-wrap">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Star className="h-4 w-4" />
         <span>Ordenar por:</span>
       </div>
-      <select
-        value={currentSort}
-        onChange={(event) => handleSortChange(event.target.value as SortOption)}
-        className="bg-background border-border hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary text-sm px-3 py-1.5 rounded-lg border appearance-none bg-no-repeat bg-right pr-8"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-          backgroundSize: '1.5rem 1.5rem',
-        }}
-        aria-label="Ordenar resultados"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ordenar resultados">
+        {options.map((opt) => {
+          const isActive = mounted ? selectedSort === opt.value : currentSort === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={isActive}
+              onClick={() => handleSortChange(opt.value)}
+              className={cn(
+                "text-sm px-3 py-1.5 rounded-lg border transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border hover:border-primary/50 text-foreground"
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
