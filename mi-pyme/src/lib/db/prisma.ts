@@ -1,10 +1,25 @@
 import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 declare global {
   var __prisma: PrismaClient | undefined;
 }
 
 function createPrismaClient() {
+  const rawUrl = process.env.DATABASE_URL!;
+
+  if (rawUrl.startsWith("postgresql://") || rawUrl.startsWith("postgres://")) {
+    const connectionString = rawUrl
+      .replace(/[?&]sslmode=verify-full/, "")
+      .replace(/[?&]sslmode=require/, "");
+
+    const adapter = new PrismaPg({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+    });
+    return new PrismaClient({ adapter });
+  }
+
   return new PrismaClient();
 }
 

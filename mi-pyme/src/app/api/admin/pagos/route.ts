@@ -3,9 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/requireRole";
 import { getResumenPagosAction } from "@/lib/actions";
 import { BusinessError } from "@/shared/types";
-import { PrismaClient } from "@/generated/prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/db/prisma";
 
 function handleError(err: unknown) {
   if (err instanceof BusinessError) {
