@@ -17,4 +17,4 @@ fi
 echo ">> Ejecutando: $DEPLOY_CMD"
 echo ""
 
-$DEPLOY_CMD
+NPM_FLAGS="--legacy-peer-deps" $DEPLOY_CMD
