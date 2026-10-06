@@ -55,7 +55,12 @@ export async function GET(): Promise<NextResponse<KeepAliveResponse>> {
     };
 
     return NextResponse.json(response, { status: 200 });
-  } catch (_err) {
+  } catch (err) {
+    console.error(
+      "[keep-alive] database check failed:",
+      err instanceof Error ? err.message : String(err)
+    );
+
     const response: KeepAliveResponse = {
       ok: false,
       timestamp: new Date().toISOString(),
