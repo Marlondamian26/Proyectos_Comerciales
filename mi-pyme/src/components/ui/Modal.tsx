@@ -16,6 +16,7 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
+  mobileAsSheet?: boolean;
 }
 
 const sizeClasses = {
@@ -38,6 +39,7 @@ export function Modal({
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showCloseButton = true,
+  mobileAsSheet = false,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -115,7 +117,10 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4"
+      className={cn(
+        "fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4",
+        mobileAsSheet && "md:items-end md:p-0"
+      )}
       aria-modal="true"
       role="dialog"
       aria-labelledby={`${modalId}-title`}
@@ -134,9 +139,11 @@ export function Modal({
         ref={dialogRef}
         id="modal"
         className={cn(
-          "relative w-full rounded-2xl border border-border bg-background p-0 shadow-theme-2xl",
+          "relative w-full rounded-2xl border border-border bg-surface-base p-0 shadow-strong",
           "data-[state=open]:animate-scale-in",
-          sizeClasses[size],
+          mobileAsSheet
+            ? "md:fixed md:inset-auto md:mb-safe md:translate-y-0 md:animate-bounce-in md:border-t md:border-t-border md:rounded-t-2xl md:max-w-full"
+            : sizeClasses[size],
           className
         )}
         onClick={(e) => e.stopPropagation()}

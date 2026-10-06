@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useId, useState } from "react";
+import { forwardRef, useId, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 export interface InputProps
@@ -14,18 +14,19 @@ export interface InputProps
   passwordToggle?: boolean;
 }
 
-export function Input({
-  label,
-  error,
-  hint,
-  leftIcon,
-  rightIcon,
-  passwordToggle = false,
-  className,
-  id,
-  type,
-  ...props
-}: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({
+    label,
+    error,
+    hint,
+    leftIcon,
+    rightIcon,
+    passwordToggle = false,
+    className,
+    id,
+    type,
+    ...props
+  }, ref) => {
   const generatedId = useId();
   const inputId = id || generatedId;
   const [showPassword, setShowPassword] = useState(false);
@@ -68,6 +69,7 @@ export function Input({
             "border-border",
             className
           )}
+          ref={ref}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={
             error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined
@@ -124,7 +126,8 @@ export function Input({
       )}
     </div>
   );
-}
+  }
+);
 
 Input.displayName = "Input";
 

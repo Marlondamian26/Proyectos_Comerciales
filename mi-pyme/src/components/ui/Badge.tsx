@@ -9,13 +9,16 @@ export type BadgeVariant =
   | "warning"
   | "error"
   | "info"
-  | "outline";
+  | "outline"
+  | "verified"
+  | "promo";
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
   size?: "sm" | "md" | "lg";
   dot?: boolean;
+  icon?: React.ReactNode;
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
@@ -26,7 +29,9 @@ const variantClasses: Record<BadgeVariant, string> = {
   warning: "bg-warning/10 text-warning-foreground",
   error: "bg-destructive/10 text-destructive",
   info: "bg-info/10 text-info",
-  outline: "border border-border bg-transparent text-foreground",
+  outline: "border border-border-default bg-transparent text-foreground",
+  verified: "bg-trust-badge-bg text-trust-verified border border-trust-badge-border",
+  promo: "bg-accent text-content-on-accent font-semibold",
 };
 
 const sizeClasses: Record<"sm" | "md" | "lg", string> = {
@@ -44,12 +49,15 @@ const dotColors: Record<BadgeVariant, string> = {
   error: "bg-destructive",
   info: "bg-info",
   outline: "bg-foreground",
+  verified: "bg-trust-verified",
+  promo: "bg-accent",
 };
 
 export function Badge({
   variant = "default",
   size = "md",
   dot = false,
+  icon,
   className,
   children,
   ...props
@@ -70,6 +78,7 @@ export function Badge({
           aria-hidden="true"
         />
       )}
+      {icon && <span className="flex-shrink-0" aria-hidden="true">{icon}</span>}
       {children}
     </span>
   );

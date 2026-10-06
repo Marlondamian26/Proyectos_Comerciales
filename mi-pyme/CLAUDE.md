@@ -106,3 +106,21 @@ Cada uno con `TODO` en el código correspondiente y referencia en `SERVICE_ARCHI
 3. `npm run lint` — sin errores de lint.
 4. `npm run test:a11y` — tests de accesibilidad pasan (light + dark mode).
 5. Si el PR toca UI: verifica contraste de colores y accesibilidad con axe-core.
+
+---
+
+## UI/UX — Reglas de Diseño (Fase 3.5)
+
+- **Tokens primero**: todo componente usa tokens, nunca valores hardcodeados.
+- **Mobile-first**: 320px antes que desktop. Touch targets ≥ 44×44px.
+- **Accesibilidad AA**: contraste ≥ 4.5:1 texto, ≥ 3:1 bordes/elementos.
+- **Light + dark**: verificar ambos en cada cambio.
+- **Motion con propósito**: 100/200/300ms. `prefers-reduced-motion` respetado.
+- **Body text ≥ 16px** (`--text-base`).
+- **Skeletons > spinners** siempre que sea posible.
+- **Empty states accionables**, no solo informativos.
+- **`next/image` con `width`/`height`/`alt`** (o `fill`).
+- **`aria-label` en icon-only buttons**.
+- **Focus visible**: `ring-2 ring-ring ring-offset-2`.
+- **Prohibido**: animaciones decorativas, `console.log`, dark patterns.
+- **Obligatorio**: `npm run test:a11y` antes de mergear.

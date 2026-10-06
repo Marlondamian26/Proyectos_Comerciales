@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
+import "@/styles/tokens.css";
 
 const inter = Inter({
   variable: "--font-inter",

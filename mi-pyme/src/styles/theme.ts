@@ -332,6 +332,62 @@ export const theme = {
     overlay: 1700,
     skipLink: 10000,
   },
+  semantic: {
+    surface: {
+      base: "var(--color-surface-base)",
+      raised: "var(--color-surface-raised)",
+      overlay: "var(--color-surface-overlay)",
+      sunken: "var(--color-surface-sunken)",
+      inverse: "var(--color-surface-inverse)",
+    },
+    text: {
+      primary: "var(--color-text-primary)",
+      secondary: "var(--color-text-secondary)",
+      tertiary: "var(--color-text-tertiary)",
+      disabled: "var(--color-text-disabled)",
+      inverse: "var(--color-text-inverse)",
+      link: "var(--color-text-link)",
+    },
+    border: {
+      subtle: "var(--color-border-subtle)",
+      DEFAULT: "var(--color-border-default)",
+      strong: "var(--color-border-strong)",
+      focus: "var(--color-border-focus)",
+    },
+    interactive: {
+      primary: "var(--color-interactive-primary)",
+      primaryHover: "var(--color-interactive-primary-hover)",
+      primaryActive: "var(--color-interactive-primary-active)",
+      secondary: "var(--color-interactive-secondary)",
+      accent: "var(--color-interactive-accent)",
+    },
+    trust: {
+      verified: "var(--color-trust-verified)",
+      badgeBg: "var(--color-trust-badge-bg)",
+      badgeBorder: "var(--color-trust-badge-border)",
+    },
+    success: {
+      bg: "var(--color-success-bg)",
+    },
+    warning: {
+      bg: "var(--color-warning-bg)",
+    },
+    danger: {
+      bg: "var(--color-danger-bg)",
+    },
+    info: {
+      bg: "var(--color-info-bg)",
+    },
+  },
+  textScale: {
+    display: "3rem",
+    h1: "2.25rem",
+    h2: "1.5rem",
+    h3: "1.25rem",
+    body: "1rem",
+    caption: "0.875rem",
+    fine: "0.75rem",
+  } as const,
   breakpoints: {
     sm: "640px",
     md: "768px",

@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { formatFechaISO, fechaHoy } from "@/shared/utils/fecha";
 import { DIAS_VISTA_DISPONIBILIDAD } from "@/core/constants";
 import type {
-  DisponibilidadProductoDTO,
   CuposServicioDTO,
   ListadoDisponibilidadDia,
 } from "@/shared/disponibilidad.types";

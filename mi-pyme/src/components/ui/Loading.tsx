@@ -91,11 +91,13 @@ export function LoadingSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-muted",
+        "relative overflow-hidden rounded-lg bg-surface-sunken",
         className
       )}
       aria-hidden="true"
-    />
+    >
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-muted/30 to-transparent" />
+    </div>
   );
 }
 

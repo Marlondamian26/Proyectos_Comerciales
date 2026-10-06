@@ -16,6 +16,10 @@ import {
   Cog,
   Star,
   Heart,
+  Wrench,
+  Bell,
+  FileText,
+  MessageCircle,
 } from "lucide-react";
 
 export interface EmptyStateProps {
@@ -34,6 +38,7 @@ const defaultIcons: Record<string, React.ReactNode> = {
   cart: <ShoppingCart className="h-12 w-12 text-muted-foreground" />,
   reservations: <Calendar className="h-12 w-12 text-muted-foreground" />,
   products: <Package className="h-12 w-12 text-muted-foreground" />,
+  services: <Wrench className="h-12 w-12 text-muted-foreground" />,
   orders: <Receipt className="h-12 w-12 text-muted-foreground" />,
   search: <Search className="h-12 w-12 text-muted-foreground" />,
   logistics: <Truck className="h-12 w-12 text-muted-foreground" />,
@@ -42,6 +47,9 @@ const defaultIcons: Record<string, React.ReactNode> = {
   settings: <Cog className="h-12 w-12 text-muted-foreground" />,
   favorites: <Heart className="h-12 w-12 text-muted-foreground" />,
   reviews: <Star className="h-12 w-12 text-muted-foreground" />,
+  notifications: <Bell className="h-12 w-12 text-muted-foreground" />,
+  invoices: <FileText className="h-12 w-12 text-muted-foreground" />,
+  support: <MessageCircle className="h-12 w-12 text-muted-foreground" />,
 };
 
 export function EmptyState({
@@ -54,7 +62,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-5 p-10 text-center rounded-2xl border border-dashed bg-muted/30",
+        "flex flex-col items-center justify-center gap-5 p-8 sm:p-10 text-center rounded-2xl border border-dashed border-border-subtle bg-surface-sunken",
         className
       )}
       aria-live="polite"
@@ -63,13 +71,17 @@ export function EmptyState({
         {icon ?? defaultIcons.search}
       </div>
       <div className="max-w-sm">
-        <h3 className="text-lg font-semibold">{title}</h3>
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         {message && (
-          <p className="text-sm text-muted-foreground mt-1">{message}</p>
+          <p className="mt-1 text-sm text-secondary">{message}</p>
         )}
       </div>
       {action && (
-        <Button variant={action.variant ?? "primary"} className="mt-2" asChild={!!action.href}>
+        <Button
+          variant={action.variant ?? "primary"}
+          className="mt-2 min-w-[200px]"
+          asChild={!!action.href}
+        >
           {action.href ? (
             <Link href={action.href}>
               <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -103,6 +115,7 @@ const presets: Record<keyof typeof defaultIcons, { title: string; message: strin
   cart: { title: "Tu carrito está vacío", message: "Agrega productos o servicios para comenzar tu pedido" },
   reservations: { title: "No tienes reservas", message: "Cuando reserves un servicio, aparecerá aquí" },
   products: { title: "No hay productos disponibles", message: "Agrega tu primer producto para empezar a vender" },
+  services: { title: "No hay servicios disponibles", message: "Agrega tu primer servicio para empezar a ofrecer" },
   orders: { title: "No tienes pedidos", message: "Tus pedidos aparecerán aquí una vez confirmados" },
   search: { title: "No se encontraron resultados", message: "Intenta con otros términos de búsqueda o filtros" },
   logistics: { title: "No hay pedidos asignados", message: "Los pedidos asignados a tu proveedor aparecerán aquí" },
@@ -111,6 +124,9 @@ const presets: Record<keyof typeof defaultIcons, { title: string; message: strin
   settings: { title: "Sin configuración", message: "Configura las opciones de tu panel" },
   favorites: { title: "No tienes favoritos", message: "Guarda tus productos favoritos para acceder rápidamente" },
   reviews: { title: "Sin reseñas", message: "Las reseñas de tus productos aparecerán aquí" },
+  notifications: { title: "No tienes notificaciones", message: "Las notificaciones de tu actividad aparecerán aquí" },
+  invoices: { title: "No tienes facturas", message: "Tus facturas aparecerán aquí cuando se generen" },
+  support: { title: "Sin mensajes", message: "Inicia una conversación con soporte si necesitas ayuda" },
 };
 
 export function EmptyStatePreset({
@@ -118,13 +134,14 @@ export function EmptyStatePreset({
   action,
   className,
 }: EmptyStatePresetProps) {
-  const { title, message } = presets[preset];
+  const presetData = presets[preset] ?? presets.search;
+  const { title, message } = presetData;
 
   return (
     <EmptyState
       title={title}
       message={message}
-      icon={defaultIcons[preset]}
+      icon={defaultIcons[preset] ?? defaultIcons.search}
       action={action}
       className={className}
     />

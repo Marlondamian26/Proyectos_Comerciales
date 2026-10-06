@@ -15,7 +15,7 @@ export type ButtonVariant =
   | "gradientSecondary"
   | "gradientAccent"
   | "link";
-export type ButtonSize = "sm" | "md" | "lg" | "icon";
+export type ButtonSize = "sm" | "md" | "lg" | "xl" | "icon";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -53,32 +53,33 @@ Slot.displayName = "Slot";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-primary-foreground shadow-theme-sm hover:bg-primary/90 hover:shadow-theme-md active:scale-[0.98]",
+    "bg-interactive-primary text-content-inverse shadow-theme-sm hover:bg-interactive-primary-hover hover:shadow-theme-md active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-primary focus-visible:ring-offset-2",
   secondary:
-    "bg-secondary text-secondary-foreground shadow-theme-sm hover:bg-secondary/90 hover:shadow-theme-md active:scale-[0.98]",
+    "bg-interactive-secondary text-content-inverse shadow-theme-sm hover:opacity-90 hover:shadow-theme-md active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-secondary focus-visible:ring-offset-2",
   accent:
-    "bg-accent text-accent-foreground shadow-theme-sm hover:bg-accent/90 hover:shadow-theme-md active:scale-[0.98]",
+    "bg-interactive-accent text-content-on-accent shadow-theme-sm hover:opacity-90 hover:shadow-theme-md active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-accent focus-visible:ring-offset-2",
   gradient:
-    "bg-gradient-primary text-white shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98]",
+    "bg-gradient-primary text-content-inverse shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-primary focus-visible:ring-offset-2",
   gradientSecondary:
-    "bg-gradient-to-r from-secondary to-emerald-600 text-white shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98]",
+    "bg-gradient-to-r from-secondary to-emerald-600 text-content-inverse shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
   gradientAccent:
-    "bg-gradient-to-r from-accent to-orange-600 text-white shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98]",
+    "bg-gradient-to-r from-accent to-orange-600 text-content-inverse shadow-theme-lg hover:shadow-theme-glow active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
   outline:
-    "border border-border bg-background hover:bg-accent/10 hover:text-accent hover:border-accent/30 hover:shadow-theme-md active:scale-[0.98]",
+    "border border-border-default bg-surface-base hover:bg-interactive-accent/10 hover:text-interactive-accent hover:border-interactive-accent/30 hover:shadow-theme-md active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-accent focus-visible:ring-offset-2",
   ghost:
-    "hover:bg-accent/10 hover:text-accent-foreground active:scale-[0.98]",
+    "hover:bg-interactive-accent/10 hover:text-interactive-accent active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-accent focus-visible:ring-offset-2",
   destructive:
-    "bg-destructive text-destructive-foreground shadow-theme-sm hover:bg-destructive/90 hover:shadow-theme-md active:scale-[0.98]",
+    "bg-destructive text-destructive-foreground shadow-theme-sm hover:bg-destructive/90 hover:shadow-theme-md active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2",
   link:
-    "text-primary underline-offset-4 hover:underline active:scale-[0.98]",
+    "text-interactive-primary underline-offset-4 hover:underline hover:text-interactive-primary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-interactive-primary focus-visible:ring-offset-2",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-sm gap-1.5",
-  md: "h-10 px-4 text-sm gap-2",
-  lg: "h-11 px-5 text-base gap-2.5",
-  icon: "h-10 w-10 p-0",
+  sm: "h-9 px-3 text-sm gap-1.5 min-h-[36px] min-w-[36px]",
+  md: "h-10 px-4 text-sm gap-2 min-h-[40px] min-w-[40px]",
+  lg: "h-11 px-5 text-base gap-2.5 min-h-[44px] min-w-[44px]",
+  xl: "h-12 px-6 text-lg gap-3 min-h-[48px] min-w-[48px]",
+  icon: "h-10 w-10 min-h-[44px] min-w-[44px] p-0",
 };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -98,9 +99,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const classes = cn(
-      "inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200",
+       "inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-      "disabled:pointer-events-none disabled:opacity-50",
+      "disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none",
+      "active:scale-[0.98]",
       variantClasses[variant],
       sizeClasses[size],
       className

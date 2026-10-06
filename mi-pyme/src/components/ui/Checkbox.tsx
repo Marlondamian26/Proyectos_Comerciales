@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import React, { forwardRef, useState, useId } from "react";
+import React, { forwardRef, useId } from "react";
 
 export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -19,8 +19,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           type="checkbox"
           id={checkboxId}
           className={cn(
-            "h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary",
-            "focus:ring-2 focus:ring-offset-2",
+            "h-4 w-4 rounded border border-border-default text-interactive-primary",
+            "focus:ring-2 focus:ring-interactive-primary focus:ring-offset-2 focus:ring-offset-surface-base",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "transition-colors duration-200",
             className

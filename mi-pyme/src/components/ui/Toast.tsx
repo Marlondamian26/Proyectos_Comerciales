@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export type ToastVariant = "success" | "error" | "warning" | "info";
 
@@ -39,16 +39,46 @@ export function Toast({
   title,
   action,
 }: ToastProps) {
-  useEffect(() => {
-    if (!onClose || !duration) return;
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
+  const [progress, setProgress] = React.useState(100);
+
+   useEffect(() => {
+    if (!onClose || !duration) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProgress(100);
+      return;
+    }
+
+    setProgress(100);
+    const interval = 50;
+    const steps = duration / interval;
+    const decrement = 100 / steps;
+
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          onClose();
+          return 0;
+        }
+        return prev - decrement;
+      });
+    }, interval);
+
+    const timeout = setTimeout(() => {
+      clearInterval(timer);
+      onClose();
+    }, duration);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
+    };
   }, [onClose, duration]);
 
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-theme-lg",
+        "relative flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-lg",
         "animate-slide-down",
         toastClasses[variant],
         className
@@ -57,6 +87,15 @@ export function Toast({
       aria-live="polite"
       aria-atomic="true"
     >
+      <div
+        className="absolute bottom-0 left-0 h-0.5 w-full bg-foreground/10"
+        style={{ width: `${progress}%` }}
+      >
+        <div
+          className="h-full rounded-full bg-current transition-all"
+          style={{ width: `${progress}%`, opacity: 0.3 }}
+        />
+      </div>
       {toastIcons[variant]}
       <div className="flex-1 min-w-0">
         {title && (
@@ -163,5 +202,3 @@ export function useToast() {
     info,
   };
 }
-
-import { useState } from "react";

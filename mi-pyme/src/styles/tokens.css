@@ -1,0 +1,198 @@
+/*
+ * Design Tokens — Mi-Pyme v2.0
+ *
+ * Enhanced semantic token layer complementing globals.css.
+ * Provides additional semantic color, typography, spacing, motion, and z-index tokens.
+ *
+ * Architecture:
+ *   src/styles/tokens.css   → Enhanced semantic tokens (this file)
+ *   src/app/globals.css     → Base tokens (@theme inline)
+ *   src/styles/theme.ts     → TypeScript reference for SSR
+ *   tailwind.config.ts      → Maps CSS variables to Tailwind utilities
+ *   src/components/ui/      → Components consuming tokens
+ */
+
+/* ===== COLORES SEMÁNTICOS — Superficies ===== */
+:root {
+  /* Superficies base */
+  --color-surface-base: var(--color-surface);
+  --color-surface-raised: var(--color-surface-elevated);
+  --color-surface-overlay: var(--color-overlay);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-surface-inverse: var(--color-surface-inverse, #111827);
+
+  /* Texto semántico */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-muted);
+  --color-text-disabled: var(--color-border-strong);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-link: var(--color-primary);
+  --color-text-link-hover: var(--color-primary-600, var(--color-primary));
+
+  /* Bordes semánticos */
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-default: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-focus: var(--color-ring);
+
+  /* Interactivos */
+  --color-interactive-primary: var(--color-primary);
+  --color-interactive-primary-hover: var(--color-primary-600, var(--color-primary));
+  --color-interactive-primary-active: var(--color-primary-700, var(--color-primary));
+  --color-interactive-secondary: var(--color-secondary);
+  --color-interactive-accent: var(--color-accent);
+
+  /* Estados semánticos */
+  --color-success-bg: var(--color-success-100);
+  --color-warning-bg: var(--color-warning-100);
+  --color-danger-bg: var(--color-danger-100);
+  --color-info-bg: var(--color-info-100);
+
+  /* Trust signals */
+  --color-trust-verified: var(--color-success);
+  --color-trust-badge-bg: var(--color-success-100);
+  --color-trust-badge-border: var(--color-success-200);
+
+  /* ===== TIPOGRAFÍA SEMÁNTICA ===== */
+  --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+
+  /* Escala modular semántica */
+  --text-display: 3rem;       /* 48px */
+  --text-h1: 2.25rem;         /* 36px */
+  --text-h2: 1.5rem;          /* 24px */
+  --text-h3: 1.25rem;         /* 20px */
+  --text-body: 1rem;          /* 16px — mínimo para body */
+  --text-caption: 0.875rem;   /* 14px */
+  --text-fine: 0.75rem;       /* 12px */
+
+  /* Pesos semánticos */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line heights semánticos */
+  --leading-tight: 1.2;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Tracking semántico */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+
+  /* ===== ESPACIADO (base 4px) ===== */
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+
+  /* ===== RADIOS ===== */
+  --radius-none: 0;
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius-md: 0.5rem;   /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-2xl: 1.5rem;  /* 24px */
+  --radius-full: 9999px;
+
+  /* ===== SOMBRAS SEMÁNTICAS ===== */
+  --shadow-subtle: var(--shadow-sm);
+  --shadow-medium: var(--shadow-md);
+  --shadow-strong: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-focus: var(--shadow-focus);
+
+  /* ===== MOTIÓN ===== */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ===== Z-INDEX ===== */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-overlay: 350;
+  --z-toast: 400;
+  --z-tooltip: 500;
+}
+
+/* Dark mode — override semantic tokens */
+[data-theme="dark"] {
+  --color-surface-base: var(--color-surface);
+  --color-surface-raised: var(--color-surface-elevated);
+  --color-surface-overlay: var(--color-overlay-strong);
+  --color-surface-inverse: #ffffff;
+
+  --color-text-link: var(--color-primary-400, var(--color-primary));
+  --color-text-link-hover: var(--color-primary-300, #63D0AB);
+
+  --color-interactive-primary: var(--color-primary);
+  --color-interactive-primary-hover: var(--color-primary-600, var(--color-primary));
+  --color-interactive-primary-active: var(--color-primary-700, var(--color-primary));
+
+  --color-trust-verified: var(--color-success);
+  --color-trust-badge-bg: var(--color-success-100);
+  --color-trust-badge-border: var(--color-success-200);
+
+  --shadow-subtle: var(--shadow-sm);
+  --shadow-medium: var(--shadow-md);
+  --shadow-strong: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-focus: var(--shadow-focus);
+}
+
+/* Sistema de preferencias de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch target minimums — global utility */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Focus ring — global utility matching WCAG 2.1 AA */
+.focus-ring {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Text balance — prevent ragged line breaks in headings */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Text pretty — allow wrapping but prevent orphans */
+.text-pretty {
+  text-wrap: pretty;
+}

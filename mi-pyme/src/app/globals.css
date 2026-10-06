@@ -800,7 +800,15 @@
   }
 
   .animate-scale-in {
-    animation: scaleIn var(--duration-fast) var(--ease-out);
+    animation: scaleIn var(--duration-normal) var(--ease-out);
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in var(--duration-slow) var(--ease-spring);
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite linear;
   }
 
   @keyframes fadeIn {
@@ -843,5 +851,26 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite linear;
   }
 }

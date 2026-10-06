@@ -74,3 +74,23 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 > **Tests de arquitectura**: `src/tests/architecture-auth.test.ts` verifica
 > automáticamente que ninguna de estas reglas se ha revertido. Si un test falla,
 > es una regresión real.
+
+## UI/UX — Reglas de Diseño (Fase 3.5)
+
+> **Fuente de verdad**: `src/styles/tokens.css`, `src/app/globals.css`, `docs/design-tokens.md`, `docs/design-system.md`, `docs/ux-patterns.md`.
+
+- **OBLIGATORIO**: usar tokens semánticos, no valores hardcodeados (colores, spacing, tipografía).
+- **OBLIGATORIO**: mobile-first (320px antes que 768px).
+- **OBLIGATORIO**: touch targets ≥ 44×44px.
+- **OBLIGATORIO**: body text ≥ 16px.
+- **OBLIGATORIO**: `next/image` con `width`/`height`/`alt` (o `fill`).
+- **OBLIGATORIO**: skeletons en lugar de spinners en listas.
+- **OBLIGATORIO**: empty states accionables (con CTA clara).
+- **OBLIGATORIO**: `prefers-reduced-motion` respetado globalmente.
+- **OBLIGATORIO**: `aria-label` en icon-only buttons.
+- **OBLIGATORIO**: labels visibles en inputs (no solo placeholder).
+- **OBLIGATORIO**: focus visible (`ring-2 ring-ring`).
+- **PROHIBIDO**: animaciones decorativas sin propósito.
+- **PROHIBIDO**: `console.log` en producción.
+- **PROHIBIDO**: dark patterns (falsos countdowns, "casi agotado", popups forzados).
+- **OBLIGATORIO**: correr `npm run test:a11y` antes de mergear.
