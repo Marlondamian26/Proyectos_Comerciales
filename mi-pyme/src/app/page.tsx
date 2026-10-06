@@ -94,7 +94,7 @@ export default async function HomePage({
               </Link>
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
-              <ThemeToggle />
+              {/* <ThemeToggle /> */}
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm">Iniciar sesión</Button>
               </Link>
