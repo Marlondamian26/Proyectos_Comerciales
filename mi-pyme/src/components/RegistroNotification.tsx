@@ -5,6 +5,7 @@ import { CheckCircle, X } from "lucide-react";
 
 function readRegistroExito(): boolean {
   try {
+    if (typeof window === "undefined") return false;
     return sessionStorage.getItem("registro_exito") === "true";
   } catch {
     return false;
@@ -12,16 +13,18 @@ function readRegistroExito(): boolean {
 }
 
 export function RegistroNotification() {
-  const [visible, setVisible] = useState(() => readRegistroExito());
+  const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const timersRef = useRef<{ exit: ReturnType<typeof setTimeout>; remove: ReturnType<typeof setTimeout> } | null>(null);
 
   useEffect(() => {
-    if (!visible) return;
-
-    if (readRegistroExito()) {
+    const hasRecord = readRegistroExito();
+    if (hasRecord) {
       sessionStorage.removeItem("registro_exito");
+      setVisible(true);
     }
+
+    if (!visible) return;
 
     const exitTimer = setTimeout(() => setExiting(true), 3500);
     const removeTimer = setTimeout(() => setVisible(false), 4000);

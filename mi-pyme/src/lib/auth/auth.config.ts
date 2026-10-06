@@ -37,6 +37,7 @@ const THIRTY_DAYS = 30 * 24 * 60 * 60;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60;
 
 export const authOptions: NextAuthConfig = {
+  trustHost: true,
   providers: [
     Credentials({
       name: "credentials",
@@ -106,22 +107,27 @@ export const authOptions: NextAuthConfig = {
 
       const tokenSessionVersion = token.sessionVersion as number | undefined;
       if (tokenSessionVersion !== undefined) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { sessionVersion: true, isActive: true },
-        });
-
-        if (!dbUser || !dbUser.isActive) {
-          return null as unknown as Session;
-        }
-
-        if (dbUser.sessionVersion !== tokenSessionVersion) {
-          await logAudit("SESSION_INVALIDATED", token.id as string, token.id as string, {
-            reason: "sessionVersion_mismatch",
-            tokenVersion: tokenSessionVersion,
-            dbVersion: dbUser.sessionVersion,
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { sessionVersion: true, isActive: true },
           });
-          return null as unknown as Session;
+
+          if (!dbUser || !dbUser.isActive) {
+            return null as unknown as Session;
+          }
+
+          if (dbUser.sessionVersion !== tokenSessionVersion) {
+            await logAudit("SESSION_INVALIDATED", token.id as string, token.id as string, {
+              reason: "sessionVersion_mismatch",
+              tokenVersion: tokenSessionVersion,
+              dbVersion: dbUser.sessionVersion,
+            });
+            return null as unknown as Session;
+          }
+        } catch (error) {
+          console.error("Error in session callback:", error);
+          return session;
         }
       }
 
