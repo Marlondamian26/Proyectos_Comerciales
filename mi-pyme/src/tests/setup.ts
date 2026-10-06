@@ -1,4 +1,5 @@
 import { PrismaClient, Rol } from "@/generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcrypt from "bcryptjs";
 import path from "path";
 import { vi } from "vitest";
@@ -19,20 +20,13 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 }
 
 const dbPath = path.join(process.cwd(), "data", "mipyme.db");
+const sqliteUrl = `file:${dbPath}`;
 
-// Ensure the app's PrismaClient (prisma.ts) uses the same SQLite DB in tests.
-// The vitest `env` sets DATABASE_URL, but we also set it here for reliability
-// since the app's PrismaClient is created at module load time.
-process.env.DATABASE_URL = `file:${dbPath}`;
-process.env.DIRECT_URL = `file:${dbPath}`;
+process.env.DATABASE_URL = sqliteUrl;
+process.env.DIRECT_URL = sqliteUrl;
 
-export const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: `file:${dbPath}`,
-    },
-  },
-});
+const adapter = new PrismaLibSql({ url: sqliteUrl });
+export const prisma = new PrismaClient({ adapter });
 
 export async function setupTestData() {
   await prisma.$executeRawUnsafe(`DELETE FROM "FacturaItem";`);

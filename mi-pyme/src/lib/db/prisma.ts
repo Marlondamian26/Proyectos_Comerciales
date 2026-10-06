@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 declare global {
   var __prisma: PrismaClient | undefined;
@@ -20,7 +21,14 @@ function createPrismaClient() {
     return new PrismaClient({ adapter });
   }
 
-  return new PrismaClient();
+  if (rawUrl.startsWith("file:")) {
+    const adapter = new PrismaLibSql({
+      url: rawUrl,
+    });
+    return new PrismaClient({ adapter });
+  }
+
+  throw new Error("Unsupported DATABASE_URL format");
 }
 
 let prisma: PrismaClient;
