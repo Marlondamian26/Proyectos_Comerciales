@@ -85,7 +85,7 @@ const themeStore: ThemeStore = {
   theme: "system",
   systemTheme: "light",
   resolvedTheme: "light",
-  ready: typeof window !== "undefined",
+  ready: false,
   listeners: new Set(),
 };
 
@@ -147,10 +147,6 @@ function initializeTheme() {
   themeStore.resolvedTheme = resolved;
   applyTheme(resolved);
   emitChange();
-}
-
-if (typeof window !== "undefined") {
-  initializeTheme();
 }
 
 type ThemeContextValue = {
