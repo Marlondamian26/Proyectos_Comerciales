@@ -46,12 +46,6 @@ export async function middleware(req: NextRequest) {
       pathname === "/" ||
       publicPaths.some((path) => pathname.startsWith(path))
     ) {
-      if (pathname === "/" && session?.user?.rol) {
-        const rol = session.user.rol;
-        if (rolToPath[rol]) {
-          return NextResponse.redirect(new URL(rolToPath[rol], req.url));
-        }
-      }
       return NextResponse.next();
     }
 

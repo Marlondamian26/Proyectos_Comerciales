@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const response = NextResponse.json({
-    success: true,
-    redirectUrl: "/auth/login",
-  });
+  const cookieStore = new Response().headers;
+  const response = NextResponse.json({ success: true, redirectUrl: "/auth/login" });
 
   const authCookies = [
     "next-auth.session-token",
@@ -13,18 +11,32 @@ export async function POST() {
     "__Host-next-auth.csrf-token",
     "next-auth.callback-url",
     "__Secure-next-auth.callback-url",
-    "next-auth.pkce.code_challenge",
-    "__Host-next-auth.pkce.code_challenge",
+    "next-auth.state",
+    "__Secure-next-auth.state",
+    "next-auth.pkce.code_verifier",
+    "__Secure-next-auth.pkce.code_verifier",
+    "next-auth.nonce",
+    "__Secure-next-auth.nonce",
+    "next-auth.logout",
+    "__Secure-next-auth.logout",
   ];
 
-  authCookies.forEach((cookie) => {
-    response.cookies.delete(cookie);
-  });
-
-  response.cookies.set("next-auth.logout", "true", {
-    maxAge: 5,
-    path: "/",
-  });
+  for (const cookieName of authCookies) {
+    response.cookies.delete({ name: cookieName, path: "/" });
+    response.cookies.delete({ name: cookieName, path: "/", secure: true, sameSite: "lax" });
+    response.cookies.set(cookieName, "", { maxAge: 0, path: "/", httpOnly: true });
+    response.cookies.set(cookieName, "", {
+      maxAge: 0,
+      path: "/",
+      secure: true,
+      httpOnly: true,
+      sameSite: "lax",
+    });
+  }
 
   return response;
+}
+
+export async function GET() {
+  return POST();
 }

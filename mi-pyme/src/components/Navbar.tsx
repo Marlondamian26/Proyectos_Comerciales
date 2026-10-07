@@ -5,13 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
-import { ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { ChevronDown, User, Settings } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const GlobalSearchBar = dynamic(
   () => import("@/components/GlobalSearchBar").then((mod) => mod.GlobalSearchBar),
@@ -29,7 +29,6 @@ export interface NavbarProps {
 export function Navbar({ userRol }: NavbarProps) {
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
-  const router = useRouter();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
   const userImage = session?.user?.image ?? null;
 
@@ -75,7 +74,6 @@ export function Navbar({ userRol }: NavbarProps) {
 
 function UserMenu({ name, image }: { name: string; image: string | null }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,19 +123,7 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
             Configuración
           </Link>
           <div role="separator" className="my-1 h-px bg-border" />
-          <button
-            type="button"
-            role="menuitem"
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              router.push("/auth/login");
-              router.refresh();
-            }}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </button>
+          <LogoutButton />
         </div>
       )}
     </div>

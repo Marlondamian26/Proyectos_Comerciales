@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,18 +30,6 @@ export default async function HomePage({
 }) {
   const session = await auth();
   const userRol = session?.user?.rol;
-
-  if (userRol) {
-    const rolToPath: Record<string, string> = {
-      CLIENTE: "/cliente",
-      NEGOCIO: "/negocio",
-      LOGISTICA: "/logistica",
-      ADMIN: "/admin",
-    };
-    if (rolToPath[userRol]) {
-      redirect(rolToPath[userRol]);
-    }
-  }
 
   const sortParam = (await searchParams).sort as SortOption || "popularity-desc";
 
@@ -133,11 +120,11 @@ export default async function HomePage({
               <Image
                 src="/images/logos/logo-principal.png"
                 alt="Mi-Pyme"
-                width={640}
-                height={240}
+                width={768}
+                height={288}
                 priority
                 quality={100}
-                className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto object-contain"
+                className="mx-auto h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
               />
             </div>
             <p className="text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto mb-10">
