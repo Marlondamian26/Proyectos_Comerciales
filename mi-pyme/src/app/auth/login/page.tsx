@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -51,9 +52,15 @@ export default function LoginPage() {
         return;
       }
 
-      // Forzar recarga completa para asegurar actualización de sessión
-      // El proxy del lado del servidor redirigirá al panel correcto según rol
-      window.location.href = callbackUrl;
+      const session = await getSession();
+      const userRol = session?.user?.rol;
+
+      let redirectUrl = callbackUrl;
+      if (callbackUrl === "/" || callbackUrl === "") {
+        redirectUrl = userRol ? getDashboardPath(userRol) : "/cliente";
+      }
+
+      window.location.href = redirectUrl;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesion");
       setLoading(false);
