@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    formats: ["image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "**.cloudinary.com" },
       { protocol: "https", hostname: "**.supabase.co" },

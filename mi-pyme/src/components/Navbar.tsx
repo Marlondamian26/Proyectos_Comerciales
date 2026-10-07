@@ -52,6 +52,7 @@ export function Navbar({ userRol }: NavbarProps) {
               alt="Mi-Pyme"
               width={140}
               height={40}
+              sizes="(max-width: 640px) 120px, (max-width: 768px) 140px, 160px"
               priority
               className="h-9 w-auto object-contain"
             />

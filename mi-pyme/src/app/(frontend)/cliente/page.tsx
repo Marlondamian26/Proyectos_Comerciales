@@ -126,8 +126,8 @@ export default async function Page({
                 alt="Mi-Pyme"
                 width={768}
                 height={288}
+                sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
                 priority
-                quality={100}
                 className="mx-auto h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
               />
             </div>
