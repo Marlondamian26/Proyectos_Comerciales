@@ -129,16 +129,17 @@ export default async function HomePage({
               <CheckCircle className="h-4 w-4" />
               Plataforma #1 para PYMEs
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl mb-6">
+            <div className="mb-8 flex justify-center">
               <Image
                 src="/images/logos/logo-principal.png"
                 alt="Mi-Pyme"
-                width={320}
-                height={120}
+                width={640}
+                height={240}
                 priority
-                className="mx-auto h-20 sm:h-24 md:h-28 w-auto object-contain"
+                quality={100}
+                className="h-40 sm:h-48 md:h-56 lg:h-64 w-auto object-contain"
               />
-            </h1>
+            </div>
             <p className="text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto mb-10">
               Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
             </p>
