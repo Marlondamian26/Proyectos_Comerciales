@@ -13,7 +13,7 @@ const rolToPath: Record<string, string> = {
   ADMIN: "/admin",
 };
 
-const publicPaths = ["/login", "/api/auth", "/catalogo", "/servicios", "/auth/registro", "/auth/login", "/auth/recuperar", "/auth/resetear", "/contacto"];
+const publicPaths = ["/login", "/api/auth", "/api", "/catalogo", "/servicios", "/auth/registro", "/auth/login", "/auth/recuperar", "/auth/resetear", "/contacto", "/images", "/_next"];
 
 const mustChangePasswordPaths = [
   "/perfil/cambiar-password",
@@ -97,6 +97,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/test|api/keep-alive|_next/static|_next/image|favicon.ico|public/).*)",
+     "/((?!api/auth|api/test|api/keep-alive|_next/static|_next/image|favicon.ico|public/|images/).*)",
   ],
 };
