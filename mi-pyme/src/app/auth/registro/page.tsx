@@ -382,7 +382,7 @@ export default function RegistroPage() {
                     <input
                       id="provincia"
                       type="text"
-                      placeholder="Buenos Aires"
+                      placeholder="La Habana"
                       value={form.provincia}
                       onChange={(e) => setForm({ ...form, provincia: e.target.value })}
                       className={`flex h-11 w-full rounded-lg border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all ${errors.provincia ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
@@ -402,7 +402,7 @@ export default function RegistroPage() {
                     <input
                       id="municipio"
                       type="text"
-                      placeholder="La Plata"
+                      placeholder="Playa"
                       value={form.municipio}
                       onChange={(e) => setForm({ ...form, municipio: e.target.value })}
                       className={`flex h-11 w-full rounded-lg border bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all ${errors.municipio ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
