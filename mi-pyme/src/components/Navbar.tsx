@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -44,10 +45,17 @@ export function Navbar({ userRol }: NavbarProps) {
         <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto">
           <Link
             href="/"
-            className="flex-shrink-0 text-xl font-bold text-foreground"
-            aria-label="Mi-Pyme - Inicio"
+            className="flex-shrink-0 flex items-center"
+            aria-label="Mi-Pyme - Ir al inicio"
           >
-            Mi-Pyme
+            <Image
+              src="/images/logos/logo-horizontal.png"
+              alt="Mi-Pyme"
+              width={140}
+              height={40}
+              priority
+              className="h-9 w-auto object-contain"
+            />
           </Link>
           {showSearch && (
             <div className="flex-shrink-0">

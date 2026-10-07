@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
@@ -78,14 +79,20 @@ export default async function HomePage({
       <nav className="sticky top-0 z-[1000] w-full border-b bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white">
-                <ShoppingBag className="h-4 w-4" />
-              </div>
-              <Link href="/" className="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Mi-Pyme
-              </Link>
-            </div>
+            <Link
+              href="/"
+              className="flex-shrink-0 flex items-center"
+              aria-label="Mi-Pyme - Ir al inicio"
+            >
+              <Image
+                src="/images/logos/logo-horizontal.png"
+                alt="Mi-Pyme"
+                width={140}
+                height={40}
+                priority
+                className="h-9 w-auto object-contain"
+              />
+            </Link>
             <div className="hidden md:flex items-center gap-6 text-sm">
               <Link href="/catalogo" className="text-muted-foreground hover:text-foreground transition-colors">
                 Catálogo
@@ -123,9 +130,14 @@ export default async function HomePage({
               Plataforma #1 para PYMEs
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl mb-6">
-              <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                Mi-Pyme
-              </span>
+              <Image
+                src="/images/logos/logo-principal.png"
+                alt="Mi-Pyme"
+                width={320}
+                height={120}
+                priority
+                className="mx-auto h-20 sm:h-24 md:h-28 w-auto object-contain"
+              />
             </h1>
             <p className="text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto mb-10">
               Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.

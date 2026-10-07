@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { validarPassword } from "@/lib/auth/password-policy";
 import { registrarUsuario } from "@/lib/actions";
@@ -18,6 +17,7 @@ import {
   MapPin,
   AlertCircle,
   Hash,
+  Home,
 } from "lucide-react";
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -217,7 +217,10 @@ export default function RegistroPage() {
 
             {/* Volver al inicio button */}
             <div className="mb-6">
-              <DashboardBackLink />
+              <Link href="/" className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Home className="h-4 w-4" />
+                Volver a inicio
+              </Link>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

@@ -6,9 +6,8 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Lock, Eye, EyeOff, AlertCircle, Hash, Check } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle, Hash, Check, Home } from "lucide-react";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -154,7 +153,10 @@ export default function LoginPage() {
 
             {/* Volver al inicio button */}
             <div className="mb-6">
-              <DashboardBackLink />
+              <Link href="/" className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Home className="h-4 w-4" />
+                Volver a inicio
+              </Link>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

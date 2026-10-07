@@ -8,6 +8,7 @@ import {
 } from "@/lib/actions";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import Link from "next/link";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
@@ -120,9 +121,14 @@ export default async function Page({
               Plataforma #1 para PYMEs
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl mb-6">
-              <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                Mi-Pyme
-              </span>
+              <Image
+                src="/images/logos/logo-principal.png"
+                alt="Mi-Pyme"
+                width={320}
+                height={120}
+                priority
+                className="mx-auto h-20 sm:h-24 md:h-28 w-auto object-contain"
+              />
             </h1>
             <p className="text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto mb-10">
               Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
