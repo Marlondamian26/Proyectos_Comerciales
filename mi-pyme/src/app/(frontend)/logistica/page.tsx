@@ -102,7 +102,7 @@ export default async function Page() {
 
           <Card className="hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet/10 text-violet">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
                 <MapPin className="h-5 w-5" />
               </div>
               <span className="text-xs font-medium text-muted-foreground">

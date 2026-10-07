@@ -138,7 +138,7 @@ export const authOptions: NextAuthConfig = {
       try {
         if (new URL(url).origin === baseUrl) return url;
       } catch {}
-      return baseUrl;
+       return `${baseUrl}/auth/login`;
     },
   },
 };

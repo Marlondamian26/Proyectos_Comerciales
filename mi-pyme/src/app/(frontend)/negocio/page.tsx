@@ -109,7 +109,7 @@ export default async function NegocioDashboardPage() {
 
         <Card>
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet/10 text-violet">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
               <TrendingUp className="h-5 w-5" />
             </div>
             <span className="text-xs font-medium text-success flex items-center gap-0.5">

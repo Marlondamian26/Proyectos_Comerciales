@@ -109,7 +109,7 @@ export default async function Page() {
 
           <Card className="hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet/10 text-violet">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
                 <TrendingUp className="h-5 w-5" />
               </div>
               <span className="text-xs font-medium text-success flex items-center gap-0.5">
@@ -200,7 +200,7 @@ export default async function Page() {
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-200"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet text-xs font-bold text-white">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                         {(u.nombre ?? u.email).slice(0, 2).toUpperCase()}
                       </div>
                       <div>

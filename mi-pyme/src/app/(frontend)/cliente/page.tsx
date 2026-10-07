@@ -111,7 +111,7 @@ export default async function Page({
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-violet/10 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
         </div>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
@@ -120,7 +120,7 @@ export default async function Page({
               Plataforma #1 para PYMEs
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl mb-6">
-              <span className="bg-gradient-to-r from-primary via-violet to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
                 Mi-Pyme
               </span>
             </h1>
@@ -219,7 +219,7 @@ export default async function Page({
 
           <Card className="hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet/10 text-violet">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10 text-secondary">
                 <Receipt className="h-5 w-5" />
               </div>
               <span className="text-xs font-medium text-muted-foreground">
@@ -604,7 +604,7 @@ export default async function Page({
       {/* CTA Section */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-primary to-violet p-8 sm:p-16 text-center">
+          <div className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-8 sm:p-16 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               ¿Listo para empezar?
             </h2>

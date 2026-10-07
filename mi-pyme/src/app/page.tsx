@@ -79,10 +79,10 @@ export default async function HomePage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-violet text-white">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white">
                 <ShoppingBag className="h-4 w-4" />
               </div>
-              <Link href="/" className="text-lg font-bold bg-gradient-to-r from-primary to-violet bg-clip-text text-transparent">
+              <Link href="/" className="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Mi-Pyme
               </Link>
             </div>
@@ -98,7 +98,7 @@ export default async function HomePage({
               </Link>
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
-              {/* <ThemeToggle /> */}
+              <ThemeToggle />
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm">Iniciar sesión</Button>
               </Link>
@@ -114,7 +114,7 @@ export default async function HomePage({
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-violet/10 blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-secondary/10 blur-3xl" />
         </div>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
           <div className="mx-auto max-w-3xl text-center">
@@ -123,7 +123,7 @@ export default async function HomePage({
               Plataforma #1 para PYMEs
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl mb-6">
-              <span className="bg-gradient-to-r from-primary via-violet to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
                 Mi-Pyme
               </span>
             </h1>
@@ -430,7 +430,7 @@ export default async function HomePage({
       {/* CTA Section */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-primary to-violet p-8 sm:p-16 text-center">
+          <div className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-8 sm:p-16 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               ¿Listo para empezar?
             </h2>

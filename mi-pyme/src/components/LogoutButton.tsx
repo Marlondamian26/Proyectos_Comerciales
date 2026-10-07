@@ -10,7 +10,7 @@ export function LogoutButton() {
       variant="ghost"
       size="sm"
       className="gap-2 w-full justify-start"
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick={() => signOut({ callbackUrl: "/auth/login" })}
     >
       <LogOut className="h-4 w-4" />
       Cerrar sesión

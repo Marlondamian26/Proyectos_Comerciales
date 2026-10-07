@@ -33,7 +33,7 @@ export function Navbar({ userRol }: NavbarProps) {
   return (
     <header
       className={cn(
-        "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "sticky top-0 z-[1000] border-b bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80",
         "transition-colors duration-200"
       )}
       role="banner"
@@ -93,7 +93,7 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 w-48 z-50 rounded-lg border bg-popover p-1 shadow-md"
+          className="absolute right-0 top-full mt-2 w-48 z-[1100] rounded-lg border bg-popover p-1 shadow-md"
         >
           <Link
             href="/perfil"
@@ -117,7 +117,7 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
           <button
             type="button"
             role="menuitem"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ callbackUrl: "/auth/login" })}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <LogOut className="h-4 w-4" />

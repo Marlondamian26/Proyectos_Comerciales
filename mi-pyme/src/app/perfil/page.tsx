@@ -50,7 +50,7 @@ const ROLES: Record<string, { label: string; color: string }> = {
   CLIENTE: { label: "Cliente", color: "bg-primary/10 text-primary" },
   NEGOCIO: { label: "Negocio", color: "bg-secondary/10 text-secondary" },
   LOGISTICA: { label: "Logística", color: "bg-accent/10 text-accent" },
-  ADMIN: { label: "Administrador", color: "bg-violet/10 text-violet" },
+  ADMIN: { label: "Administrador", color: "bg-secondary/10 text-secondary" },
 };
 
 export default function PerfilPage() {

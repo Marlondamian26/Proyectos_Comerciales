@@ -153,7 +153,7 @@ function ThemeDropdown({
           role="listbox"
           aria-label="Seleccionar tema"
           aria-activedescendant={`${buttonId}-option-${currentTheme}`}
-          className="absolute right-0 top-full mt-1.5 z-50 min-w-[140px] rounded-xl border bg-popover p-1.5 shadow-lg animate-scale-in"
+          className="absolute right-0 top-full mt-1.5 z-[1100] min-w-[140px] rounded-xl border bg-popover p-1.5 shadow-lg animate-scale-in"
         >
           {options.map((option) => (
             <button

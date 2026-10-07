@@ -228,7 +228,7 @@ function NavItem({
         <div
           role="tooltip"
           className={cn(
-            "absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50",
+            "absolute left-full ml-2 top-1/2 -translate-y-1/2 z-[1100]",
             "hidden group-hover:block group-focus-within:block",
             "px-3 py-1.5 rounded-md bg-popover text-popover-foreground",
             "text-sm whitespace-nowrap shadow-medium pointer-events-none"
