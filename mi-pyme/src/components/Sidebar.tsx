@@ -209,7 +209,7 @@ function NavItem({
         href={item.href}
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
-          "hover:bg-muted hover:text-foreground",
+          "hover:bg-muted hover:text-foreground dark:hover:bg-white dark:hover:text-secondary-300",
           isActive
             ? "bg-muted text-foreground"
             : "text-muted-foreground",
