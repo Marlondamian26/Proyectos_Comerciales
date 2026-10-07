@@ -40,8 +40,8 @@ export default async function Page() {
     <main className="min-h-screen app-background">
       <div className="app-blob app-blob--primary top-20 right-20 w-80 h-80" />
       <div className="app-blob app-blob--secondary bottom-10 left-10 w-96 h-96" />
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <section className="border-b border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">

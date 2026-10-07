@@ -3,7 +3,8 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
@@ -27,13 +28,14 @@ export interface NavbarProps {
 export function Navbar({ userRol }: NavbarProps) {
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
+  const router = useRouter();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
   const userImage = session?.user?.image ?? null;
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-[1000] border-b bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80",
+        "sticky top-0 z-[1000] border-b border-border bg-background",
         "transition-colors duration-200"
       )}
       role="banner"
@@ -65,6 +67,7 @@ export function Navbar({ userRol }: NavbarProps) {
 
 function UserMenu({ name, image }: { name: string; image: string | null }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,7 +120,11 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
           <button
             type="button"
             role="menuitem"
-            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/auth/login");
+              router.refresh();
+            }}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <LogOut className="h-4 w-4" />

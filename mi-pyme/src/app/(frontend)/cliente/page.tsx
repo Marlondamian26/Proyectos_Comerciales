@@ -86,8 +86,8 @@ export default async function Page({
       <div className="app-blob app-blob--primary top-20 left-20 w-72 h-72" />
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       {/* Dashboard Summary Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <section className="border-b border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -108,7 +108,7 @@ export default async function Page({
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+      <section className="border-t border-border bg-background">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />

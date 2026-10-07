@@ -75,7 +75,7 @@ export default async function HomePage({
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 w-full border-b bg-background">
+      <nav className="sticky top-0 z-[1000] w-full border-b bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export default async function HomePage({
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
+      <section className="relative border-b border-border bg-background">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-secondary/10 blur-3xl" />

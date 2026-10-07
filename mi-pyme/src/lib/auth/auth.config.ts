@@ -38,6 +38,11 @@ const TWENTY_FOUR_HOURS = 24 * 60 * 60;
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/login",
+    newUser: "/auth/registro",
+  },
   providers: [
     Credentials({
       name: "credentials",
@@ -136,9 +141,11 @@ export const authOptions: NextAuthConfig = {
     async redirect({ url, baseUrl }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       try {
-        if (new URL(url).origin === baseUrl) return url;
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(baseUrl);
+        if (urlObj.origin === baseUrlObj.origin) return url;
       } catch {}
-       return `${baseUrl}/auth/login`;
+      return `${baseUrl}/auth/login`;
     },
   },
 };
