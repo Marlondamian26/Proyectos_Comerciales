@@ -34,7 +34,7 @@ export async function RoleLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col app-background">
       <Navbar userRol={userRol as Rol} esDuenoDeNegocio={esDuenoDeNegocio} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar userRol={userRol as Rol} />

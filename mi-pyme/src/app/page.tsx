@@ -69,7 +69,11 @@ export default async function HomePage({
   const negociosConEnvio = negocios.filter((n) => n.permiteEnvio).slice(0, 6);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen app-background">
+      {/* Decorative blobs */}
+      <div className="app-blob app-blob--primary top-20 left-20 w-72 h-72" />
+      <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
+      <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

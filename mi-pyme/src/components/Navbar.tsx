@@ -3,12 +3,13 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
-import { Search } from "lucide-react";
+import { Avatar } from "@/components/ui/Avatar";
+import { ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 const GlobalSearchBar = dynamic(
   () => import("@/components/GlobalSearchBar").then((mod) => mod.GlobalSearchBar),
@@ -18,72 +19,16 @@ const GlobalSearchBar = dynamic(
   }
 );
 
-export interface NavItem {
-  label: string;
-  href: string;
-  icon?: React.ReactNode;
-  allowedRoles?: Rol[];
-  requiresNegocioOwnership?: boolean;
-}
-
-const navItems: NavItem[] = [
-  { label: "Inicio", href: "/", icon: "🏠", allowedRoles: [] },
-  { label: "Catálogo", href: "/catalogo", icon: "🛍️", allowedRoles: [] },
-  { label: "Carrito", href: "/carrito", icon: "🛒", allowedRoles: [Rol.CLIENTE] },
-  { label: "Reservas", href: "/reservas", icon: "📅", allowedRoles: [Rol.CLIENTE] },
-  {
-    label: "Pedidos",
-    href: "/pedidos",
-    icon: "📦",
-    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA],
-  },
-   {
-    label: "Facturas",
-    href: "/facturas",
-    icon: "🧾",
-    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN],
-  },
-  {
-    label: "Pagos",
-    href: "/pagos",
-    icon: "💳",
-    allowedRoles: [Rol.CLIENTE, Rol.ADMIN],
-  },
-  {
-    label: "Cliente",
-    href: "/cliente",
-    icon: "👤",
-    allowedRoles: [Rol.CLIENTE],
-  },
-   {
-    label: "Negocio",
-    href: "/negocio",
-    icon: "🏢",
-    allowedRoles: [Rol.NEGOCIO, Rol.ADMIN],
-    requiresNegocioOwnership: true,
-  },
-  {
-    label: "Logística",
-    href: "/logistica",
-    icon: "🚚",
-    allowedRoles: [Rol.LOGISTICA, Rol.ADMIN],
-  },
-  {
-    label: "Admin",
-    href: "/admin",
-    icon: "⚙️",
-    allowedRoles: [Rol.ADMIN],
-  },
-];
-
 export interface NavbarProps {
   userRol?: Rol;
   esDuenoDeNegocio?: boolean;
 }
 
-export function Navbar({ userRol, esDuenoDeNegocio }: NavbarProps) {
-  const pathname = usePathname();
+export function Navbar({ userRol }: NavbarProps) {
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
+  const { data: session } = useSession();
+  const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
+  const userImage = session?.user?.image ?? null;
 
   return (
     <header
@@ -102,56 +47,23 @@ export function Navbar({ userRol, esDuenoDeNegocio }: NavbarProps) {
           >
             Mi-Pyme
           </Link>
-          <ul className="flex items-center gap-2" role="menubar">
-            {navItems
-              .filter(
-                (item) =>
-                  !item.allowedRoles ||
-                  item.allowedRoles.length === 0 ||
-                  (userRol && item.allowedRoles.includes(userRol)) ||
-                  (item.requiresNegocioOwnership && esDuenoDeNegocio)
-              )
-              .map((item) => (
-                <li key={item.href} role="none">
-                  <Link
-                    href={item.href}
-                    role="menuitem"
-                    className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150",
-                      "hover:bg-muted hover:text-foreground",
-                      pathname === item.href
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground"
-                    )}
-                    aria-current={pathname === item.href ? "page" : undefined}
-                  >
-                    <span className="mr-2" aria-hidden="true">
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-          </ul>
           {showSearch && (
             <div className="flex-shrink-0">
               <GlobalSearchBar userRol={userRol} />
             </div>
           )}
-          {!showSearch && userRol && (
-            <SearchDropdown userRol={userRol} />
-          )}
         </div>
         <div className="flex-shrink-0 flex items-center gap-1">
           <NotificacionBell />
           <ThemeToggle />
+          <UserMenu name={userName} image={userImage} />
         </div>
       </nav>
     </header>
   );
 }
 
-function SearchDropdown({ userRol }: { userRol: Rol }) {
+function UserMenu({ name, image }: { name: string; image: string | null }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -166,19 +78,51 @@ function SearchDropdown({ userRol }: { userRol: Rol }) {
   }, []);
 
   return (
-    <div className="relative flex-shrink-0" ref={containerRef}>
+    <div className="relative" ref={containerRef}>
       <button
-        onClick={() => setOpen(!open)}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        aria-label="Búsqueda"
-        aria-expanded={open}
         type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Menú de usuario"
       >
-        <Search className="h-4 w-4" />
+        <Avatar src={image} name={name} size="sm" />
+        <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-72 z-50">
-          <GlobalSearchBar userRol={userRol} compact />
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-2 w-48 z-50 rounded-lg border bg-popover p-1 shadow-md"
+        >
+          <Link
+            href="/perfil"
+            role="menuitem"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <User className="h-4 w-4" />
+            Mi perfil
+          </Link>
+          <Link
+            href="/admin"
+            role="menuitem"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <Settings className="h-4 w-4" />
+            Configuración
+          </Link>
+          <div role="separator" className="my-1 h-px bg-border" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </button>
         </div>
       )}
     </div>

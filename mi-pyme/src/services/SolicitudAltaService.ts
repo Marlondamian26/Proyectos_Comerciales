@@ -9,7 +9,7 @@
  */
 import { Service } from "./Service";
 import prisma from "@/lib/db/prisma";
-import { ICache, getCache, cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
+import { ICache, getCache, cacheKeys, cacheTTL } from "@/infrastructure";
 import { BusinessError } from "@/shared/types";
 import { logAudit } from "./utils/audit";
 import { NegocioService } from "./NegocioService";
@@ -70,16 +70,12 @@ export class SolicitudAltaService extends Service {
       );
     }
 
-    const slugBase = datos.nombreNegocio
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w\-]/g, "");
-
     const solicitud = await prisma.solicitudAltaNegocio.create({
       data: {
         userId,
-        nombreNegocio: datos.nombreNegocio,
-        descripcion: datos.descripcion ?? undefined,
+         nombreNegocio: datos.nombreNegocio,
+         tipoRol: datos.tipoRol ?? "NEGOCIO",
+         descripcion: datos.descripcion ?? undefined,
         areaId: datos.areaId ?? undefined,
         subareaIds: datos.subareaIds && datos.subareaIds.length > 0
           ? JSON.stringify(datos.subareaIds)
@@ -213,7 +209,7 @@ export class SolicitudAltaService extends Service {
     * Aprueba una solicitud: crea el Negocio real y lo enlaza al usuario.
    * Solo ADMIN.
    */
-  async aprobarSolicitud(solicitudId: string, adminId: string): Promise<{ negocio: Awaited<ReturnType<typeof prisma.negocio.findUnique>>; solicitud: SolicitudAltaNegocio }> {
+  async aprobarSolicitud(solicitudId: string, adminId: string): Promise<{ negocio: Awaited<ReturnType<typeof prisma.negocio.findUnique>> | null; solicitud: SolicitudAltaNegocio }> {
     const solicitud = await prisma.solicitudAltaNegocio.findUnique({
       where: { id: solicitudId },
       include: { user: true, area: true },
@@ -236,53 +232,60 @@ export class SolicitudAltaService extends Service {
       .replace(/\s+/g, "-")
       .replace(/[^\w\-]/g, "");
 
-    let slug = slugBase;
-    let intento = 0;
-    while (await prisma.negocio.findUnique({ where: { slug }, select: { id: true } })) {
-      intento++;
-      slug = `${slugBase}-${intento}`;
+    let negocio: Awaited<ReturnType<typeof prisma.negocio.findUnique>> = null;
+
+    if (solicitud.tipoRol !== "LOGISTICA") {
+      let slug = slugBase;
+      let intento = 0;
+      while (await prisma.negocio.findUnique({ where: { slug }, select: { id: true } })) {
+        intento++;
+        slug = `${slugBase}-${intento}`;
+      }
+
+      negocio = await prisma.negocio.create({
+        data: {
+          nombre: solicitud.nombreNegocio,
+          descripcion: solicitud.descripcion ?? undefined,
+          slug,
+          estado: "ACTIVO",
+          areaId: solicitud.areaId ?? undefined,
+          userId: solicitud.userId,
+          provincia: solicitud.provincia ?? undefined,
+          municipio: solicitud.municipio ?? undefined,
+          telefono: solicitud.telefono ?? undefined,
+          emailContacto: solicitud.emailContacto ?? undefined,
+          direccion: solicitud.direccion ?? undefined,
+          permiteReservas: true,
+          permiteEnvio: true,
+          aprobadoPorId: adminId,
+          aprobadoEn: new Date(),
+        },
+      });
+
+      const DIAS_DEFAULT = [
+        { diaSemana: 1, horaApertura: "08:00", horaCierre: "18:00" },
+        { diaSemana: 2, horaApertura: "08:00", horaCierre: "18:00" },
+        { diaSemana: 3, horaApertura: "08:00", horaCierre: "18:00" },
+        { diaSemana: 4, horaApertura: "08:00", horaCierre: "18:00" },
+        { diaSemana: 5, horaApertura: "08:00", horaCierre: "18:00" },
+        { diaSemana: 6, horaApertura: "08:00", horaCierre: "13:00" },
+        { diaSemana: 0, horaApertura: "00:00", horaCierre: "00:00", cerrado: true },
+      ];
+
+      await prisma.horarioNegocio.createMany({
+        data: DIAS_DEFAULT.map((d) => ({
+          negocioId: negocio!.id,
+          diaSemana: d.diaSemana,
+          horaApertura: d.horaApertura,
+          horaCierre: d.horaCierre,
+          cerrado: d.diaSemana === 0,
+        })),
+      });
+
+      if (negocio) {
+        this.negocioService.invalidateCache(negocio.id);
+      }
     }
-
-    const negocio = await prisma.negocio.create({
-      data: {
-        nombre: solicitud.nombreNegocio,
-        descripcion: solicitud.descripcion ?? undefined,
-        slug,
-        estado: "ACTIVO",
-        areaId: solicitud.areaId ?? undefined,
-        userId: solicitud.userId,
-        provincia: solicitud.provincia ?? undefined,
-        municipio: solicitud.municipio ?? undefined,
-        telefono: solicitud.telefono ?? undefined,
-        emailContacto: solicitud.emailContacto ?? undefined,
-        direccion: solicitud.direccion ?? undefined,
-        permiteReservas: true,
-        permiteEnvio: true,
-        aprobadoPorId: adminId,
-        aprobadoEn: new Date(),
-      },
-    });
-
-    // Horarios por defecto
-    const DIAS_DEFAULT = [
-      { diaSemana: 1, horaApertura: "08:00", horaCierre: "18:00" },
-      { diaSemana: 2, horaApertura: "08:00", horaCierre: "18:00" },
-      { diaSemana: 3, horaApertura: "08:00", horaCierre: "18:00" },
-      { diaSemana: 4, horaApertura: "08:00", horaCierre: "18:00" },
-      { diaSemana: 5, horaApertura: "08:00", horaCierre: "18:00" },
-      { diaSemana: 6, horaApertura: "08:00", horaCierre: "13:00" },
-      { diaSemana: 0, horaApertura: "00:00", horaCierre: "00:00", cerrado: true },
-    ];
-
-    await prisma.horarioNegocio.createMany({
-      data: DIAS_DEFAULT.map((d) => ({
-        negocioId: negocio.id,
-        diaSemana: d.diaSemana,
-        horaApertura: d.horaApertura,
-        horaCierre: d.horaCierre,
-        cerrado: d.diaSemana === 0,
-      })),
-    });
 
     // Marcar solicitud como aprobada
     await prisma.solicitudAltaNegocio.update({
@@ -294,17 +297,19 @@ export class SolicitudAltaService extends Service {
       },
     });
 
-    // Otorgar rol NEGOCIO al usuario si no lo tiene
+    // Otorgar rol al usuario según tipoRol solicitado
     const userActual = await prisma.user.findUnique({
       where: { id: solicitud.userId },
       select: { rol: true },
     });
 
-    if (userActual && userActual.rol !== "NEGOCIO" && userActual.rol !== "ADMIN") {
+    const rolObjetivo = solicitud.tipoRol === "LOGISTICA" ? "LOGISTICA" : "NEGOCIO";
+
+    if (userActual && (userActual.rol as string) !== rolObjetivo && userActual.rol !== "ADMIN") {
       await prisma.user.update({
         where: { id: solicitud.userId },
         data: {
-          rol: "NEGOCIO",
+          rol: rolObjetivo,
           sessionVersion: { increment: 1 },
         },
       });
@@ -313,13 +318,16 @@ export class SolicitudAltaService extends Service {
     }
 
     await logAudit("SOLICITUD_APROBADA", adminId, solicitudId, {
-      negocioId: negocio.id,
+      negocioId: negocio?.id,
+      tipoRol: rolObjetivo,
       sessionVersionIncrementado: true,
     });
 
     await this.cache.del(cacheKeys.solicitudes.pending());
     await this.cache.del(cacheKeys.solicitudes.detail(solicitudId));
-    this.negocioService.invalidateCache(negocio.id);
+    if (negocio) {
+      this.negocioService.invalidateCache(negocio.id);
+    }
 
     return { negocio, solicitud };
   }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { Area, Subarea } from "@/generated/prisma/client";
-import { MapPin, Building2, Phone, Mail } from "lucide-react";
+import { MapPin, Building2, Phone, Mail, Truck } from "lucide-react";
 
 interface Props {
   areas: Area[];
@@ -29,6 +29,7 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
   const [telefono, setTelefono] = useState("");
   const [emailContacto, setEmailContacto] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [tipoRol, setTipoRol] = useState<"NEGOCIO" | "LOGISTICA">("NEGOCIO");
 
   const areaOptions = areas.map((a) => ({ value: a.id, label: a.nombre }));
 
@@ -38,6 +39,7 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
     try {
       await crearSolicitudAltaAction({
         nombreNegocio,
+        tipoRol,
         descripcion: descripcion || undefined,
         areaId: areaId ?? undefined,
         subareaIds,
@@ -73,6 +75,50 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
               leftIcon={<Building2 className="h-4 w-4" />}
               placeholder="Ej: Mi cafetería"
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              Tipo de solicitud
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setTipoRol("NEGOCIO")}
+                className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${
+                  tipoRol === "NEGOCIO"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+                aria-pressed={tipoRol === "NEGOCIO"}
+              >
+                <Building2 className="h-5 w-5" />
+                <div>
+                  <div className="font-semibold">Negocio</div>
+                  <div className="text-sm opacity-80">
+                    Registra un negocio con productos y servicios
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoRol("LOGISTICA")}
+                className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${
+                  tipoRol === "LOGISTICA"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+                aria-pressed={tipoRol === "LOGISTICA"}
+              >
+                <Truck className="h-5 w-5" />
+                <div>
+                  <div className="font-semibold">Logística</div>
+                  <div className="text-sm opacity-80">
+                    Ofrece servicios de delivery y transporte
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="md:col-span-2">

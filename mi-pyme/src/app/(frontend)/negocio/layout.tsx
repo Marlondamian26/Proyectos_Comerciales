@@ -30,7 +30,7 @@ export default async function NegocioLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col app-background">
       <Navbar userRol={userRol as Rol} esDuenoDeNegocio={true} />
       <div className="flex flex-1 overflow-hidden">
         <NegocioSidebar userRol={userRol} />

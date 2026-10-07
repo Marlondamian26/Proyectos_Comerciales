@@ -81,7 +81,10 @@ export default async function Page({
   const negociosConEnvio = negocios.filter((n) => n.permiteEnvio).slice(0, 6);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen app-background">
+      {/* Decorative blobs */}
+      <div className="app-blob app-blob--primary top-20 left-20 w-72 h-72" />
+      <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       {/* Dashboard Summary Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">

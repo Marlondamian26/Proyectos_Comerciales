@@ -7,7 +7,10 @@ import prisma from "@/lib/db/prisma";
 import { cachedQuery } from "@/lib/db/prisma";
 import { getCache, cacheKeys, cachePrefixes, cacheTTL } from "@/infrastructure";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { Rol } from "@/lib/auth/roles";
+import { signIn } from "@/lib/auth";
+import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { requireRole } from "@/lib/auth/requireRole";
 import { BCRYPT_ROUNDS } from "@/lib/auth/constants";
 import { validarPassword } from "@/lib/auth/password-policy";
@@ -1886,7 +1889,9 @@ export async function registrarUsuario(
     rol?: string;
     provincia?: string;
     municipio?: string;
-  }
+    quieroVender?: boolean;
+    callbackUrl?: string;
+  },
 ): Promise<{ success: boolean; userId?: string; error?: string }> {
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1947,8 +1952,48 @@ export async function registrarUsuario(
       destinatarioUserId: user.id,
     });
 
-    return { success: true, userId: user.id };
+    await logAudit("REGISTRO_USUARIO", null, user.id, {
+      email: user.email,
+      username: user.username,
+      rol: "CLIENTE",
+      nombre: user.nombre,
+      provincia: datos.provincia,
+      municipio: datos.municipio,
+    });
+
+    // Auto-login: autenticar al usuario recién creado para evitar que
+    // tenga que ir a Login manualmente.
+    try {
+      await signIn("credentials", {
+        email: datos.email,
+        password: datos.password,
+        redirect: false,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        throw error;
+      }
+      console.error("[REGISTRO] Error en auto-login:", error);
+    }
+
+    if (datos.quieroVender) {
+      redirect("/negocios/solicitar");
+    }
+    const redirectPath =
+      datos.callbackUrl && datos.callbackUrl.startsWith("/")
+        ? datos.callbackUrl
+        : getDashboardPath(user.rol as Rol);
+    redirect(redirectPath);
   } catch (err: unknown) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") {
+      throw err;
+    }
+    if (err && typeof err === "object" && "digest" in err) {
+      const digest = (err as { digest?: string }).digest;
+      if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) {
+        throw err;
+      }
+    }
     const message = err instanceof Error ? err.message : String(err);
     console.error("Error registering user:", message, err);
     return { success: false, error: `Error al registrar usuario: ${message}` };
@@ -2996,6 +3041,7 @@ export async function listProveedoresDisponiblesAction(negocioId: string) {
 export async function crearSolicitudAltaAction(datos: {
   nombreNegocio: string;
   descripcion?: string | null;
+  tipoRol?: string | null;
   areaId?: string | null;
   subareaIds?: string[];
   provincia?: string | null;

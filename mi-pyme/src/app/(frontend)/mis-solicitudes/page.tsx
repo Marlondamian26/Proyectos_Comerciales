@@ -37,7 +37,7 @@ export default async function MisSolicitudesPage() {
   const userId = session?.user?.id ?? "";
 
   if (!session) {
-    redirect("/auth/signin");
+    redirect("/auth/login");
   }
 
   if (session.user?.rol === Rol.ADMIN) {
@@ -47,7 +47,7 @@ export default async function MisSolicitudesPage() {
   const solicitudes: SolicitudUsuario[] = await listarSolicitudesUsuarioAction(userId);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen app-background">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>

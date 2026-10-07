@@ -11,7 +11,7 @@ export default async function SolicitarNegocioPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/auth/signin");
+    redirect("/auth/login");
   }
 
   if (session.user?.rol === Rol.ADMIN) {
@@ -27,7 +27,7 @@ export default async function SolicitarNegocioPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen app-background">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">

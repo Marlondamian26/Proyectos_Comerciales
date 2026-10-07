@@ -51,6 +51,7 @@ export interface HorarioNegocioDTO {
 
 export interface SolicitudAltaDTO {
   nombreNegocio: string;
+  tipoRol?: string | null;
   descripcion?: string | null;
   areaId?: string | null;
   subareaIds?: string[];

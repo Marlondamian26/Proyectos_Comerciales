@@ -728,6 +728,7 @@ model SolicitudAltaNegocio {
   id            String    @id @default(cuid())
   userId        String
   nombreNegocio String
+  tipoRol       String    @default("NEGOCIO")
   descripcion   String?
   areaId        String?
   subareaIds    String?

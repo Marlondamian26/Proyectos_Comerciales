@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 import "@/styles/tokens.css";
+import "@/styles/gradients.css";
 
 const inter = Inter({
   variable: "--font-inter",

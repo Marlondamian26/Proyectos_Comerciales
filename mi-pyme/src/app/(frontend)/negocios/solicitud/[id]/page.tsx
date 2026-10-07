@@ -50,7 +50,7 @@ export default async function SolicitudDetallePage({ params }: Props) {
   const { id } = await params;
 
   if (!session) {
-    redirect("/auth/signin");
+    redirect("/auth/login");
   }
 
   const solicitud = (await getSolicitudAltaAction(id)) as SolicitudConRelations | null;
@@ -62,7 +62,7 @@ export default async function SolicitudDetallePage({ params }: Props) {
   const negocioActivo = solicitud.estado === "ACTIVO";
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen app-background">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>

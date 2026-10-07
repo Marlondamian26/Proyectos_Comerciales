@@ -36,7 +36,7 @@ para **Production** y **Preview**:
 |----------|-------|
 | `DATABASE_URL` | `postgresql://postgres.<ref>:<password>@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require` |
 | `DIRECT_URL` | `postgresql://postgres.<ref>:<password>@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require` |
-| `NEXTAUTH_URL` | `https://mi-pyme.vercel.app` (o tu dominio) |
+| `NEXTAUTH_URL` | `https://mi-pyme-seven.vercel.app` (DOMINIO DE PRODUCCIÓN EXACTO) |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32` (mínimo 32 chars) |
 | `GENERIC_ADMIN_PASSWORD` | Contraseña fuerte para el admin genérico |
 | `NEGOCIO_PASSWORD` | Contraseña para usuarios NEGOCIO de prueba |
@@ -171,6 +171,24 @@ openssl rand -base64 32
 ```
 
 Y configúrala en Vercel → Environment Variables → `NEXTAUTH_SECRET`.
+
+### Logout redirige a un sitio externo ("MiPyme Chile")
+
+**Causa:** `NEXTAUTH_URL` mal configurada en Vercel, o falta del callback `redirect`
+en `src/lib/auth/auth.config.ts`. NextAuth resuelve `callbackUrl` relativo contra
+`NEXTAUTH_URL`; si apunta a un dominio equivocado, el logout sale del sitio.
+
+**Solución:**
+
+1. Verifica que `NEXTAUTH_URL` en **Vercel → Settings → Environment Variables**
+   sea exactamente el dominio de producción:
+   ```
+   NEXTAUTH_URL=https://mi-pyme-seven.vercel.app
+   ```
+2. El callback `redirect` en `auth.config.ts` fuerza que las URLs relativas
+   (`callbackUrl: "/"`) se resuelvan contra `baseUrl` y que cualquier redirect
+   externo caiga a `baseUrl` (nunca a un sitio externo).
+3. Redeploy.
 
 ## Post-deploy
 

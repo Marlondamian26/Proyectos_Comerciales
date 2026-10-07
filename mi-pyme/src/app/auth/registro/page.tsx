@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { validarPassword } from "@/lib/auth/password-policy";
+import { registrarUsuario } from "@/lib/actions";
 import {
   User,
   Eye,
@@ -33,18 +34,17 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 }
 
 export default function RegistroPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/cliente";
   const intentRaw = searchParams.get("intent");
-  const [intent, _setIntent] = useState<{ action: string; [key: string]: string } | null>(() => {
+  const parsedIntent: { action: string; [key: string]: string } | null = (() => {
     if (!intentRaw) return null;
     try {
       return JSON.parse(intentRaw);
     } catch {
       return null;
     }
-  });
+  })();
 
   const [form, setForm] = useState({
     nombre: "",
@@ -55,6 +55,7 @@ export default function RegistroPage() {
     provincia: "",
     municipio: "",
   });
+  const [quieroVender, setQuieroVender] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -109,35 +110,31 @@ export default function RegistroPage() {
     setApiError("");
 
     try {
-      const response = await fetch("/api/auth/registro", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
+      let resolvedCallbackUrl = callbackUrl;
+      if (parsedIntent) {
+        const intentAction = parsedIntent.action;
+        if (intentAction === "carrito") {
+          resolvedCallbackUrl = "/carrito";
+        } else if (intentAction === "reserva") {
+          resolvedCallbackUrl = `/reservas?servicioId=${parsedIntent.servicioId || ""}`;
+        } else if (intentAction === "pedido") {
+          resolvedCallbackUrl = "/carrito";
+        }
+      }
+
+      const result = await registrarUsuario({
+        nombre: form.nombre,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        provincia: form.provincia,
+        municipio: form.municipio,
+        quieroVender: quieroVender,
+        callbackUrl: resolvedCallbackUrl,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        sessionStorage.setItem("registro_exito", "true");
-
-        if (intent) {
-          const intentAction = intent.action;
-          if (intentAction === "carrito") {
-            router.push("/carrito");
-          } else if (intentAction === "reserva") {
-            router.push(`/reservas?servicioId=${intent.servicioId || ""}`);
-          } else if (intentAction === "pedido") {
-            router.push("/carrito");
-          } else {
-            router.push(callbackUrl);
-          }
-        } else {
-          router.push("/cliente");
-        }
-      } else {
-        setApiError(result.error || "Error al registrar usuario");
+      if (result?.error) {
+        setApiError(result.error);
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -410,6 +407,24 @@ export default function RegistroPage() {
                   </div>
                   {errors.municipio && <p className="text-sm text-destructive" role="alert">{errors.municipio}</p>}
                 </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-lg border border-border p-3 bg-muted/20">
+                <div className="flex items-center h-5 mt-0.5">
+                  <input
+                    id="quiero-vender"
+                    type="checkbox"
+                    checked={quieroVender}
+                    onChange={(e) => setQuieroVender(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                  />
+                </div>
+                <label htmlFor="quiero-vender" className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">¿Tienes un negocio?</span>
+                  <span className="block mt-0.5">
+                    Marca esta opción y, tras registrarte, podrás solicitar unirte a Mi-Pyme como negocio o logística.
+                  </span>
+                </label>
               </div>
 
               <Button
