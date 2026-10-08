@@ -160,6 +160,29 @@ model Negocio {
   @@index([estado])
 }
 
+model Provincia {
+  id         String     @id @default(cuid())
+  nombre     String     @unique
+  slug       String     @unique
+  activo     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  municipios Municipio[]
+}
+
+model Municipio {
+  id          String    @id @default(cuid())
+  nombre      String
+  slug        String    @unique
+  provinciaId String?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  provincia   Provincia? @relation(fields: [provinciaId], references: [id])
+
+  @@index([provinciaId])
+}
+
 model Area {
   id                   String                 @id @default(cuid())
   nombre               String
