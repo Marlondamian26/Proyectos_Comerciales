@@ -17,6 +17,7 @@ model User {
   password                                                      String?
   nombre                                                        String?
   rol                                                           Rol                    @default(CLIENTE)
+  monedaPreferida                                               Moneda                    @default(CUP)
   provincia                                                     String?
   municipio                                                     String?
   isGenericAdmin                                                Boolean                @default(false)
@@ -52,6 +53,7 @@ model User {
    cuponUsos                                                      CuponUso[]
    comboUsos                                                      ComboUso[]
    notificaciones                                                  Notificacion[]
+   preferenciasMoneda                                            PreferenciaMonedaUsuario[]
    preferenciasNotificacion                                        PreferenciaNotificacion[]
 
   @@index([rol])
@@ -124,7 +126,10 @@ model Negocio {
   telefono                 String?
   emailContacto            String?
   direccion                String?
-  permiteReservas          Boolean           @default(true)
+ monedaBase               Moneda            @default(CUP)
+ monedaVisualizacion      Moneda            @default(CUP)
+ conversionAutomatica     Boolean           @default(true)
+ permiteReservas          Boolean           @default(true)
   permiteEnvio             Boolean           @default(false)
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
@@ -242,6 +247,7 @@ model Producto {
   pedidoItems      PedidoItem[]
   subarea          Subarea                  @relation(fields: [subareaId], references: [id])
   negocio          Negocio                  @relation(fields: [negocioId], references: [id])
+  precios          PrecioProducto[]
 
   @@index([tratamientoIVA])
 }
@@ -277,9 +283,53 @@ model Servicio {
    comboItems          ComboItem[]
    subarea             Subarea        @relation(fields: [subareaId], references: [id])
   negocio             Negocio        @relation(fields: [negocioId], references: [id])
+  precios             PrecioProducto[]
 
   @@index([tratamientoIVA])
   @@index([tipo])
+}
+
+model PrecioProducto {
+  id                   String    @id @default(cuid())
+  productoId           String?
+  producto             Producto? @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  servicioId           String?
+  servicio             Servicio? @relation(fields: [servicioId], references: [id], onDelete: Cascade)
+  monedaBase           Moneda    @default(CUP)
+  montoBase            Decimal
+  monedaVisualizacion  Moneda    @default(CUP)
+  montoVisualizacion   Decimal?
+  conversionAutomatica Boolean   @default(true)
+  tasaOverride         Decimal?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([productoId])
+  @@index([servicioId])
+}
+
+model TasaCambio {
+  id        String   @id @default(cuid())
+  fecha     DateTime @default(now())
+  moneda    Moneda
+  tasa      Decimal
+  fuente    String   @default("ELTOQUE")
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fecha, moneda, fuente])
+  @@index([moneda, fecha])
+  @@index([fuente])
+}
+
+model PreferenciaMonedaUsuario {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  moneda    Moneda   @default(CUP)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Inventario {
@@ -772,6 +822,15 @@ model SolicitudAltaNegocio {
 
   @@index([userId])
   @@index([estado])
+}
+
+enum Moneda {
+  CUP
+  USD
+  EUR
+  MLC
+  USD_TRANSFER
+  EUR_TRANSFER
 }
 
 enum Rol {

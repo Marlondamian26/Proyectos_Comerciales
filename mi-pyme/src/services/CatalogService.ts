@@ -13,7 +13,8 @@ import { DisponibilidadService } from "./DisponibilidadService";
 import { NotificacionService } from "./NotificacionService";
 import { assertPertenencia } from "./utils/permisos";
 import { logAudit } from "./utils/audit";
-import { Prisma, TratamientoIVA } from "@/generated/prisma/client";
+import { PrecioService } from "./PrecioService";
+import { Prisma, TratamientoIVA, Moneda } from "@/generated/prisma/client";
 import { CODIGO_VALIDACION } from "@/core/constants";
 import type { EventoNotificacion } from "@/shared/notificaciones.types";
 import type {
@@ -267,6 +268,82 @@ export class CatalogService extends Service {
     }
 
     return resultados;
+  }
+
+  async listarProductosConPrecioVisual(
+    params: ListarProductosParams = {},
+    opts: { userId?: string | null; moneda?: string | Moneda; negocioId?: string } = {}
+  ) {
+    const precioService = new PrecioService();
+    const productos = await this.listarProductos(params);
+
+    return Promise.all(
+      productos.map(async (producto) => {
+        const negocio = await prisma.negocio.findUnique({
+          where: { id: producto.negocioId },
+          select: {
+            monedaBase: true,
+            monedaVisualizacion: true,
+            conversionAutomatica: true,
+          },
+        });
+
+        const res = await precioService.calcularPrecioVista({
+          montoBase: Number(producto.precio),
+          monedaBase: negocio?.monedaBase ?? Moneda.CUP,
+          monedaVisualizacion: opts.moneda ?? negocio?.monedaVisualizacion ?? Moneda.CUP,
+          userId: opts.userId,
+          negocioId: opts.negocioId ?? producto.negocioId,
+          conversionAutomatica: negocio?.conversionAutomatica ?? true,
+        });
+
+        return {
+          ...producto,
+          precioBase: res.montoBase,
+          precioVisualizacion: res.montoVisualizacion,
+          monedaBase: res.monedaBase,
+          monedaVisualizacion: res.monedaVisualizacion,
+        };
+      })
+    );
+  }
+
+  async listarServiciosConPrecioVisual(
+    params: ListarServiciosParams = {},
+    opts: { userId?: string | null; moneda?: string | Moneda; negocioId?: string } = {}
+  ) {
+    const precioService = new PrecioService();
+    const servicios = await this.listarServicios(params);
+
+    return Promise.all(
+      servicios.map(async (servicio) => {
+        const negocio = await prisma.negocio.findUnique({
+          where: { id: servicio.negocioId },
+          select: {
+            monedaBase: true,
+            monedaVisualizacion: true,
+            conversionAutomatica: true,
+          },
+        });
+
+        const res = await precioService.calcularPrecioVista({
+          montoBase: Number(servicio.precio),
+          monedaBase: negocio?.monedaBase ?? Moneda.CUP,
+          monedaVisualizacion: opts.moneda ?? negocio?.monedaVisualizacion ?? Moneda.CUP,
+          userId: opts.userId,
+          negocioId: opts.negocioId ?? servicio.negocioId,
+          conversionAutomatica: negocio?.conversionAutomatica ?? true,
+        });
+
+        return {
+          ...servicio,
+          precioBase: res.montoBase,
+          precioVisualizacion: res.montoVisualizacion,
+          monedaBase: res.monedaBase,
+          monedaVisualizacion: res.monedaVisualizacion,
+        };
+      })
+    );
   }
 
   // -- CRUD de productos scoped por negocio --

@@ -52,6 +52,8 @@ export async function setupTestData() {
   await prisma.$executeRawUnsafe(`DELETE FROM "Pago";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "HorarioNegocio";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Notificacion";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PreferenciaMonedaUsuario";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "TasaCambio";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "PreferenciaNotificacion";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "NegocioSubarea";`);
   await prisma.$executeRawUnsafe(`DELETE FROM "Negocio";`);

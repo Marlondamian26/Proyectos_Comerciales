@@ -25,6 +25,8 @@ import { DashboardNegocioService } from "@/services/DashboardNegocioService";
 import { CatalogService } from "@/services/CatalogService";
 import { CheckoutService } from "@/services/CheckoutService";
 import { LogisticaService } from "@/services/LogisticaService";
+import { ExchangeRateService } from "@/services/ExchangeRateService";
+import { PrecioService } from "@/services/PrecioService";
 import { PagoService } from "@/services/PagoService";
 import IVAService, { type GrupoItemInput } from "@/services/IVAService";
 import FacturaService from "@/services/FacturaService";
@@ -67,6 +69,36 @@ const cuponService = new CuponService();
 const comboService = new ComboService();
 const descuentoService = new DescuentoService();
 const notificacionService = new NotificacionService();
+const exchangeRateService = new ExchangeRateService();
+const precioService = new PrecioService();
+
+export async function obtenerTasasCambio(forceRefresh = false) {
+  return exchangeRateService.getRates(forceRefresh);
+}
+
+export async function refrescarTasasCambio() {
+  return exchangeRateService.syncFromElToque(true);
+}
+
+export async function guardarPreferenciaMoneda(userId: string, moneda: string) {
+  return precioService.guardarPreferenciaMoneda(userId, moneda);
+}
+
+export async function obtenerPrecioVisualizado(input: {
+  montoBase: number | string;
+  monedaBase?: string;
+  monedaVisualizacion?: string;
+  userId?: string | null;
+  negocioId?: string | null;
+}) {
+  return precioService.calcularPrecioVista({
+    montoBase: input.montoBase,
+    monedaBase: input.monedaBase,
+    monedaVisualizacion: input.monedaVisualizacion,
+    userId: input.userId,
+    negocioId: input.negocioId,
+  });
+}
 
 /**
  * Emite una notificación de forma NO BLOQUEANTE.

@@ -18,6 +18,7 @@ export const cacheTTL = {
   dashboardResumen: 120,
   logistica: 3600,
   checkout: 1800,
+  monedas: 3600,
   reportes: 600,
    usuarios: 600,
    solicitudes: 600,

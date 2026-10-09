@@ -101,6 +101,10 @@ export const cacheKeys = {
   checkout: {
     token: (token: string) => `checkout:token:${token}`,
   },
+  monedas: {
+    rates: () => `monedas:rates`,
+    userPreference: (userId: string) => `monedas:usuario:${userId}`,
+  },
   dashboard: {
     resumen: (negocioId: string, rango?: { desde?: Date; hasta?: Date }) =>
       buildKey(`dashboard:resumen:${negocioId}`, hashFiltros(rango)),
@@ -161,6 +165,7 @@ export const cachePrefixes = {
    codigoEntrega: "pago:codigo-entrega:",
    notificaciones: "notificaciones:",
    dashboard: "dashboard:",
+  monedas: "monedas:",
   reporte: "reporte:",
   descuentos: "descuentos:",
 } as const;
