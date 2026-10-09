@@ -11,15 +11,17 @@ const isTest =
 
 const databaseUrl = isTest
   ? process.env.DATABASE_URL ?? "file:./data/mipyme.db"
-  : process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? "postgresql://postgres:postgres@localhost:5432/mipyme";
-const shadowDatabaseUrl =
-  !isTest && process.env.DIRECT_URL?.startsWith("postgres") ? process.env.DIRECT_URL : undefined;
+  : process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL (or DIRECT_URL) must be set for Prisma.");
+}
 
 export default defineConfig({
   schema: isTest ? "prisma/schema.test.prisma" : "prisma/schema.prisma",
   datasource: {
     url: databaseUrl,
-    shadowDatabaseUrl,
+    shadowDatabaseUrl: isTest ? undefined : process.env.SHADOW_DATABASE_URL,
   },
   migrations: {
     seed: "tsx prisma/seed.ts",
