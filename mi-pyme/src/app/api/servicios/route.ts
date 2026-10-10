@@ -6,6 +6,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const filtros = {
+      ...(searchParams.get("area") && {
+        area: searchParams.get("area")!,
+      }),
       ...(searchParams.get("areaId") && {
         areaId: searchParams.get("areaId")!,
       }),

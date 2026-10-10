@@ -20,6 +20,10 @@ const mustChangePasswordPaths = [
   "/api/perfil",
 ];
 
+function isPathUnder(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 export const runtime = "nodejs";
 export const preferredRegion = "home";
 
@@ -42,23 +46,28 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
-    if (
-      pathname === "/" ||
-      publicPaths.some((path) => pathname.startsWith(path))
-    ) {
+    if (pathname === "/" || publicPaths.some((path) => isPathUnder(pathname, path))) {
       return NextResponse.next();
     }
 
     if (!session) {
-      const registerUrl = new URL("/auth/registro", req.url);
-      registerUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(registerUrl);
+      const shouldRedirectToLogin = [
+        "/cliente",
+        "/negocio",
+        "/logistica",
+        "/admin",
+      ].some((route) => isPathUnder(pathname, route));
+
+      const targetUrl = shouldRedirectToLogin ? "/auth/login" : "/auth/registro";
+      const authUrl = new URL(targetUrl, req.url);
+      authUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(authUrl);
     }
 
     const rol = session.user?.rol;
     const userId = session.user?.id;
 
-    if (rol && pathname.startsWith("/negocio")) {
+    if (rol && isPathUnder(pathname, "/negocio")) {
       const isNegocioOwner = rol === "NEGOCIO" || rol === "ADMIN"
         ? true
         : rol === "CLIENTE" && userId
@@ -71,19 +80,19 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    if (rol && pathname.startsWith("/")) {
+    if (rol) {
       const targetPath = rolToPath[rol];
 
-      if (pathname.startsWith("/cliente") && rol !== "CLIENTE" && rol !== "ADMIN") {
+      if (isPathUnder(pathname, "/cliente") && rol !== "CLIENTE" && rol !== "ADMIN") {
         return NextResponse.redirect(new URL(targetPath, req.url));
       }
-      if (pathname.startsWith("/negocio")) {
+      if (isPathUnder(pathname, "/negocio")) {
         return NextResponse.next();
       }
-      if (pathname.startsWith("/logistica") && rol !== "LOGISTICA" && rol !== "ADMIN") {
+      if (isPathUnder(pathname, "/logistica") && rol !== "LOGISTICA" && rol !== "ADMIN") {
         return NextResponse.redirect(new URL(targetPath, req.url));
       }
-      if (pathname.startsWith("/admin") && rol !== "ADMIN") {
+      if (isPathUnder(pathname, "/admin") && rol !== "ADMIN") {
         return NextResponse.redirect(new URL(targetPath, req.url));
       }
     }
@@ -91,6 +100,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   } catch (err) {
     console.error("Proxy error:", err);
+    const pathname = req.nextUrl.pathname;
+    if (
+      ["/cliente", "/negocio", "/logistica", "/admin"].some((route) =>
+        isPathUnder(pathname, route)
+      )
+    ) {
+      const loginUrl = new URL("/auth/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
     return NextResponse.next();
   }
 }

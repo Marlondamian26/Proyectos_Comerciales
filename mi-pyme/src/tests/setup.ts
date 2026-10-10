@@ -69,6 +69,7 @@ export async function setupTestData() {
     data: {
       nombre: "Belleza",
       slug: "belleza",
+      areaId: area.id,
       activo: true,
     },
   });

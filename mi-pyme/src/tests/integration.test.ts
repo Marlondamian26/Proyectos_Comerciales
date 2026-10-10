@@ -3,6 +3,7 @@ import { prisma, setupTestData, cleanupTestData } from "./setup";
 import { HORA_CORTE_DISPONIBILIDAD } from "@/core/constants";
 import {
   listarProductos,
+  listarServicios,
   agregarAlCarrito,
   listarCarrito,
   crearReserva,
@@ -72,6 +73,114 @@ describe("Backend API Integration Tests", () => {
       expect(productos.every((p) => p.negocioId === testData.negocio.id)).toBe(
         true
       );
+    });
+
+    it("should filter by areaId through the product subarea", async () => {
+      const area2 = await prisma.area.create({
+        data: { nombre: "Alimentos", slug: `alimentos-area-filter-${Date.now()}`, activo: true },
+      });
+      const subarea2 = await prisma.subarea.create({
+        data: {
+          nombre: "Granos",
+          slug: `granos-area-filter-${Date.now()}`,
+          areaId: area2.id,
+          activo: true,
+        },
+      });
+      const negocio2 = await prisma.negocio.create({
+        data: {
+          nombre: "Negocio de alimentos",
+          slug: `negocio-alimentos-${Date.now()}`,
+          activo: true,
+          areaId: testData.area.id,
+          regimenFiscal: "GENERAL",
+          tasaIVA: 10,
+          modoPrecio: "IVA_INCLUIDO",
+          nit: "987654321",
+        },
+      });
+      await prisma.negocioSubarea.create({
+        data: { negocioId: negocio2.id, subareaId: subarea2.id },
+      });
+      await prisma.producto.create({
+        data: {
+          negocioId: negocio2.id,
+          subareaId: subarea2.id,
+          nombre: "Arroz",
+          descripcion: "Arroz de prueba",
+          precio: 10,
+          unidadMedida: "kg",
+          imagenUrl: "https://example.com/arroz.jpg",
+          activo: true,
+          disponibleHoy: true,
+        },
+      });
+
+      const productos = await listarProductos({ areaId: testData.area.id });
+      expect(productos.length).toBeGreaterThan(0);
+      expect(productos.every((p) => p.subarea?.areaId === testData.area.id)).toBe(
+        true
+      );
+      expect(productos.some((p) => p.nombre === "Arroz")).toBe(false);
+
+      const productosArea2 = await listarProductos({ areaId: area2.id });
+      expect(productosArea2.map((p) => p.nombre)).toContain("Arroz");
+      const productosPorSlug = await listarProductos({ area: area2.slug });
+      expect(productosPorSlug.map((p) => p.nombre)).toContain("Arroz");
+      await expect(
+        listarProductos({ area: "area-inexistente-para-prueba" })
+      ).resolves.toHaveLength(0);
+    });
+
+    it("should filter services by areaId through the subarea", async () => {
+      const alimentosArea = await prisma.area.create({
+        data: { nombre: "Alimentos", slug: `alimentos-servicios-${Date.now()}`, activo: true },
+      });
+      const granos = await prisma.subarea.create({
+        data: {
+          nombre: "Granos y secos",
+          slug: `granos-servicios-${Date.now()}`,
+          areaId: alimentosArea.id,
+          activo: true,
+        },
+      });
+      const negocioAlimentos = await prisma.negocio.create({
+        data: {
+          nombre: "Negocio alimentos",
+          slug: `negocio-alimentos-servicios-${Date.now()}`,
+          activo: true,
+          areaId: testData.area.id,
+          regimenFiscal: "GENERAL",
+          tasaIVA: 10,
+          modoPrecio: "IVA_INCLUIDO",
+          nit: "111222333",
+        },
+      });
+      await prisma.negocioSubarea.create({
+        data: { negocioId: negocioAlimentos.id, subareaId: granos.id },
+      });
+      await prisma.servicio.create({
+        data: {
+          negocioId: negocioAlimentos.id,
+          subareaId: granos.id,
+          nombre: "Entrega express",
+          descripcion: "Servicio de entrega",
+          duracionMinutos: 30,
+          horariosDisponibles: JSON.stringify([]),
+          capacidad: 2,
+          imagenUrl: "https://example.com/express.jpg",
+          activo: true,
+        },
+      });
+
+      const servicios = await listarServicios({ areaId: testData.area.id });
+      expect(servicios.every((s) => s.subarea?.areaId === testData.area.id)).toBe(true);
+      expect(servicios.some((s) => s.nombre === "Entrega express")).toBe(false);
+
+      const serviciosArea2 = await listarServicios({ areaId: alimentosArea.id });
+      expect(serviciosArea2.map((s) => s.nombre)).toContain("Entrega express");
+      const serviciosPorSlug = await listarServicios({ area: alimentosArea.slug });
+      expect(serviciosPorSlug.map((s) => s.nombre)).toContain("Entrega express");
     });
   });
 

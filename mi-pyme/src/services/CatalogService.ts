@@ -180,7 +180,7 @@ export class CatalogService extends Service {
       where.subareaId = params.subareaId;
     }
     if (params.areaId) {
-      where.negocio = { areaId: params.areaId };
+      where.subarea = { areaId: params.areaId };
     }
     if (params.disponibleHoy !== undefined) {
       where.disponibleHoy = params.disponibleHoy;
@@ -220,7 +220,7 @@ export class CatalogService extends Service {
       where.subareaId = params.subareaId;
     }
     if (params.areaId) {
-      where.negocio = { areaId: params.areaId };
+      where.subarea = { areaId: params.areaId };
     }
 
     const servicios = await prisma.servicio.findMany({

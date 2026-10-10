@@ -9,7 +9,6 @@ import {
   listarAreas,
   listarSubareas,
 } from "@/lib/actions";
-import { auth } from "@/lib/auth";
 import { catalogoAddToCart, catalogoReserve } from "./actions";
 import Link from "next/link";
 import { Home } from "lucide-react";
@@ -23,6 +22,7 @@ import type {
 export const dynamic = "force-dynamic";
 
 interface CatalogoFiltros {
+  area?: string;
   areaId?: string;
   subareaId?: string;
   disponibleHoy?: string;
@@ -38,19 +38,22 @@ export default async function CatalogoPage({
 }: {
   searchParams: Promise<CatalogoFiltros>;
 }) {
-  const session = await auth();
   const filtros = await searchParams;
+  const areas = await listarAreas();
+  const areaId = filtros.areaId || areas.find((area) => area.slug === filtros.area)?.id;
 
   const page = parseInt(filtros.page || "1", 10);
-  const offset = (page - 1) * ITEMS_PER_PAGE;
 
-  const [productos, servicios, areas, subareas] = await Promise.all([
-    listarProductosConDisponibilidad(
-      filtros as unknown as ListarProductosParams
-    ),
-    listarServiciosConCupos(filtros as unknown as ListarServiciosParams),
-    listarAreas(),
-    listarSubareas(filtros.areaId),
+  const [productos, servicios, subareas] = await Promise.all([
+    listarProductosConDisponibilidad({
+      ...(filtros as ListarProductosParams),
+      areaId,
+    }),
+    listarServiciosConCupos({
+      ...(filtros as ListarServiciosParams),
+      areaId,
+    }),
+    listarSubareas(areaId),
   ]);
 
   const query = filtros.q?.toLowerCase() || "";
@@ -168,7 +171,7 @@ export default async function CatalogoPage({
               <select
                 id="areaId"
                 name="areaId"
-                defaultValue={filtros.areaId ?? ""}
+                defaultValue={areaId ?? ""}
                 className="rounded-md border px-3 py-2 text-sm"
                 aria-label="Filtrar por área"
               >
@@ -181,7 +184,7 @@ export default async function CatalogoPage({
               </select>
             </div>
 
-            {filtros.areaId && (
+            {areaId && (
               <div className="flex flex-col gap-2">
                 <label htmlFor="subareaId" className="text-sm font-medium">
                   Subárea
@@ -266,10 +269,10 @@ export default async function CatalogoPage({
           0 &&
           !query ? (
           <EmptyStatePreset
-            preset="products"
+            preset="search"
             action={{
-              label: "Agregar primer producto",
-              href: "/admin/productos/nuevo",
+              label: "Ver catálogo completo",
+              href: "/catalogo",
             }}
           />
         ) : (
@@ -413,10 +416,10 @@ export default async function CatalogoPage({
           0 &&
           !query ? (
           <EmptyStatePreset
-            preset="services"
+            preset="search"
             action={{
-              label: "Agregar primer servicio",
-              href: "/admin/servicios/nuevo",
+              label: "Ver catálogo completo",
+              href: "/catalogo",
             }}
           />
         ) : (

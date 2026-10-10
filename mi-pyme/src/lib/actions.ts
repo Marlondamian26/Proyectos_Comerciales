@@ -253,13 +253,27 @@ export async function obtenerNegocioDelUsuario(usuarioId: string) {
   });
 }
 
+async function resolveAreaId(areaId?: string, slug?: string) {
+  if (areaId) return areaId;
+  if (!slug) return undefined;
+
+  const area = await prisma.area.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+
+  return area?.id ?? "";
+}
+
 export async function listarProductos(filtros?: {
+  area?: string;
   areaId?: string;
   negocioId?: string;
   subareaId?: string;
   disponibleHoy?: boolean;
 }) {
-  const cacheKey = cacheKeys.catalogo.productos(filtros);
+  const resolvedAreaId = await resolveAreaId(filtros?.areaId, filtros?.area);
+  const cacheKey = cacheKeys.catalogo.productos({ ...filtros, areaId: resolvedAreaId });
 
   return cachedQuery(cacheKey, async () => {
     return prisma.producto.findMany({
@@ -267,7 +281,9 @@ export async function listarProductos(filtros?: {
         activo: true,
         ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
         ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
-        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(resolvedAreaId !== undefined && {
+          subarea: { areaId: resolvedAreaId },
+        }),
         ...(filtros?.disponibleHoy !== undefined && {
           disponibleHoy: filtros.disponibleHoy,
         }),
@@ -283,13 +299,15 @@ export async function listarProductos(filtros?: {
 
 export async function listarServicios(options?: {
   sort?: { campo?: string; orden?: "asc" | "desc" };
+  area?: string;
   areaId?: string;
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
   tipo?: string;
 }) {
-  const cacheKey = cacheKeys.catalogo.servicios(options);
+  const resolvedAreaId = await resolveAreaId(options?.areaId, options?.area);
+  const cacheKey = cacheKeys.catalogo.servicios({ ...options, areaId: resolvedAreaId });
 
   const orderBy: Record<string, "asc" | "desc"> = {};
   if (options?.sort?.campo === "nombre") {
@@ -306,7 +324,9 @@ export async function listarServicios(options?: {
           : { activo: true }),
         ...(options?.negocioId && { negocioId: options.negocioId }),
         ...(options?.subareaId && { subareaId: options.subareaId }),
-        ...(options?.areaId && { negocio: { areaId: options.areaId } }),
+        ...(resolvedAreaId !== undefined && {
+          subarea: { areaId: resolvedAreaId },
+        }),
         ...(options?.tipo && { tipo: options.tipo as "SERVICIO_GENERAL" | "TRANSPORTE" }),
       },
       include: {
@@ -2468,20 +2488,24 @@ export async function validarCarritoAction() {
  * Lista productos enriquecidos con disponibilidad de hoy (batch).
  */
 export async function listarProductosConDisponibilidad(filtros?: {
+  area?: string;
   areaId?: string;
   negocioId?: string;
   subareaId?: string;
   disponibleHoy?: boolean;
 }) {
+  const resolvedAreaId = await resolveAreaId(filtros?.areaId, filtros?.area);
   await getCache().invalidatePrefix(cachePrefixes.catalogo + "productos");
-  const cacheKey = cacheKeys.catalogo.productos(filtros);
+  const cacheKey = cacheKeys.catalogo.productos({ ...filtros, areaId: resolvedAreaId });
   return cachedQuery(cacheKey, async () => {
     const productos = await prisma.producto.findMany({
       where: {
         activo: true,
         ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
         ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
-        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(resolvedAreaId !== undefined && {
+          subarea: { areaId: resolvedAreaId },
+        }),
         ...(filtros?.disponibleHoy !== undefined && {
           disponibleHoy: filtros.disponibleHoy,
         }),
@@ -2519,13 +2543,15 @@ export async function listarProductosConDisponibilidad(filtros?: {
  * Lista servicios enriquecidos con cupos disponibles hoy.
  */
 export async function listarServiciosConCupos(filtros?: {
+  area?: string;
   areaId?: string;
   negocioId?: string;
   subareaId?: string;
   activo?: boolean;
   tipo?: string;
 }) {
-  const cacheKey = cacheKeys.catalogo.servicios(filtros);
+  const resolvedAreaId = await resolveAreaId(filtros?.areaId, filtros?.area);
+  const cacheKey = cacheKeys.catalogo.servicios({ ...filtros, areaId: resolvedAreaId });
   return cachedQuery(cacheKey, async () => {
     const servicios = await prisma.servicio.findMany({
       where: {
@@ -2534,7 +2560,9 @@ export async function listarServiciosConCupos(filtros?: {
           : { activo: true }),
         ...(filtros?.negocioId && { negocioId: filtros.negocioId }),
         ...(filtros?.subareaId && { subareaId: filtros.subareaId }),
-        ...(filtros?.areaId && { negocio: { areaId: filtros.areaId } }),
+        ...(resolvedAreaId !== undefined && {
+          subarea: { areaId: resolvedAreaId },
+        }),
         ...(filtros?.tipo && { tipo: filtros.tipo as "SERVICIO_GENERAL" | "TRANSPORTE" }),
       },
       include: {

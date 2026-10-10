@@ -1,12 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { listarServiciosConCupos } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Calendar, Clock, Users, ArrowRight, Home } from "lucide-react";
+import { Clock, Users, ArrowRight, Home } from "lucide-react";
 import type { ServicioConCupos } from "@/services/CatalogService";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +24,15 @@ function tipoTransporteLabel(tipo: string): string {
 export default async function ServiciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ negocioId?: string; tipo?: string }>;
+  searchParams: Promise<{ area?: string; areaId?: string; negocioId?: string; tipo?: string }>;
 }) {
-  const { negocioId, tipo } = await searchParams;
-  const servicios = (await listarServiciosConCupos(
-    (negocioId ? { negocioId } : undefined) ?? (tipo ? { tipo } : { activo: true })
-  )) as ServicioConCupos[];
+  const { area, areaId, negocioId, tipo } = await searchParams;
+  const servicios = (await listarServiciosConCupos({
+    ...(area ? { area } : {}),
+    ...(areaId ? { areaId } : {}),
+    ...(negocioId ? { negocioId } : {}),
+    ...(tipo ? { tipo } : { activo: true }),
+  })) as ServicioConCupos[];
 
   return (
     <main className="min-h-screen">
