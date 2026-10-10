@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { Upload, X } from "lucide-react";
 
 export interface ComprobanteFormProps {
-  pagoId: string;
   metodo: "TRANSFERENCIA_BANCARIA" | "PAGO_MOVIL";
   initialReferencia?: string | null;
   initialIdTransferencia?: string | null;
@@ -25,7 +24,6 @@ export interface ComprobanteFormProps {
 }
 
 export function ComprobanteForm({
-  pagoId,
   metodo,
   initialReferencia,
   initialIdTransferencia,
@@ -40,6 +38,7 @@ export function ComprobanteForm({
   const [entidadPago, setEntidadPago] = useState(initialEntidadPago ?? "");
   const [notas, setNotas] = useState(initialNotas ?? "");
   const [comprobanteUrl, setComprobanteUrl] = useState<string | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,13 +71,13 @@ export function ComprobanteForm({
     }
   };
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "application/pdf"];
     if (!validTypes.includes(file.type)) {
-      setError("Formato de archivo no permitido. Usa PNG, JPG o PDF.");
+      setError("Formato de archivo no permitido. Usa PNG, JPG, WEBP o PDF.");
       return;
     }
 
@@ -88,9 +87,30 @@ export function ComprobanteForm({
       return;
     }
 
-    const fakeUrl = `/uploads/pagos/${pagoId}_${Date.now()}.${file.name.split(".").pop()}`;
-    setComprobanteUrl(fakeUrl);
-    setError(null);
+    try {
+      setUploadingFile(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo subir el archivo");
+      }
+
+      setComprobanteUrl(payload.result?.url ?? payload.url ?? null);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Error al subir el comprobante");
+    } finally {
+      setUploadingFile(false);
+      e.target.value = "";
+    }
   };
 
   const handleRemoveImage = () => {
@@ -155,13 +175,14 @@ export function ComprobanteForm({
         <div className="mt-1 flex items-center gap-3">
           <label className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground hover:bg-muted">
             <Upload className="h-4 w-4" />
-            <span>Subir archivo</span>
+            <span>{uploadingFile ? "Subiendo..." : "Subir archivo"}</span>
             <input
               type="file"
-              accept="image/png,image/jpeg,image/jpg,application/pdf"
+              accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
               onChange={handleUpload}
               className="sr-only"
               aria-label="Seleccionar archivo de comprobante"
+              disabled={uploadingFile}
             />
           </label>
           {comprobanteUrl && (

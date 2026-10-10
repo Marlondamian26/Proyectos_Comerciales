@@ -13,6 +13,11 @@ const envSchema = z.object({
   DATABASE_URL_POSTGRES: z.string().optional(),
   NEXTAUTH_SECRET: z.string().min(1, "NEXTAUTH_SECRET is required"),
   NEXTAUTH_URL: z.string().url().optional(),
+  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().default("mi-pyme"),
+  CLOUDINARY_FOLDER: z.string().default("mi-pyme"),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),

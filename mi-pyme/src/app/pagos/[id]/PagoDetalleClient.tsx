@@ -107,7 +107,6 @@ export default function PagoDetalleClient({ pago: pagoInicial, error: errorInici
         <Card className="p-6 mt-6">
           <h2 className="text-lg font-semibold mb-4">Subir comprobante</h2>
            <ComprobanteForm
-             pagoId={pago.id}
              metodo={pago.metodo}
              initialReferencia={pago.referencia ?? undefined}
              initialIdTransferencia={pago.idTransferencia ?? undefined}

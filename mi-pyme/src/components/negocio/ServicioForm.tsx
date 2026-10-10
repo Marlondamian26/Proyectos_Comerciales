@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { Upload } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select } from "@/components/ui/Input";
@@ -37,6 +39,8 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
   const [capacidad, setCapacidad] = useState("");
   const [precio, setPrecio] = useState("");
   const [imagenUrl, setImagenUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [subareaId, setSubareaId] = useState("");
   const [activo, setActivo] = useState(true);
   const [areaSeleccionada, setAreaSeleccionada] = useState("");
@@ -77,6 +81,8 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
     setCapacidad("");
     setPrecio("");
     setImagenUrl("");
+    setImageError(null);
+    setUploadingImage(false);
     setSubareaId("");
     setActivo(true);
     setAreaSeleccionada("");
@@ -134,6 +140,47 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
 
   const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     cargarSubareas(e.target.value);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      setImageError("Formato de archivo no permitido. Usa PNG, JPG o WEBP.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("La imagen excede 5 MB.");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setImageError(null);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "No se pudo subir la imagen");
+      }
+
+      setImagenUrl(payload.result?.url ?? payload.url ?? "");
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : "Error al subir la imagen");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -363,12 +410,34 @@ export default function ServiciosPanel({ negocioId, servicios, areas, subareasIn
               </div>
             </>
           )}
-          <Input
-            label="URL de imagen"
-            value={imagenUrl}
-            onChange={(e) => setImagenUrl(e.target.value)}
-            placeholder="https://..."
-          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-semibold text-foreground tracking-wide">URL de imagen</label>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+                <Upload className="h-4 w-4" />
+                <span>{uploadingImage ? "Subiendo..." : "Subir imagen"}</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  className="sr-only"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                />
+              </label>
+            </div>
+            <Input
+              aria-label="URL de imagen"
+              value={imagenUrl}
+              onChange={(e) => setImagenUrl(e.target.value)}
+              placeholder="https://..."
+            />
+            {imagenUrl && (
+              <div className="mt-2 overflow-hidden rounded-lg border border-border bg-muted/30 p-2">
+                <Image src={imagenUrl} alt="Vista previa del servicio" width={80} height={80} className="h-20 w-20 rounded-md object-cover" />
+              </div>
+            )}
+            {imageError && <p className="text-sm text-destructive">{imageError}</p>}
+          </div>
           <Select
             label="Área"
             value={areaSeleccionada ?? ""}
