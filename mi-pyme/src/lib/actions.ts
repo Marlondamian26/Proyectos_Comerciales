@@ -37,6 +37,13 @@ import { CuponService } from "@/services/CuponService";
 import { ComboService } from "@/services/ComboService";
 import { DescuentoService } from "@/services/DescuentoService";
 import { NotificacionService } from "@/services/NotificacionService";
+import {
+  AdminUserService,
+  type CrearUsuarioAdminInput,
+  type RolUsuarioAdmin,
+} from "@/services/AdminUserService";
+import { ProfileImageService } from "@/services/ProfileImageService";
+import type { SolicitudAltaDTO } from "@/shared/negocio.types";
 import type {
   EventoNotificacion,
   TipoNotificacion,
@@ -69,6 +76,8 @@ const cuponService = new CuponService();
 const comboService = new ComboService();
 const descuentoService = new DescuentoService();
 const notificacionService = new NotificacionService();
+const adminUserService = new AdminUserService();
+const profileImageService = new ProfileImageService();
 const exchangeRateService = new ExchangeRateService();
 const precioService = new PrecioService();
 
@@ -1686,6 +1695,108 @@ export async function listarUsuarios() {
   });
 }
 
+export async function listarUsuariosAdminAction(filtros: {
+  rol?: RolUsuarioAdmin;
+  estado?: "ACTIVO" | "INACTIVO" | "ELIMINADO" | "TODOS";
+  desde?: string;
+  hasta?: string;
+} = {}) {
+  await requireRole([Rol.ADMIN]);
+  const where: Prisma.UserWhereInput = {};
+  if (filtros.rol) where.rol = filtros.rol;
+  if (filtros.estado === "ACTIVO") {
+    where.isActive = true;
+    where.deletedAt = null;
+  } else if (filtros.estado === "INACTIVO") {
+    where.isActive = false;
+    where.deletedAt = null;
+  } else if (filtros.estado === "ELIMINADO") {
+    where.deletedAt = { not: null };
+  }
+  if (filtros.desde || filtros.hasta) {
+    const desde = filtros.desde ? new Date(filtros.desde) : undefined;
+    const hasta = filtros.hasta ? new Date(filtros.hasta) : undefined;
+    if (
+      (desde && Number.isNaN(desde.getTime())) ||
+      (hasta && Number.isNaN(hasta.getTime()))
+    ) {
+      throw new BusinessError("El rango de fechas no es válido", "VALIDACION", 400);
+    }
+    if (hasta) {
+      hasta.setUTCDate(hasta.getUTCDate() + 1);
+    }
+    if (desde && hasta && desde >= hasta) {
+      throw new BusinessError("La fecha inicial debe ser anterior a la final", "VALIDACION", 400);
+    }
+    where.createdAt = {
+      ...(desde ? { gte: desde } : {}),
+      ...(hasta ? { lt: hasta } : {}),
+    };
+  }
+  return prisma.user.findMany({
+    where,
+    select: {
+      id: true,
+      email: true,
+      nombre: true,
+      username: true,
+      rol: true,
+      isGenericAdmin: true,
+      mustChangePassword: true,
+      isActive: true,
+      deletedAt: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function crearUsuarioAdminAction(datos: CrearUsuarioAdminInput) {
+  const session = await requireRole([Rol.ADMIN]);
+  const result = await adminUserService.crearUsuario(datos, session.id);
+  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin");
+  return result;
+}
+
+export async function cambiarRolUsuarioAction(
+  userId: string,
+  nuevoRol: RolUsuarioAdmin
+) {
+  const session = await requireRole([Rol.ADMIN]);
+  await adminUserService.cambiarRol(userId, nuevoRol, session.id);
+  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin");
+}
+
+export async function resetearPasswordUsuarioAction(userId: string) {
+  const session = await requireRole([Rol.ADMIN]);
+  const temporaryPassword = await adminUserService.resetearPassword(
+    userId,
+    session.id
+  );
+  revalidatePath("/admin/usuarios");
+  return temporaryPassword;
+}
+
+export async function cambiarEstadoActivoUsuarioAction(
+  userId: string,
+  activo: boolean
+) {
+  const session = await requireRole([Rol.ADMIN]);
+  await adminUserService.cambiarEstadoActivo(userId, activo, session.id);
+  revalidatePath("/admin/usuarios");
+}
+
+export async function eliminarUsuarioAdminAction(
+  userId: string,
+  motivo: string
+) {
+  const session = await requireRole([Rol.ADMIN]);
+  await adminUserService.eliminarUsuario(userId, session.id, motivo);
+  revalidatePath("/admin/usuarios");
+}
+
 export async function estadoUsuario(usuarioId: string) {
   await requireRole([Rol.ADMIN]);
   return cachedQuery(cacheKeys.usuario.detalle(usuarioId), async () => {
@@ -2064,6 +2175,7 @@ export async function obtenerPerfil(usuarioId: string) {
       provincia: true,
       municipio: true,
       image: true,
+      fotoPerfilUrl: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -2120,6 +2232,35 @@ export async function actualizarPerfil(
   await getCache().del(cacheKeys.usuario.all());
 
   return user;
+}
+
+export async function actualizarFotoPerfilAction(url: string, publicId: string) {
+  const session = await requireRole([
+    Rol.CLIENTE,
+    Rol.NEGOCIO,
+    Rol.LOGISTICA,
+    Rol.ADMIN,
+  ]);
+  const result = await profileImageService.actualizarFotoPerfil(
+    session.id,
+    url,
+    publicId
+  );
+  revalidatePath("/perfil");
+  revalidatePath("/");
+  return result;
+}
+
+export async function eliminarFotoPerfilAction() {
+  const session = await requireRole([
+    Rol.CLIENTE,
+    Rol.NEGOCIO,
+    Rol.LOGISTICA,
+    Rol.ADMIN,
+  ]);
+  await profileImageService.eliminarFotoPerfil(session.id);
+  revalidatePath("/perfil");
+  revalidatePath("/");
 }
 
 export async function cambiarPassword(
@@ -3098,29 +3239,23 @@ export async function listProveedoresDisponiblesAction(negocioId: string) {
 
 // -- Solicitudes de alta --
 
-export async function crearSolicitudAltaAction(datos: {
-  nombreNegocio: string;
-  descripcion?: string | null;
-  tipoRol?: string | null;
-  areaId?: string | null;
-  subareaIds?: string[];
-  provincia?: string | null;
-  municipio?: string | null;
-  telefono?: string | null;
-  emailContacto?: string | null;
-  direccion?: string | null;
-}) {
-  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+export async function crearSolicitudRolAction(datos: SolicitudAltaDTO) {
+  const session = await requireRole([Rol.CLIENTE]);
   const result = await solicitudAltaService.crearSolicitud(session.id, datos);
   revalidatePath("/admin/solicitudes");
+  revalidatePath("/admin/solicitudes-rol");
+  revalidatePath("/solicitar-rol/estado");
 
-  // Notificación: SOLICITUD_ALTA_CREADA → al admin
   emitirNotificacionSafe({
     tipo: "SOLICITUD_ALTA_CREADA",
-    titulo: "Nueva solicitud de alta",
-    mensaje: `${datos.nombreNegocio} solicitó ser dado de alta.`,
-    enlace: "/admin/solicitudes",
-    metadata: { negocioNombre: datos.nombreNegocio, solicitanteId: session.id },
+    titulo: "Nueva solicitud de rol",
+    mensaje: `${datos.nombreNegocio} solicitó convertirse en ${datos.tipo ?? "NEGOCIO"}.`,
+    enlace: "/admin/solicitudes-rol",
+    metadata: {
+      nombre: datos.nombreNegocio,
+      tipo: datos.tipo ?? "NEGOCIO",
+      solicitanteId: session.id,
+    },
     actorId: session.id,
     destinatarioRol: "ADMIN",
   });
@@ -3128,59 +3263,109 @@ export async function crearSolicitudAltaAction(datos: {
   return result;
 }
 
-export async function cancelarSolicitudAltaAction(id: string) {
-  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+export async function crearSolicitudAltaAction(datos: SolicitudAltaDTO) {
+  return crearSolicitudRolAction(datos);
+}
+
+export async function listarMisSolicitudesAction() {
+  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA]);
+  return solicitudAltaService.listarSolicitudesUsuario(
+    session.id,
+    session.id,
+    session.rol
+  );
+}
+
+export async function cancelarSolicitudRolAction(id: string) {
+  const session = await requireRole([Rol.CLIENTE]);
   const result = await solicitudAltaService.cancelarSolicitud(id, session.id);
-  revalidatePath("/admin/solicitudes");
+  revalidatePath("/admin/solicitudes-rol");
+  revalidatePath("/solicitar-rol/estado");
+  revalidatePath("/mis-solicitudes");
   return result;
 }
 
+export async function cancelarSolicitudAltaAction(id: string) {
+  return cancelarSolicitudRolAction(id);
+}
+
 export async function getSolicitudAltaAction(id: string) {
-  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  const session = await requireRole([
+    Rol.CLIENTE,
+    Rol.NEGOCIO,
+    Rol.LOGISTICA,
+    Rol.ADMIN,
+  ]);
   return solicitudAltaService.getSolicitud(id, session.id, session.rol);
 }
 
 export async function listarSolicitudesUsuarioAction(usuarioId: string) {
-  const session = await requireRole([Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN]);
+  const session = await requireRole([
+    Rol.CLIENTE,
+    Rol.NEGOCIO,
+    Rol.LOGISTICA,
+    Rol.ADMIN,
+  ]);
   return solicitudAltaService.listarSolicitudesUsuario(usuarioId, session.id, session.rol);
 }
 
+export async function listarSolicitudesRolAction(filtros: {
+  tipo?: string;
+  estado?: string;
+} = {}) {
+  await requireRole([Rol.ADMIN]);
+  return solicitudAltaService.listarSolicitudes(filtros.estado, filtros.tipo);
+}
+
 export async function listarSolicitudesPendientesAction() {
-  const session = await requireRole([Rol.ADMIN]);
-  return solicitudAltaService.listarSolicitudes("PENDIENTE_APROBACION");
+  return listarSolicitudesRolAction({ estado: "PENDIENTE_APROBACION" });
 }
 
 export async function listarSolicitudesAction(estado?: string) {
-  const session = await requireRole([Rol.ADMIN]);
-  return solicitudAltaService.listarSolicitudes(estado);
+  return listarSolicitudesRolAction({ estado });
 }
 
-export async function aprobarNegocioAction(solicitudId: string) {
+export async function aprobarSolicitudRolAction(solicitudId: string) {
   const session = await requireRole([Rol.ADMIN]);
-   const result = await solicitudAltaService.aprobarSolicitud(
+  const result = await solicitudAltaService.aprobarSolicitud(
     solicitudId,
     session.id
   );
   revalidatePath("/admin/solicitudes");
+  revalidatePath("/admin/solicitudes-rol");
   revalidatePath("/negocio");
+  revalidatePath("/logistica");
+  revalidatePath("/solicitar-rol/estado");
 
-  // Notificación: SOLICITUD_ALTA_APROBADA → al solicitante
-  if (result.negocio) {
-    emitirNotificacionSafe({
-      tipo: "SOLICITUD_ALTA_APROBADA",
-      titulo: "¡Tu negocio fue aprobado!",
-      mensaje: "Tu negocio ha sido aprobado. Ya puedes comenzar a vender.",
-      enlace: "/negocio",
-      metadata: { negocioId: result.negocio.id, negocioNombre: result.negocio.nombre },
-      actorId: session.id,
-      destinatarioUserId: result.solicitud.userId,
-    });
-  }
+  const esNegocio = result.solicitud.tipo === "NEGOCIO";
+  emitirNotificacionSafe({
+    tipo: "SOLICITUD_ALTA_APROBADA",
+    titulo: esNegocio ? "¡Tu negocio fue aprobado!" : "¡Tu perfil logístico fue aprobado!",
+    mensaje: esNegocio
+      ? "Tu negocio ha sido aprobado. Ya puedes comenzar a vender."
+      : "Tu perfil logístico ha sido aprobado y ya puedes acceder a tu panel.",
+    enlace: esNegocio ? "/negocio" : "/logistica",
+    metadata: {
+      tipo: result.solicitud.tipo,
+      negocioId: result.negocio?.id ?? null,
+      proveedorLogisticoId: result.proveedorLogistico?.id ?? null,
+      nombre: result.solicitud.nombreNegocio,
+    },
+    actorId: session.id,
+    destinatarioUserId: result.solicitud.userId,
+  });
 
   return result;
 }
 
-export async function rechazarNegocioAction(solicitudId: string, motivo: string) {
+export async function aprobarNegocioAction(solicitudId: string) {
+  return aprobarSolicitudRolAction(solicitudId);
+}
+
+export async function rechazarSolicitudRolAction(
+  solicitudId: string,
+  motivo: string
+) {
   const session = await requireRole([Rol.ADMIN]);
   const result = await solicitudAltaService.rechazarSolicitud(
     solicitudId,
@@ -3188,19 +3373,24 @@ export async function rechazarNegocioAction(solicitudId: string, motivo: string)
     motivo
   );
   revalidatePath("/admin/solicitudes");
+  revalidatePath("/admin/solicitudes-rol");
+  revalidatePath("/solicitar-rol/estado");
+  revalidatePath("/mis-solicitudes");
 
-  // Notificación: SOLICITUD_ALTA_RECHAZADA → al solicitante
   emitirNotificacionSafe({
     tipo: "SOLICITUD_ALTA_RECHAZADA",
     titulo: "Solicitud rechazada",
-    mensaje: `Tu solicitud fue rechazada: ${motivo.substring(0, 80)}`,
-    enlace: "/mis-solicitudes",
-    metadata: { solicitudId, motivo },
+    mensaje: `Tu solicitud fue rechazada: ${motivo.trim().substring(0, 80)}`,
+    enlace: "/solicitar-rol/estado",
+    metadata: { solicitudId, motivo: motivo.trim() },
     actorId: session.id,
     destinatarioUserId: result.userId,
   });
-
   return result;
+}
+
+export async function rechazarNegocioAction(solicitudId: string, motivo: string) {
+  return rechazarSolicitudRolAction(solicitudId, motivo);
 }
 
 // -- Dashboard --

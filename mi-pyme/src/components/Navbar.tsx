@@ -30,7 +30,8 @@ export function Navbar({ userRol }: NavbarProps) {
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
-  const userImage = session?.user?.image ?? null;
+  const userImage =
+    session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
 
   return (
     <header

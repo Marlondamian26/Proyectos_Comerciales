@@ -15,7 +15,7 @@ interface Props {
   subareasByArea: Record<string, Subarea[]>;
 }
 
-export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
+export default function SolicitudRolForm({ areas, subareasByArea }: Props) {
   const router = useRouter();
   const { success, error: errorToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,11 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
   const [telefono, setTelefono] = useState("");
   const [emailContacto, setEmailContacto] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [tipoRol, setTipoRol] = useState<"NEGOCIO" | "LOGISTICA">("NEGOCIO");
+  const [tipo, setTipo] = useState<"NEGOCIO" | "LOGISTICA">("NEGOCIO");
+  const [alcanceNacional, setAlcanceNacional] = useState(false);
+  const [tiposEnvio, setTiposEnvio] = useState<
+    Array<"paquete" | "mudanza" | "personas" | "carga">
+  >([]);
 
   const areaOptions = areas.map((a) => ({ value: a.id, label: a.nombre }));
 
@@ -39,18 +43,20 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
     try {
       await crearSolicitudAltaAction({
         nombreNegocio,
-        tipoRol,
+        tipo,
         descripcion: descripcion || undefined,
-        areaId: areaId ?? undefined,
-        subareaIds,
+        areaId: tipo === "NEGOCIO" ? areaId ?? undefined : undefined,
+        subareaIds: tipo === "NEGOCIO" ? subareaIds : undefined,
         provincia: provincia || undefined,
         municipio: municipio || undefined,
-        telefono,
-        emailContacto,
+        telefono: telefono || undefined,
+        emailContacto: emailContacto || undefined,
         direccion: direccion || undefined,
+        alcanceNacional: tipo === "LOGISTICA" ? alcanceNacional : undefined,
+        tiposEnvio: tipo === "LOGISTICA" ? tiposEnvio : undefined,
       });
       success("Solicitud enviada correctamente");
-      router.push("/mis-solicitudes");
+      router.push("/solicitar-rol/estado");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al enviar la solicitud";
       errorToast(msg);
@@ -67,13 +73,17 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <Input
-              label="Nombre del negocio"
+              label={tipo === "NEGOCIO" ? "Nombre del negocio" : "Nombre del proveedor logístico"}
               value={nombreNegocio}
               onChange={(e) => setNombreNegocio(e.target.value)}
               required
               minLength={3}
               leftIcon={<Building2 className="h-4 w-4" />}
-              placeholder="Ej: Mi cafetería"
+              placeholder={
+                tipo === "NEGOCIO"
+                  ? "Ej: Mi cafetería"
+                  : "Ej: Transporte del Centro"
+              }
             />
           </div>
 
@@ -84,13 +94,13 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setTipoRol("NEGOCIO")}
+                onClick={() => setTipo("NEGOCIO")}
                 className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${
-                  tipoRol === "NEGOCIO"
+                  tipo === "NEGOCIO"
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border hover:bg-muted"
                 }`}
-                aria-pressed={tipoRol === "NEGOCIO"}
+                aria-pressed={tipo === "NEGOCIO"}
               >
                 <Building2 className="h-5 w-5" />
                 <div>
@@ -102,13 +112,13 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => setTipoRol("LOGISTICA")}
+                onClick={() => setTipo("LOGISTICA")}
                 className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${
-                  tipoRol === "LOGISTICA"
+                  tipo === "LOGISTICA"
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border hover:bg-muted"
                 }`}
-                aria-pressed={tipoRol === "LOGISTICA"}
+                aria-pressed={tipo === "LOGISTICA"}
               >
                 <Truck className="h-5 w-5" />
                 <div>
@@ -127,30 +137,116 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              placeholder="Cuéntanos brevemente sobre tu negocio..."
+              placeholder={
+                tipo === "NEGOCIO"
+                  ? "Cuéntanos brevemente sobre tu negocio..."
+                  : "Describe tus servicios logísticos..."
+              }
             />
           </div>
 
-          <div>
-            <Select
-              label="Categoría (área)"
-              value={areaId ?? ""}
-              onChange={(e) => { setAreaId(e.target.value); setSubareaIds([]); }}
-              options={areaOptions}
-              placeholder="Selecciona una categoría"
-            />
-          </div>
+          {tipo === "NEGOCIO" ? (
+            <>
+              <div>
+                <Select
+                  label="Categoría (área)"
+                  value={areaId ?? ""}
+                  onChange={(e) => { setAreaId(e.target.value); setSubareaIds([]); }}
+                  options={areaOptions}
+                  placeholder="Selecciona una categoría"
+                  required
+                />
+              </div>
 
-          <div>
-            <Select
-              label="Subcategoría"
-              value={subareaIds[0] ?? ""}
-              onChange={(e) => setSubareaIds(e.target.value ? [e.target.value] : [])}
-              options={subareasOptions}
-              placeholder={areaId ? "Selecciona una subcategoría" : "Primero selecciona un área"}
-              disabled={!areaId}
-            />
-          </div>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-semibold">Subcategorías</legend>
+                {!areaId ? (
+                  <p className="text-sm text-muted-foreground">
+                    Primero selecciona un área.
+                  </p>
+                ) : subareasOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No hay subcategorías disponibles.
+                  </p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {subareasOptions.map((subarea) => (
+                      <label
+                        key={subarea.value}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={subareaIds.includes(subarea.value)}
+                          onChange={(event) => {
+                            setSubareaIds((current) =>
+                              event.target.checked
+                                ? [...current, subarea.value]
+                                : current.filter((id) => id !== subarea.value)
+                            );
+                          }}
+                        />
+                        {subarea.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </fieldset>
+            </>
+          ) : (
+            <div className="md:col-span-2 space-y-4">
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={alcanceNacional}
+                  onChange={(event) =>
+                    setAlcanceNacional(event.target.checked)
+                  }
+                />
+                Ofrezco cobertura nacional
+              </label>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-semibold">Tipos de envío</legend>
+                <p id="tipos-envio-help" className="text-sm text-muted-foreground">
+                  Selecciona al menos un tipo de servicio.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[
+                    ["paquete", "Paquetes"],
+                    ["mudanza", "Mudanzas"],
+                    ["personas", "Transporte de personas"],
+                    ["carga", "Carga"],
+                  ].map(([value, label]) => {
+                    const envio = value as
+                      | "paquete"
+                      | "mudanza"
+                      | "personas"
+                      | "carga";
+                    return (
+                      <label
+                        key={envio}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tiposEnvio.includes(envio)}
+                          aria-describedby="tipos-envio-help"
+                          onChange={(event) => {
+                            setTiposEnvio((current) =>
+                              event.target.checked
+                                ? [...current, envio]
+                                : current.filter((item) => item !== envio)
+                            );
+                          }}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            </div>
+          )}
 
           <div>
             <Input
@@ -209,7 +305,7 @@ export default function SolicitudAltaForm({ areas, subareasByArea }: Props) {
 
         <div className="flex justify-end pt-4 border-t">
           <Button type="submit" loading={loading} disabled={loading}>
-            {loading ? "Enviando..." : "Enviar solicitud de alta"}
+            {loading ? "Enviando..." : "Enviar solicitud de rol"}
           </Button>
         </div>
       </form>

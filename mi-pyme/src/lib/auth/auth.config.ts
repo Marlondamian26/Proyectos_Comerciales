@@ -19,6 +19,7 @@ declare module "next-auth" {
       rol?: Rol;
       mustChangePassword?: boolean;
       rememberMe?: boolean;
+      fotoPerfilUrl?: string | null;
     };
   }
 
@@ -28,6 +29,7 @@ declare module "next-auth" {
     mustChangePassword?: boolean;
     sessionVersion?: number;
     rememberMe?: boolean;
+    fotoPerfilUrl?: string | null;
   }
 }
 
@@ -95,6 +97,9 @@ export const authOptions: NextAuthConfig = {
           (user as { rememberMe?: boolean }).rememberMe
         );
       }
+      if (user && "fotoPerfilUrl" in user) {
+        token.fotoPerfilUrl = (user as { fotoPerfilUrl?: string | null }).fotoPerfilUrl ?? null;
+      }
 
       if (user && !token.rememberMe) {
         token.exp = Math.floor(Date.now() / 1000) + TWENTY_FOUR_HOURS;
@@ -108,6 +113,7 @@ export const authOptions: NextAuthConfig = {
         session.user.rol = token.rol as Rol;
         session.user.mustChangePassword = Boolean(token.mustChangePassword);
         session.user.rememberMe = Boolean(token.rememberMe);
+        session.user.fotoPerfilUrl = token.fotoPerfilUrl as string | null | undefined;
       }
 
       const tokenSessionVersion = token.sessionVersion as number | undefined;
@@ -115,7 +121,11 @@ export const authOptions: NextAuthConfig = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { sessionVersion: true, isActive: true },
+            select: {
+              sessionVersion: true,
+              isActive: true,
+              fotoPerfilUrl: true,
+            },
           });
 
           if (!dbUser || !dbUser.isActive) {
@@ -130,6 +140,8 @@ export const authOptions: NextAuthConfig = {
             });
             return null as unknown as Session;
           }
+          session.user.fotoPerfilUrl = dbUser.fotoPerfilUrl;
+          session.user.image = dbUser.fotoPerfilUrl;
         } catch (error) {
           console.error("Error in session callback:", error);
           return session;

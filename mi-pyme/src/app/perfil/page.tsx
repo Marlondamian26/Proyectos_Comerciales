@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -18,7 +17,6 @@ import {
   Save,
   Eye,
   EyeOff,
-  Camera,
   Calendar,
   Hash,
   Trash2,
@@ -26,6 +24,7 @@ import {
   Shield,
 } from "lucide-react";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { ProfileImageUploader } from "@/components/perfil/ProfileImageUploader";
 
 type ProfileData = {
   id: string;
@@ -36,6 +35,7 @@ type ProfileData = {
   provincia?: string;
   municipio?: string;
   image?: string;
+  fotoPerfilUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
   isGenericAdmin?: boolean;
@@ -54,6 +54,7 @@ const ROLES: Record<string, { label: string; color: string }> = {
 };
 
 export default function PerfilPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -268,7 +269,7 @@ export default function PerfilPage() {
 
       // Redirect to home after a short delay
       setTimeout(() => {
-        window.location.href = "/";
+        router.push("/");
       }, 2000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "No se pudo eliminar la cuenta";
@@ -346,22 +347,10 @@ export default function PerfilPage() {
           </div>
 
           <div className="flex items-center gap-6 mb-6">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                {profile?.image ? (
-                   <Image src={profile.image} alt={profile.nombre || "Avatar"} width={80} height={80} className="w-full h-full object-cover" />
-                ) : (
-                  <User className="h-10 w-10 text-muted-foreground" />
-                )}
-              </div>
-              <button
-                type="button"
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm hover:bg-primary/90 transition-colors"
-                aria-label="Cambiar foto de perfil"
-              >
-                <Camera className="h-4 w-4" />
-              </button>
-            </div>
+            <ProfileImageUploader
+              nombre={profile?.nombre || "Usuario"}
+              fotoPerfilUrl={profile?.fotoPerfilUrl ?? profile?.image}
+            />
             <div className="space-y-1">
               <p className="text-sm font-medium">{profile?.nombre || "Sin nombre"}</p>
               <p className="text-xs text-muted-foreground">@{profile?.username || "usuario"}</p>

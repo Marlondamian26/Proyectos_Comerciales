@@ -4,9 +4,11 @@ import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { redirect } from "next/navigation";
 import { NegocioService } from "@/services/NegocioService";
+import { SolicitudAltaService } from "@/services/SolicitudAltaService";
 import { getCache } from "@/infrastructure";
 
 const negocioService = new NegocioService(getCache());
+const solicitudAltaService = new SolicitudAltaService();
 
 export interface RoleLayoutProps {
   children: React.ReactNode;
@@ -29,15 +31,24 @@ export async function RoleLayout({
   }
 
   let esDuenoDeNegocio = false;
+  let tieneSolicitudPendiente = false;
   if (session.user.id) {
     esDuenoDeNegocio = await negocioService.esPropietarioDeAlgunNegocio(session.user.id);
+    if (userRol === Rol.CLIENTE) {
+      tieneSolicitudPendiente = await solicitudAltaService.tieneSolicitudPendiente(
+        session.user.id
+      );
+    }
   }
 
   return (
     <div className="flex min-h-screen flex-col app-background">
       <Navbar userRol={userRol as Rol} esDuenoDeNegocio={esDuenoDeNegocio} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar userRol={userRol as Rol} />
+        <Sidebar
+          userRol={userRol as Rol}
+          tieneSolicitudPendiente={tieneSolicitudPendiente}
+        />
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>

@@ -32,6 +32,8 @@ model User {
   sessionVersion                                                Int        @default(0)
   createdAt                                                     DateTime               @default(now())
   updatedAt                                                     DateTime               @updatedAt
+  fotoPerfilUrl                                                 String?
+  fotoPerfilPublicId                                            String?
   accounts                                                      Account[]
   auditLogs                                                     AuditLog[]
   carritos                                                      Carrito[]
@@ -801,7 +803,7 @@ model SolicitudAltaNegocio {
   id            String    @id @default(cuid())
   userId        String
   nombreNegocio String
-  tipoRol       String    @default("NEGOCIO")
+  tipo            TipoSolicitud   @default(NEGOCIO)
   descripcion   String?
   areaId        String?
   subareaIds    String?
@@ -810,7 +812,9 @@ model SolicitudAltaNegocio {
   telefono      String?
   emailContacto String?
   direccion     String?
-  estado        String    @default("PENDIENTE_APROBACION")
+  alcanceNacional Boolean         @default(false)
+  tiposEnvio      String?
+  estado          EstadoSolicitud @default(PENDIENTE_APROBACION)
   motivoRechazo String?
   revisadoPorId String?
   revisadoEn    DateTime?
@@ -821,6 +825,7 @@ model SolicitudAltaNegocio {
   user          User      @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([tipo])
   @@index([estado])
 }
 
@@ -838,6 +843,19 @@ enum Rol {
   CLIENTE
   NEGOCIO
   LOGISTICA
+}
+
+enum TipoSolicitud {
+  NEGOCIO
+  LOGISTICA
+}
+
+enum EstadoSolicitud {
+  PENDIENTE_APROBACION
+  APROBADA
+  RECHAZADA
+  CANCELADA
+  SUSPENDIDA
 }
 
 enum MetodoPago {

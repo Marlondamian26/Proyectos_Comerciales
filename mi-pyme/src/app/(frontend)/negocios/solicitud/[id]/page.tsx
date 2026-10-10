@@ -10,6 +10,7 @@ import Link from "next/link";
 interface SolicitudConRelations {
   id: string;
   nombreNegocio: string;
+  tipo: "NEGOCIO" | "LOGISTICA";
   estado: string;
   descripcion: string | null;
   provincia: string | null;
@@ -31,16 +32,18 @@ interface Props {
 
 const estadoLabels: Record<string, string> = {
   PENDIENTE_APROBACION: "Pendiente de aprobación",
-  ACTIVO: "Aprobado",
-  RECHAZADO: "Rechazado",
-  SUSPENDIDO: "Suspendido",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+  CANCELADA: "Cancelada",
+  SUSPENDIDA: "Suspendida",
 };
 
 const estadoColors: Record<string, string> = {
   PENDIENTE_APROBACION: "bg-yellow-100 text-yellow-800",
-  ACTIVO: "bg-green-100 text-green-800",
-  RECHAZADO: "bg-red-100 text-red-800",
-  SUSPENDIDO: "bg-gray-100 text-gray-800",
+  APROBADA: "bg-green-100 text-green-800",
+  RECHAZADA: "bg-red-100 text-red-800",
+  CANCELADA: "bg-gray-100 text-gray-800",
+  SUSPENDIDA: "bg-gray-100 text-gray-800",
 };
 
 export const dynamic = "force-dynamic";
@@ -59,7 +62,7 @@ export default async function SolicitudDetallePage({ params }: Props) {
     redirect("/mis-solicitudes");
   }
 
-  const negocioActivo = solicitud.estado === "ACTIVO";
+  const solicitudAprobada = solicitud.estado === "APROBADA";
 
   return (
     <main className="min-h-screen app-background">
@@ -70,7 +73,8 @@ export default async function SolicitudDetallePage({ params }: Props) {
               Solicitud de alta
             </h1>
             <p className="text-muted-foreground mt-1">
-              Negocio: {solicitud.nombreNegocio}
+              {solicitud.tipo === "LOGISTICA" ? "Proveedor: " : "Negocio: "}
+              {solicitud.nombreNegocio}
             </p>
           </div>
           <Badge className={estadoColors[solicitud.estado] ?? ""}>
@@ -156,10 +160,14 @@ export default async function SolicitudDetallePage({ params }: Props) {
           </form>
         )}
 
-        {negocioActivo && (
+        {solicitudAprobada && (
           <div className="mt-4">
             <Button asChild>
-              <Link href="/negocio">Ir a mi panel de negocio</Link>
+              <Link href={solicitud.tipo === "LOGISTICA" ? "/logistica" : "/negocio"}>
+                {solicitud.tipo === "LOGISTICA"
+                  ? "Ir a mi panel logístico"
+                  : "Ir a mi panel de negocio"}
+              </Link>
             </Button>
           </div>
         )}

@@ -19,6 +19,7 @@ export type AuthorizeResult = {
   mustChangePassword: boolean;
   sessionVersion?: number;
   rememberMe?: boolean;
+  fotoPerfilUrl?: string | null;
 } | null;
 
 export async function credentialsAuthorize(
@@ -89,11 +90,12 @@ export async function credentialsAuthorize(
   return {
     id: user.id,
     email: user.email,
-    name: user.nombre ?? user.name,
-    image: user.image,
+    name: user.nombre ?? user.name ?? undefined,
+    image: user.fotoPerfilUrl ?? user.image ?? null,
     rol: user.rol as Rol,
     mustChangePassword: user.mustChangePassword,
     sessionVersion: user.sessionVersion,
     rememberMe: credentials.rememberMe === "true",
+    fotoPerfilUrl: user.fotoPerfilUrl ?? undefined,
   };
 }

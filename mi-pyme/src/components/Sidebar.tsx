@@ -28,6 +28,7 @@ export interface SidebarItem {
   icon: React.ReactNode;
   allowedRoles: Rol[];
   requiresNegocioOwnership?: boolean;
+  requiresNoPendingRoleRequest?: boolean;
 }
 
 export const sidebarItems: SidebarItem[] = [
@@ -80,14 +81,27 @@ export const sidebarItems: SidebarItem[] = [
     allowedRoles: [Rol.LOGISTICA, Rol.ADMIN],
   },
   {
-    label: "Solicitudes",
-    href: "/admin/solicitudes",
+    label: "Solicitudes de rol",
+    href: "/admin/solicitudes-rol",
     icon: <CogIcon className="h-5 w-5" />,
     allowedRoles: [Rol.ADMIN],
   },
   {
+    label: "Solicitar ser negocio",
+    href: "/solicitar-rol",
+    icon: <BuildingIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE],
+    requiresNoPendingRoleRequest: true,
+  },
+  {
+    label: "Mis solicitudes de rol",
+    href: "/solicitar-rol/estado",
+    icon: <UserIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA],
+  },
+  {
     label: "Usuarios",
-    href: "/admin?tab=usuarios",
+    href: "/admin/usuarios",
     icon: <UsersIcon className="h-5 w-5" />,
     allowedRoles: [Rol.ADMIN],
   },
@@ -120,11 +134,16 @@ export const sidebarItems: SidebarItem[] = [
 export interface SidebarProps {
   userRol?: Rol;
   esDuenoDeNegocio?: boolean;
+  tieneSolicitudPendiente?: boolean;
 }
 
 const SIDEBAR_COLLAPSED_KEY = "mi-pyme-sidebar-collapsed";
 
-export function Sidebar({ userRol, esDuenoDeNegocio }: SidebarProps) {
+export function Sidebar({
+  userRol,
+  esDuenoDeNegocio,
+  tieneSolicitudPendiente = false,
+}: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -147,9 +166,12 @@ export function Sidebar({ userRol, esDuenoDeNegocio }: SidebarProps) {
 
   const visibleItems = sidebarItems.filter(
     (item) =>
-      item.allowedRoles.length === 0 ||
-      (userRol && item.allowedRoles.includes(userRol)) ||
-      (item.requiresNegocioOwnership && esDuenoDeNegocio)
+      (
+        item.allowedRoles.length === 0 ||
+        (userRol && item.allowedRoles.includes(userRol)) ||
+        (item.requiresNegocioOwnership && esDuenoDeNegocio)
+      ) &&
+      (!item.requiresNoPendingRoleRequest || !tieneSolicitudPendiente)
   );
 
   return (

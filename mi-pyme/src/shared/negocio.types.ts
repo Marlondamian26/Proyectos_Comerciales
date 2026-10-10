@@ -50,8 +50,8 @@ export interface HorarioNegocioDTO {
 }
 
 export interface SolicitudAltaDTO {
+  tipo?: "NEGOCIO" | "LOGISTICA";
   nombreNegocio: string;
-  tipoRol?: string | null;
   descripcion?: string | null;
   areaId?: string | null;
   subareaIds?: string[];
@@ -60,6 +60,8 @@ export interface SolicitudAltaDTO {
   telefono?: string | null;
   emailContacto?: string | null;
   direccion?: string | null;
+  alcanceNacional?: boolean;
+  tiposEnvio?: Array<"paquete" | "mudanza" | "personas" | "carga">;
 }
 
 export interface ProductoNegocioDTO {

@@ -1,7 +1,11 @@
 import { Readable } from "node:stream";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import cloudinary, { getCloudinaryConfigError, getCloudinaryUserFolder } from "@/lib/cloudinary";
+import cloudinary, {
+  getCloudinaryAvatarFolder,
+  getCloudinaryConfigError,
+  getCloudinaryUserFolder,
+} from "@/lib/cloudinary";
 
 const allowedTypes = [
   "image/png",
@@ -10,6 +14,7 @@ const allowedTypes = [
   "image/webp",
   "application/pdf",
 ];
+const allowedAvatarTypes = ["image/png", "image/jpeg", "image/webp"];
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -25,16 +30,25 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const file = formData.get("file");
+  const isAvatar = formData.get("purpose") === "avatar";
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Archivo requerido" }, { status: 400 });
   }
 
-  if (!allowedTypes.includes(file.type)) {
+  if (
+    isAvatar
+      ? !allowedAvatarTypes.includes(file.type)
+      : !allowedTypes.includes(file.type)
+  ) {
     return NextResponse.json({ error: "Tipo de archivo no permitido" }, { status: 400 });
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "El archivo excede 5 MB" }, { status: 400 });
+  const maxSize = isAvatar ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return NextResponse.json(
+      { error: `El archivo excede ${isAvatar ? "2" : "5"} MB` },
+      { status: 400 }
+    );
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -42,15 +56,25 @@ export async function POST(req: NextRequest) {
   const result = await new Promise<{ secure_url: string; public_id: string; resource_type: string }>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: getCloudinaryUserFolder(session.user.id),
-        resource_type: file.type === "application/pdf" ? "raw" : "auto",
-        transformation:
-          file.type.startsWith("image/")
+        folder: isAvatar
+          ? getCloudinaryAvatarFolder(session.user.id)
+          : getCloudinaryUserFolder(session.user.id),
+        resource_type: isAvatar
+          ? "image"
+          : file.type === "application/pdf"
+            ? "raw"
+            : "auto",
+        transformation: file.type.startsWith("image/")
+          ? isAvatar
             ? [
+                { width: 512, height: 512, crop: "fill", gravity: "auto" },
+                { quality: "auto:good", fetch_format: "auto" },
+              ]
+            : [
                 { width: 1200, height: 1200, crop: "limit" },
                 { quality: "auto:good", fetch_format: "auto" },
               ]
-            : undefined,
+          : undefined,
       },
       (error, uploadResult) => {
         if (error || !uploadResult) {

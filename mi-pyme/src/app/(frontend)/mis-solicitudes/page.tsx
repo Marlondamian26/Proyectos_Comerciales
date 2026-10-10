@@ -11,16 +11,18 @@ export const dynamic = "force-dynamic";
 
 const estadoLabels: Record<string, string> = {
   PENDIENTE_APROBACION: "Pendiente",
-  ACTIVO: "Aprobada",
-  RECHAZADO: "Rechazada",
-  SUSPENDIDO: "Suspendida",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+  CANCELADA: "Cancelada",
+  SUSPENDIDA: "Suspendida",
 };
 
 const estadoColors: Record<string, string> = {
-  PENDIENTE_APROBACION: "bg-yellow-100 text-yellow-800",
-  ACTIVO: "bg-green-100 text-green-800",
-  RECHAZADO: "bg-red-100 text-red-800",
-  SUSPENDIDO: "bg-gray-100 text-gray-800",
+  PENDIENTE_APROBACION: "bg-warning/10 text-warning-foreground",
+  APROBADA: "bg-success/10 text-success",
+  RECHAZADA: "bg-destructive/10 text-destructive",
+  CANCELADA: "bg-muted text-muted-foreground",
+  SUSPENDIDA: "bg-muted text-muted-foreground",
 };
 
 interface SolicitudUsuario {
@@ -45,6 +47,7 @@ export default async function MisSolicitudesPage() {
   }
 
   const solicitudes: SolicitudUsuario[] = await listarSolicitudesUsuarioAction(userId);
+  const puedeSolicitarRol = session.user?.rol === Rol.CLIENTE;
 
   return (
     <main className="min-h-screen app-background">
@@ -55,13 +58,14 @@ export default async function MisSolicitudesPage() {
               Mis solicitudes
             </h1>
             <p className="text-muted-foreground mt-1">
-              Estado de tus solicitudes de alta de negocio
+              Estado de tus solicitudes de cambio de rol
             </p>
           </div>
-          <Link href="/negocios/solicitar">
-            <button className="px-4 py-2 rounded-lg bg-gradient text-white font-medium hover:opacity-90 transition-opacity">
-              + Nueva solicitud
-            </button>
+          <Link
+            href={puedeSolicitarRol ? "/solicitar-rol" : "/solicitar-rol/estado"}
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90"
+          >
+            {puedeSolicitarRol ? "+ Nueva solicitud" : "Ver estado"}
           </Link>
         </div>
 

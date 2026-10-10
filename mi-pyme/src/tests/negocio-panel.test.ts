@@ -54,15 +54,20 @@ describe("Panel Negocio Services", () => {
     await prisma.$executeRawUnsafe(`DELETE FROM "Negocio"`);
     await prisma.$executeRawUnsafe(`DELETE FROM "SolicitudAltaNegocio"`);
     await prisma.$executeRawUnsafe(`DELETE FROM "User"`);
-    await prisma.$executeRawUnsafe(`DELETE FROM "Area"`);
     await prisma.$executeRawUnsafe(`DELETE FROM "Subarea"`);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Area"`);
 
     const area = await prisma.area.create({
       data: { nombre: "Servicios", slug: "servicios", activo: true },
     });
 
     const subarea = await prisma.subarea.create({
-      data: { nombre: "Belleza", slug: "belleza", activo: true },
+      data: {
+        nombre: "Belleza",
+        slug: "belleza",
+        areaId: area.id,
+        activo: true,
+      },
     });
 
     const password = await bcrypt.hash("password123", 10);
@@ -384,6 +389,7 @@ describe("Panel Negocio Services", () => {
 
       await solicitudService.crearSolicitud(clienteUser.id, {
         nombreNegocio: "Negocio Uno",
+        areaId: testData.area.id,
         telefono: "11111111",
         emailContacto: "uno@test.com",
       });
@@ -391,13 +397,14 @@ describe("Panel Negocio Services", () => {
       try {
         await solicitudService.crearSolicitud(clienteUser.id, {
           nombreNegocio: "Negocio Dos",
+          areaId: testData.area.id,
           telefono: "22222222",
           emailContacto: "dos@test.com",
         });
         expect.fail("Should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(BusinessError);
-        expect((err as BusinessError).code).toBe("CONFLICTO");
+        expect((err as BusinessError).code).toBe("SOLICITUD_PENDIENTE");
       }
 
       await prisma.user.delete({ where: { id: clienteUser.id } });
@@ -415,6 +422,7 @@ describe("Panel Negocio Services", () => {
 
       const sol = await solicitudService.crearSolicitud(clienteUser.id, {
         nombreNegocio: "Negocio Get",
+        areaId: testData.area.id,
         telefono: "33333333",
         emailContacto: "get@test.com",
       });

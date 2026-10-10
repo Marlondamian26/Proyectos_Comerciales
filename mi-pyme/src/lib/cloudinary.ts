@@ -6,6 +6,10 @@ export function getCloudinaryUserFolder(userId: string): string {
   return `${CLOUDINARY_FOLDER}/users/${Buffer.from(userId).toString("base64url")}`;
 }
 
+export function getCloudinaryAvatarFolder(userId: string): string {
+  return `${getCloudinaryUserFolder(userId)}/avatars`;
+}
+
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,

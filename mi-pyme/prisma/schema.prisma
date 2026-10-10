@@ -32,6 +32,8 @@ model User {
   sessionVersion                                                Int                       @default(0)
   createdAt                                                     DateTime                  @default(now())
   updatedAt                                                     DateTime                  @updatedAt
+  fotoPerfilUrl                       String?
+  fotoPerfilPublicId                  String?
   accounts                                                      Account[]
   auditLogs                                                     AuditLog[]
   carritos                                                      Carrito[]
@@ -53,8 +55,8 @@ model User {
   proveedoresLogisticos                                         ProveedorLogistico[]
   reservas                                                      Reserva[]
   sessions                                                      Session[]
-  SolicitudAltaNegocio_SolicitudAltaNegocio_revisadoPorIdToUser SolicitudAltaNegocio[]    @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
-  SolicitudAltaNegocio_SolicitudAltaNegocio_userIdToUser        SolicitudAltaNegocio[]    @relation("SolicitudAltaNegocio_userIdToUser")
+  solicitudes                         SolicitudAltaNegocio[]     @relation("SolicitudAltaNegocio_userIdToUser")
+  solicitudesRevisadas                SolicitudAltaNegocio[]     @relation("SolicitudAltaNegocio_revisadoPorIdToUser")
 
   @@index([rol])
   @@index([isGenericAdmin])
@@ -782,27 +784,30 @@ model Pago {
 model SolicitudAltaNegocio {
   id            String    @id @default(cuid())
   userId        String
+  user            User            @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
+  tipo            TipoSolicitud   @default(NEGOCIO)
   nombreNegocio String
-  tipoRol       String    @default("NEGOCIO")
   descripcion   String?
-  areaId        String?
-  subareaIds    String?
-  provincia     String?
-  municipio     String?
   telefono      String?
   emailContacto String?
   direccion     String?
-  estado        String    @default("PENDIENTE_APROBACION")
+  provincia       String?
+  municipio       String?
+  areaId          String?
+  area            Area?           @relation(fields: [areaId], references: [id])
+  subareaIds      String?
+  alcanceNacional Boolean         @default(false)
+  tiposEnvio      String?
+  estado          EstadoSolicitud @default(PENDIENTE_APROBACION)
   motivoRechazo String?
   revisadoPorId String?
+  revisadoPor     User?           @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
   revisadoEn    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  area          Area?     @relation(fields: [areaId], references: [id])
-  revisadoPor   User?     @relation("SolicitudAltaNegocio_revisadoPorIdToUser", fields: [revisadoPorId], references: [id])
-  user          User      @relation("SolicitudAltaNegocio_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([tipo])
   @@index([estado])
 }
 
@@ -980,4 +985,17 @@ enum EstadoNotificacion {
 enum CanalNotificacion {
   IN_APP
   EMAIL
+}
+
+enum TipoSolicitud {
+  NEGOCIO
+  LOGISTICA
+}
+
+enum EstadoSolicitud {
+  PENDIENTE_APROBACION
+  APROBADA
+  RECHAZADA
+  CANCELADA
+  SUSPENDIDA
 }
