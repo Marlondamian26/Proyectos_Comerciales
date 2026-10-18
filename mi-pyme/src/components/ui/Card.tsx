@@ -130,8 +130,8 @@ export function Card({
       </div>
       {footer && (
         <div className={cn(
-          "px-4 sm:px-5 py-3 bg-muted/30",
-          footerBorder && "border-t border-border-subtle",
+          "px-4 sm:px-5 py-3",
+          footerBorder && "border-t border-border",
           footerBorder && "rounded-b-xl"
         )}>
           {footer}

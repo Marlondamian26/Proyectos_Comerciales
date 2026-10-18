@@ -488,13 +488,13 @@ export default async function Page({
                     variant: servicio.activo ? "success" : "warning",
                   }}
                   footer={
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-4">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
                         {servicio.duracionMinutos} min
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <Users className="h-4 w-4 text-muted-foreground" />
                         {servicio.capacidad}
                       </span>
                     </div>

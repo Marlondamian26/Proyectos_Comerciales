@@ -63,7 +63,7 @@ export default async function HomePage({
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
-      <nav className="sticky top-0 z-[1000] w-full border-b border-border bg-background-alt/95 backdrop-blur-sm">
+      <nav className="sticky top-0 z-[1000] w-full border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
           <Link
             href="/"
@@ -195,13 +195,13 @@ export default async function HomePage({
                     variant: servicio.activo ? "success" : "warning",
                   }}
                   footer={
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-4">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
                         {servicio.duracionMinutos} min
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <Users className="h-4 w-4 text-muted-foreground" />
                         {servicio.capacidad}
                       </span>
                     </div>

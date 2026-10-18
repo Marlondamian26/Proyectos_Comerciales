@@ -37,7 +37,7 @@ export function Navbar({ userRol }: NavbarProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-[1000] border-b border-border bg-background-alt/95 backdrop-blur-sm",
+        "sticky top-0 z-[1000] border-b border-border bg-background",
         "transition-colors duration-200"
       )}
       role="banner"
