@@ -9,7 +9,7 @@ import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
-import { ChevronDown, User, Settings } from "lucide-react";
+import { ChevronDown, User, Settings, Menu, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -17,7 +17,7 @@ const GlobalSearchBar = dynamic(
   () => import("@/components/GlobalSearchBar").then((mod) => mod.GlobalSearchBar),
   {
     ssr: false,
-    loading: () => <div className="w-64 h-9" />,
+    loading: () => <div className="h-9 w-52 animate-pulse rounded-md bg-muted/40" />,
   }
 );
 
@@ -27,6 +27,7 @@ export interface NavbarProps {
 }
 
 export function Navbar({ userRol }: NavbarProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
@@ -36,40 +37,85 @@ export function Navbar({ userRol }: NavbarProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-[1000] border-b border-border bg-background",
+        "sticky top-0 z-[1000] border-b border-border bg-background-alt/95 backdrop-blur-sm",
         "transition-colors duration-200"
       )}
       role="banner"
     >
-      <nav className="container flex h-16 items-center justify-between gap-4" aria-label="Navegación principal">
-        <div className="flex min-w-0 flex-1 items-center gap-6 overflow-x-auto">
-          <Link
-            href="/"
-            className="flex-shrink-0 flex items-center"
-            aria-label="Mi-Pyme - Ir al inicio"
-          >
-            <Image
-              src="/images/logos/logo-horizontal.png"
-              alt="Mi-Pyme"
-              width={140}
-              height={40}
-              sizes="(max-width: 640px) 120px, (max-width: 768px) 140px, 160px"
-              priority
-              className="h-9 w-auto object-contain"
-            />
-          </Link>
-          {showSearch && (
-            <div className="flex-shrink-0">
+      <nav
+        className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:h-16 sm:gap-4 sm:px-6 lg:px-8"
+        aria-label="Navegación principal"
+      >
+        <Link
+          href="/"
+          className="flex-shrink-0 items-center"
+          aria-label="Mi-Pyme - Ir al inicio"
+        >
+          <Image
+            src="/images/logos/logo-horizontal.png"
+            alt="Mi-Pyme"
+            width={140}
+            height={40}
+            sizes="(max-width: 640px) 100px, 140px"
+            priority
+            className="h-7 w-auto object-contain sm:h-9"
+          />
+        </Link>
+
+        {showSearch && (
+          <div className="hidden flex-1 justify-center md:flex">
+            <div className="w-full max-w-md">
               <GlobalSearchBar userRol={userRol} />
             </div>
-          )}
-        </div>
-        <div className="flex-shrink-0 flex items-center gap-1">
+          </div>
+        )}
+
+        <div className="hidden items-center gap-2 md:flex">
           <NotificacionBell />
           <ThemeToggle />
           <UserMenu name={userName} image={userImage} />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </nav>
+
+      {mobileMenuOpen && (
+        <div className="border-t border-border bg-background md:hidden">
+          <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
+            {showSearch && (
+              <div className="w-full">
+                <GlobalSearchBar userRol={userRol} />
+              </div>
+            )}
+            <nav className="flex flex-col gap-1">
+              <Link href="/catalogo" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                Catálogo
+              </Link>
+              <Link href="/servicios" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                Servicios
+              </Link>
+              <Link href="/perfil" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                Mi perfil
+              </Link>
+            </nav>
+            <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <NotificacionBell />
+              </div>
+              <UserMenu name={userName} image={userImage} />
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

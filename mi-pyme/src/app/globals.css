@@ -513,11 +513,17 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    box-sizing: border-box;
   }
 
   *:focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
+  }
+
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -528,6 +534,12 @@
     line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
   }
 
   html {

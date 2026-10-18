@@ -63,57 +63,55 @@ export default async function HomePage({
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
-      <nav className="sticky top-0 z-[1000] w-full border-b bg-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link
-              href="/"
-              className="flex-shrink-0 flex items-center"
-              aria-label="Mi-Pyme - Ir al inicio"
-            >
-              <Image
-                src="/images/logos/logo-horizontal.png"
-                alt="Mi-Pyme"
-                width={140}
-                height={40}
-                sizes="(max-width: 640px) 120px, (max-width: 768px) 140px, 160px"
-                priority
-                className="h-9 w-auto object-contain"
-              />
+      <nav className="sticky top-0 z-[1000] w-full border-b border-border bg-background-alt/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
+          <Link
+            href="/"
+            className="flex-shrink-0 items-center"
+            aria-label="Mi-Pyme - Ir al inicio"
+          >
+            <Image
+              src="/images/logos/logo-horizontal.png"
+              alt="Mi-Pyme"
+              width={140}
+              height={40}
+              sizes="(max-width: 640px) 100px, 140px"
+              priority
+              className="h-7 w-auto object-contain sm:h-9"
+            />
+          </Link>
+          <div className="hidden items-center gap-6 text-sm md:flex">
+            <Link href="/catalogo" className="text-muted-foreground transition-colors hover:text-foreground">
+              Catálogo
             </Link>
-            <div className="hidden md:flex items-center gap-6 text-sm">
-              <Link href="/catalogo" className="text-muted-foreground hover:text-foreground transition-colors">
-                Catálogo
-              </Link>
-              <Link href="/servicios" className="text-muted-foreground hover:text-foreground transition-colors">
-                Servicios
-              </Link>
-              <Link href="/contacto" className="text-muted-foreground hover:text-foreground transition-colors">
-                Contacto
-              </Link>
-            </div>
-            <div className="flex flex-shrink-0 items-center gap-2">
-              <ThemeToggle />
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm">Iniciar sesión</Button>
-              </Link>
-              <Link href="/auth/registro">
-                <Button size="sm">Registrarse</Button>
-              </Link>
-            </div>
+            <Link href="/servicios" className="text-muted-foreground transition-colors hover:text-foreground">
+              Servicios
+            </Link>
+            <Link href="/contacto" className="text-muted-foreground transition-colors hover:text-foreground">
+              Contacto
+            </Link>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <Link href="/auth/login" className="hidden sm:inline-flex">
+              <Button variant="ghost" size="sm">Iniciar sesión</Button>
+            </Link>
+            <Link href="/auth/registro">
+              <Button size="sm">Registrarse</Button>
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative border-b border-border bg-background">
+      <section className="relative border-b border-border bg-background-alt">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-secondary/10 blur-3xl" />
         </div>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
               <CheckCircle className="h-4 w-4" />
               Plataforma #1 para PYMEs
             </div>
@@ -125,26 +123,26 @@ export default async function HomePage({
                 height={288}
                 sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
                 priority
-                className="mx-auto h-48 sm:h-56 md:h-64 lg:h-72 w-auto object-contain"
+                className="mx-auto h-40 w-auto object-contain sm:h-52 md:h-64 lg:h-72"
               />
             </div>
-            <p className="text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto mb-10">
+            <p className="mx-auto mb-10 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg md:text-xl">
               Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href="/auth/registro">
-                <Button size="lg" className="min-w-[200px]">
+                <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
                   Comenzar gratis
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/catalogo">
-                <Button size="lg" variant="outline" className="min-w-[200px]">
+                <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
                   Explorar catálogo
                 </Button>
               </Link>
             </div>
-            <div className="mt-10 flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 text-sm text-muted-foreground sm:flex-row sm:gap-8">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-success" />
                 <span>Gratis para comenzar</span>
@@ -166,117 +164,6 @@ export default async function HomePage({
       <section className="border-b bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <SortControls currentSort={sortParam} />
-        </div>
-      </section>
-
-      {/* Áreas Explorar */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Explora por Áreas
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {areasSlice.map((area) => (
-              <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
-                <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                  <div className="p-6">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
-                      <ShoppingBag className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">{area.nombre}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">/{area.slug}</p>
-                    <span className="inline-flex items-center text-sm text-primary font-medium">
-                      Ver más <ChevronRight className="h-4 w-4 ml-1" />
-                    </span>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-          {areas.length > 6 && (
-            <div className="mt-8 text-center">
-              <Link href="/catalogo">
-                <Button variant="outline" size="lg">
-                  Ver todas las áreas
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Negocios Destacados */}
-      <section className="py-16 sm:py-24 bg-muted/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Negocios Destacados
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Conoce los mejores negocios de la plataforma
-            </p>
-          </div>
-          {negociosSlice.length === 0 ? (
-            <EmptyStatePreset preset="search" />
-          ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {negociosSlice.map((negocio) => (
-                <Card
-                  key={negocio.id}
-                  className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                  badge={{
-                    text: negocio.activo ? "Abierto" : "Cerrado",
-                    variant: negocio.activo ? "success" : "warning",
-                  }}
-                >
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{negocio.nombre}</h3>
-                    {negocio.descripcion && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {negocio.descripcion}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                      {negocio.area && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {negocio.area.nombre}
-                        </span>
-                      )}
-                      {negocio.subareas.length > 0 && (
-                        <span className="flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5" />
-                          {negocio.subareas.length} subáreas
-                        </span>
-                      )}
-                    </div>
-                    <Button variant="primary" size="sm" className="w-full" asChild>
-                      <Link href={`/catalogo?negocioId=${negocio.id}`}>
-                        Ver productos
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-          {negocios.length > 6 && (
-            <div className="mt-12 text-center">
-              <Link href="/catalogo">
-                <Button variant="outline" size="lg">
-                  Ver todos los negocios
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 
@@ -360,9 +247,120 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* Áreas Explorar */}
+      <section className="py-16 sm:py-24 bg-background-alt">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Explora por Áreas
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {areasSlice.map((area) => (
+              <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
+                <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                  <div className="p-6">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{area.nombre}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">/{area.slug}</p>
+                    <span className="inline-flex items-center text-sm text-primary font-medium">
+                      Ver más <ChevronRight className="h-4 w-4 ml-1" />
+                    </span>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          {areas.length > 6 && (
+            <div className="mt-8 text-center">
+              <Link href="/catalogo">
+                <Button variant="outline" size="lg">
+                  Ver todas las áreas
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Negocios Destacados */}
+      <section className="py-16 sm:py-24 bg-background-alt">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Negocios Destacados
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Conoce los mejores negocios de la plataforma
+            </p>
+          </div>
+          {negociosSlice.length === 0 ? (
+            <EmptyStatePreset preset="search" />
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {negociosSlice.map((negocio) => (
+                <Card
+                  key={negocio.id}
+                  className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                  badge={{
+                    text: negocio.activo ? "Abierto" : "Cerrado",
+                    variant: negocio.activo ? "success" : "warning",
+                  }}
+                >
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{negocio.nombre}</h3>
+                    {negocio.descripcion && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                        {negocio.descripcion}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                      {negocio.area && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {negocio.area.nombre}
+                        </span>
+                      )}
+                      {negocio.subareas.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5" />
+                          {negocio.subareas.length} subáreas
+                        </span>
+                      )}
+                    </div>
+                    <Button variant="primary" size="sm" className="w-full" asChild>
+                      <Link href={`/catalogo?negocioId=${negocio.id}`}>
+                        Ver productos
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+          {negocios.length > 6 && (
+            <div className="mt-12 text-center">
+              <Link href="/catalogo">
+                <Button variant="outline" size="lg">
+                  Ver todos los negocios
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Envío y Transporte */}
       {negociosConEnvio.length > 0 && (
-        <section className="py-16 sm:py-24 bg-muted/20">
+        <section className="py-16 sm:py-24 bg-background-alt">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
