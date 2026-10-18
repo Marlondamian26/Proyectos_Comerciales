@@ -85,6 +85,7 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 - **OBLIGATORIO**: body text ≥ 16px.
 - **OBLIGATORIO**: `next/image` con `width`/`height`/`alt` (o `fill`).
 - **OBLIGATORIO**: skeletons en lugar de spinners en listas.
+- Los fallbacks de navegación deben usar skeletons contextuales, `LoadingRegion` y labels accesibles. Respetar tema claro/oscuro y `prefers-reduced-motion`; ver [`docs/loading-system.md`](./docs/loading-system.md).
 - **OBLIGATORIO**: empty states accionables (con CTA clara).
 - **OBLIGATORIO**: `prefers-reduced-motion` respetado globalmente.
 - **OBLIGATORIO**: `aria-label` en icon-only buttons.

@@ -4,9 +4,15 @@ export interface LoadingProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   variant?: "spinner" | "dots" | "pulse";
+  label?: string;
 }
 
-export function Loading({ size = "md", className, variant = "spinner" }: LoadingProps) {
+export function Loading({
+  size = "md",
+  className,
+  variant = "spinner",
+  label = "Cargando",
+}: LoadingProps) {
   const sizeClasses = {
     sm: "h-5 w-5",
     md: "h-8 w-8",
@@ -15,7 +21,13 @@ export function Loading({ size = "md", className, variant = "spinner" }: Loading
 
   if (variant === "dots") {
     return (
-      <div className={cn("flex items-center justify-center gap-1", className)} aria-live="polite" aria-busy="true">
+      <div
+        role="status"
+        aria-label={label}
+        className={cn("flex items-center justify-center gap-1", className)}
+        aria-live="polite"
+        aria-busy="true"
+      >
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -32,7 +44,13 @@ export function Loading({ size = "md", className, variant = "spinner" }: Loading
 
   if (variant === "pulse") {
     return (
-      <div className={cn("flex items-center justify-center", className)} aria-live="polite" aria-busy="true">
+      <div
+        role="status"
+        aria-label={label}
+        className={cn("flex items-center justify-center", className)}
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div
           className={cn("rounded-full bg-primary/80 animate-ping", sizeClasses[size])}
           aria-hidden="true"
@@ -42,7 +60,13 @@ export function Loading({ size = "md", className, variant = "spinner" }: Loading
   }
 
   return (
-    <div className={cn("flex items-center justify-center", className)} aria-live="polite" aria-busy="true">
+    <div
+      role="status"
+      aria-label={label}
+      className={cn("flex items-center justify-center", className)}
+      aria-live="polite"
+      aria-busy="true"
+    >
       <svg
         className={cn("animate-spin text-primary", sizeClasses[size])}
         xmlns="http://www.w3.org/2000/svg"
@@ -74,11 +98,10 @@ export function LoadingOverlay({ message = "Cargando..." }: { message?: string }
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-      aria-live="polite"
       aria-busy="true"
     >
       <div className="flex flex-col items-center gap-4 bg-surface p-8 rounded-2xl border shadow-2xl">
-        <Loading size="lg" />
+        <Loading size="lg" label={message} />
         <p className="text-sm text-muted-foreground font-medium">{message}</p>
       </div>
     </div>
@@ -91,12 +114,11 @@ export function LoadingSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-lg bg-surface-sunken",
+        "skeleton-shimmer relative overflow-hidden rounded-lg",
         className
       )}
       aria-hidden="true"
     >
-      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-muted/30 to-transparent" />
     </div>
   );
 }

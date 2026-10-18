@@ -22,6 +22,7 @@ export interface ButtonProps
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  loadingText?: React.ReactNode;
   icon?: React.ReactNode;
   iconPosition?: "left" | "right";
   asChild?: boolean;
@@ -89,6 +90,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       loading = false,
+      loadingText,
       icon,
       iconPosition = "left",
       asChild = false,
@@ -141,7 +143,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {iconPosition === "left" && renderIcon()}
-        {children}
+        {loading && loadingText ? (
+          <span aria-live="polite">{loadingText}</span>
+        ) : (
+          children
+        )}
         {iconPosition === "right" && renderIcon()}
       </button>
     );

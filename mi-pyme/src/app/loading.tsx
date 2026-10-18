@@ -1,9 +1,5 @@
-import { Loading as LoadingSpinner } from "@/components/ui/Loading";
+import { BrandLoader } from "@/components/ui/BrandLoader";
 
 export default function Loading() {
-  return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <LoadingSpinner size="lg" />
-    </div>
-  );
+  return <BrandLoader fullscreen />;
 }

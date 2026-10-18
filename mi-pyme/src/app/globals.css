@@ -65,7 +65,6 @@
   --color-border-strong: #D0DAE8;
   --color-border-muted: #F0F4FA;
   --color-muted: #F0F4FA;
-
   --color-foreground: var(--color-text-primary);
   --color-muted-foreground: var(--color-text-muted);
   --color-card: var(--color-surface);
@@ -324,7 +323,6 @@
   --color-border-strong: rgba(255, 255, 255, 0.12);
   --color-border-muted: rgba(255, 255, 255, 0.03);
   --color-muted: rgba(255, 255, 255, 0.08);
-
   --color-foreground: var(--color-text-primary);
   --color-muted-foreground: var(--color-text-muted);
   --color-card: var(--color-surface);
@@ -458,7 +456,6 @@
     --color-border-subtle: rgba(255, 255, 255, 0.04);
     --color-border-strong: rgba(255, 255, 255, 0.12);
     --color-border-muted: rgba(255, 255, 255, 0.03);
-
     --color-success: #22C55E;
     --color-success-100: #063E2D;
     --color-success-200: #0D6146;
@@ -884,5 +881,29 @@
 
   .animate-shimmer {
     animation: shimmer 1.5s infinite linear;
+  }
+}
+
+.skeleton-shimmer {
+  background-color: var(--color-surface-alt);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-surface-alt) 0%,
+    var(--color-surface-elevated) 50%,
+    var(--color-surface-alt) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none !important;
   }
 }

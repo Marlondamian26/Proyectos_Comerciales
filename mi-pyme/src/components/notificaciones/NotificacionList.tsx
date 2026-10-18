@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { NotificacionItem } from "./NotificacionItem";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { NotificationListSkeleton } from "@/components/ui/Skeleton";
 import {
   Filter,
   CheckCheck,
@@ -36,7 +37,7 @@ export function NotificacionList() {
   const [limit] = useState(20);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrev, setHasPrev] = useState(false);
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
   const [estadoFilter, setEstadoFilter] = useState<EstadoNotificacion | "TODOS">("TODOS");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -168,14 +169,14 @@ export function NotificacionList() {
       </div>
 
       {cargando ? (
-        <div className="space-y-2" aria-label="Cargando notificaciones">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-lg bg-muted/50"
-              aria-hidden="true"
-            />
-          ))}
+        <div
+          className="space-y-2"
+          role="status"
+          aria-label="Cargando notificaciones"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <NotificationListSkeleton count={3} />
         </div>
       ) : notificaciones.length === 0 ? (
         <div className="py-10 text-center">

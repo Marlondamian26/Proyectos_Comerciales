@@ -17,6 +17,9 @@ export interface SkeletonProps
   variant?: SkeletonVariant;
   rows?: number;
   count?: number;
+  width?: string | number;
+  height?: string | number;
+  lines?: number;
 }
 
 const skeletonClasses: Record<SkeletonVariant, string> = {
@@ -34,23 +37,33 @@ export function Skeleton({
   variant = "text",
   rows = 1,
   count = 1,
+  width,
+  height,
+  lines,
+  style,
   ...props
 }: SkeletonProps) {
-  if (variant === "text" && rows > 1) {
+  const lineCount = lines ?? rows;
+
+  if (variant === "text" && lineCount > 1) {
     return (
       <div
         className={cn("flex flex-col gap-2", className)}
-        aria-label="Cargando..."
+        aria-hidden="true"
         {...props}
       >
-        {Array.from({ length: rows }).map((_, i) => (
+        {Array.from({ length: lineCount }).map((_, i) => (
           <div
             key={i}
             className={cn(
-              "animate-pulse rounded bg-surface-sunken",
-              i === rows - 1 && "w-3/4",
-              "h-4"
+              "skeleton-shimmer h-4 rounded",
+              i === lineCount - 1 && "w-3/4"
             )}
+            style={{
+              width: i === lineCount - 1 ? undefined : width,
+              height,
+              ...style,
+            }}
           />
         ))}
       </div>
@@ -59,11 +72,11 @@ export function Skeleton({
 
   if (variant === "table-row" && count > 1) {
     return (
-      <div className={cn("space-y-3", className)} aria-label="Cargando...">
+      <div className={cn("space-y-3", className)} aria-hidden="true" {...props}>
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="animate-pulse rounded bg-surface-sunken h-4 w-full"
+            className="skeleton-shimmer h-4 w-full rounded"
           />
         ))}
       </div>
@@ -73,11 +86,12 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded bg-surface-sunken",
+        "skeleton-shimmer rounded-md",
         skeletonClasses[variant],
         className
       )}
-      aria-label="Cargando..."
+      style={{ width, height, ...style }}
+      aria-hidden="true"
       {...props}
     />
   );
@@ -89,15 +103,19 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-subtle bg-surface p-4 space-y-3",
+        "overflow-hidden rounded-xl border border-border-subtle bg-surface p-4",
         className
       )}
-      aria-label="Cargando producto..."
+      aria-hidden="true"
     >
-      <Skeleton variant="product-card" className="aspect-square w-full" />
-      <div className="space-y-2">
+      <Skeleton variant="rect" className="mb-4 aspect-square h-auto w-full" />
+      <div className="space-y-3">
         <Skeleton variant="text" className="h-5 w-3/4" />
         <Skeleton variant="text" className="h-4 w-1/2" />
+        <div className="flex items-center gap-2">
+          <Skeleton variant="circle" className="h-8 w-8" />
+          <Skeleton variant="text" className="h-4 w-1/3" />
+        </div>
         <Skeleton variant="text" className="h-6 w-1/3" />
       </div>
     </div>
@@ -105,6 +123,28 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
 }
 
 ProductCardSkeleton.displayName = "ProductCardSkeleton";
+
+export function NotificationListSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          key={index}
+          className="flex gap-4 rounded-lg border border-border-subtle bg-surface p-4"
+        >
+          <Skeleton variant="circle" className="h-10 w-10 shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton variant="text" className="h-4 w-1/3" />
+            <Skeleton variant="text" className="h-4 w-full" />
+            <Skeleton variant="text" className="h-3 w-1/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+NotificationListSkeleton.displayName = "NotificationListSkeleton";
 
 export function TableSkeleton({
   rows = 5,
@@ -117,7 +157,7 @@ export function TableSkeleton({
 }) {
   return (
     <div className={cn("w-full overflow-x-auto rounded-xl border bg-surface", className)}>
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse text-sm" aria-hidden="true">
         <thead>
           <tr className="bg-muted/50">
             {Array.from({ length: cols }).map((_, i) => (
@@ -147,20 +187,24 @@ TableSkeleton.displayName = "TableSkeleton";
 
 export function DashboardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-xl border border-border-subtle bg-surface p-4 space-y-3"
-        >
-          <div className="flex items-center justify-between">
-            <Skeleton variant="circle" className="h-10 w-10" />
-            <Skeleton variant="badge" />
+    <div className={cn("space-y-6", className)} aria-hidden="true">
+      <div className="space-y-3">
+        <Skeleton variant="text" className="h-8 w-1/3" />
+        <Skeleton variant="text" className="h-4 w-1/2" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-3 rounded-xl border border-border-subtle bg-surface p-4">
+            <div className="flex items-center justify-between">
+              <Skeleton variant="circle" className="h-10 w-10" />
+              <Skeleton variant="badge" />
+            </div>
+            <Skeleton variant="text" className="h-4 w-3/4" />
+            <Skeleton variant="text" className="h-6 w-1/2" />
           </div>
-          <Skeleton variant="text" className="h-4 w-3/4" />
-          <Skeleton variant="text" className="h-6 w-1/2" />
-        </div>
-      ))}
+        ))}
+      </div>
+      <TableSkeleton rows={5} />
     </div>
   );
 }

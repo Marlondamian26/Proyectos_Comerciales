@@ -1,5 +1,4 @@
 import { NotificacionList } from "@/components/notificaciones/NotificacionList";
-import { Suspense } from "react";
 
 export const metadata = {
   title: "Mis notificaciones - Mi-Pyme",
@@ -16,9 +15,7 @@ export default function NotificacionesPage() {
         </p>
       </div>
 
-      <Suspense fallback={<div>Cargando...</div>}>
-        <NotificacionList />
-      </Suspense>
+      <NotificacionList />
     </main>
   );
 }
