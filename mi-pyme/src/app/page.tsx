@@ -29,7 +29,7 @@ export default async function HomePage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   const session = await auth();
-  const userRol = session?.user?.rol;
+  void session;
 
   const sortParam = (await searchParams).sort as SortOption || "popularity-desc";
 
@@ -63,7 +63,7 @@ export default async function HomePage({
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
-      <nav className="sticky top-0 z-[1000] w-full border-b border-border bg-background">
+      <nav className="sticky top-0 z-[1000] w-full border-b border-transparent bg-background/70 backdrop-blur-md transition-all duration-300">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
           <Link
             href="/"
@@ -181,7 +181,7 @@ export default async function HomePage({
           {serviciosSlice.length === 0 ? (
             <EmptyStatePreset preset="search" />
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {serviciosSlice.map((servicio) => (
                 <Card
                   key={servicio.id}
@@ -207,16 +207,16 @@ export default async function HomePage({
                     </div>
                   }
                 >
-                  <div className="p-6 pt-0">
+                  <div className="p-4 sm:p-6 pt-0">
                     <h3 className="text-lg font-semibold mb-2">{servicio.nombre}</h3>
                     {servicio.descripcion && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                         {servicio.descripcion}
                       </p>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       {servicio.permiteReservas !== false && (
-                        <Button variant="primary" size="sm" className="flex-1" asChild>
+                        <Button variant="primary" size="sm" className="flex-1 w-full" asChild>
                           <Link href={`/reservas?servicioId=${servicio.id}`}>
                             Reservar ahora
                             <ArrowRight className="h-4 w-4 ml-2" />
@@ -247,48 +247,6 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Áreas Explorar */}
-      <section className="py-16 sm:py-24 bg-background-alt">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Explora por Áreas
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {areasSlice.map((area) => (
-              <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
-                <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                  <div className="p-6">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
-                      <ShoppingBag className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">{area.nombre}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">/{area.slug}</p>
-                    <span className="inline-flex items-center text-sm text-primary font-medium">
-                      Ver más <ChevronRight className="h-4 w-4 ml-1" />
-                    </span>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-          {areas.length > 6 && (
-            <div className="mt-8 text-center">
-              <Link href="/catalogo">
-                <Button variant="outline" size="lg">
-                  Ver todas las áreas
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Negocios Destacados */}
       <section className="py-16 sm:py-24 bg-background-alt">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -303,7 +261,7 @@ export default async function HomePage({
           {negociosSlice.length === 0 ? (
             <EmptyStatePreset preset="search" />
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {negociosSlice.map((negocio) => (
                 <Card
                   key={negocio.id}
@@ -313,7 +271,7 @@ export default async function HomePage({
                     variant: negocio.activo ? "success" : "warning",
                   }}
                 >
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <h3 className="text-lg font-semibold mb-2">{negocio.nombre}</h3>
                     {negocio.descripcion && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
@@ -350,6 +308,48 @@ export default async function HomePage({
               <Link href="/catalogo">
                 <Button variant="outline" size="lg">
                   Ver todos los negocios
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Áreas Explorar */}
+      <section className="py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Explora por Áreas
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {areasSlice.map((area) => (
+              <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
+                <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{area.nombre}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">/{area.slug}</p>
+                    <span className="inline-flex items-center text-sm text-primary font-medium">
+                      Ver más <ChevronRight className="h-4 w-4 ml-1" />
+                    </span>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          {areas.length > 6 && (
+            <div className="mt-8 text-center">
+              <Link href="/catalogo">
+                <Button variant="outline" size="lg">
+                  Ver todas las áreas
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
@@ -425,6 +425,36 @@ export default async function HomePage({
           </div>
         </section>
       )}
+
+      {/* Cómo funciona */}
+      <section className="py-16 sm:py-24 bg-muted/20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold tracking-tight text-center mb-12 sm:text-4xl">¿Cómo funciona?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">1. Explora</h3>
+              <p className="text-muted-foreground">Descubre negocios y servicios cerca de ti.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ArrowRight className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">2. Compra o reserva</h3>
+              <p className="text-muted-foreground">Agrega al carrito, reserva y paga de forma segura.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Truck className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">3. Recibe</h3>
+              <p className="text-muted-foreground">Recibe tu pedido en casa o recógelo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-16 sm:py-24">

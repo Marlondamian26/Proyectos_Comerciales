@@ -28,17 +28,27 @@ export interface NavbarProps {
 
 export function Navbar({ userRol }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
   const userImage =
     session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-[1000] border-b border-border bg-background",
-        "transition-colors duration-200"
+        "sticky top-0 z-[1000] transition-all duration-300 ease-out",
+        scrolled
+          ? "border-b border-border bg-background/95 backdrop-blur-lg shadow-sm"
+          : "border-b border-transparent bg-background/60 backdrop-blur-md"
       )}
       role="banner"
     >

@@ -49,7 +49,7 @@ const defaultClienteItems: MobileTabBarItem[] = [
     icon: <Package className="h-5 w-5" />,
   },
   {
-    label: "Perfil",
+    label: "Mi Perfil",
     href: "/perfil",
     icon: <User className="h-5 w-5" />,
   },

@@ -22,7 +22,11 @@ import {
   Trash2,
   AlertTriangle,
   Shield,
+  Building2,
+  FileCheck,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 import { DashboardBackLink } from "@/components/DashboardBackLink";
 import { ProfileImageUploader } from "@/components/perfil/ProfileImageUploader";
 
@@ -60,6 +64,14 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
+  const [solicitudes, setSolicitudes] = useState<Array<{
+    id: string;
+    estado: string;
+    tipo: string;
+    nombreNegocio: string;
+    motivoRechazo?: string | null;
+    createdAt: string;
+  }>>([]);
 
   const [nombre, setNombre] = useState("");
   const [provincia, setProvincia] = useState("");
@@ -107,6 +119,12 @@ export default function PerfilPage() {
           setNombre(data.nombre || "");
           setProvincia(data.provincia || "");
           setMunicipio(data.municipio || "");
+          if (data.rol === "CLIENTE") {
+            fetch("/api/solicitudes-rol/mis-solicitudes")
+              .then((r) => (r.ok ? r.json() : []))
+              .then((rows) => !cancelled && setSolicitudes(Array.isArray(rows) ? rows : []))
+              .catch(() => {});
+          }
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -457,6 +475,58 @@ export default function PerfilPage() {
             </div>
           </div>
         </Card>
+
+        {profile?.rol === "CLIENTE" && (
+          <Card>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Mi rol y solicitudes</h2>
+                <p className="text-sm text-muted-foreground">Gestiona tu rol y el estado de tus solicitudes</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-surface-subtle p-4">
+                <p className="text-sm text-muted-foreground">Tu rol actual</p>
+                <p className="text-base font-semibold mt-1">{rolInfo?.label ?? profile.rol}</p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCheck className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-medium">Mis solicitudes</p>
+                </div>
+                {solicitudes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tienes solicitudes activas.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {solicitudes.slice(0, 3).map((s) => (
+                      <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-sm">
+                        <span className="font-medium">{s.nombreNegocio || `Solicitud ${s.tipo}`}</span>
+                        <span className="text-muted-foreground">{s.estado}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Link href="/solicitar-rol/estado" className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                  Ver detalle <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                </Link>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <p className="font-medium mb-1">Solicitar ser negocio</p>
+                <p className="text-sm text-muted-foreground mb-3">Envía una solicitud para operar como NEGOCIO o LOGISTICA.</p>
+                {solicitudes.some((s) => s.estado === "PENDIENTE_APROBACION") ? (
+                  <Button variant="outline" disabled className="w-full sm:w-auto">Ya tienes una solicitud en revisión</Button>
+                ) : (
+                  <Button asChild className="w-full sm:w-auto">
+                    <Link href="/solicitar-rol">Quiero ser NEGOCIO o LOGISTICA</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
 
         <Card>
           <div className="flex items-center justify-between mb-6">

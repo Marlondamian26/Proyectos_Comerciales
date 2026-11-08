@@ -86,19 +86,7 @@ export const sidebarItems: SidebarItem[] = [
     icon: <CogIcon className="h-5 w-5" />,
     allowedRoles: [Rol.ADMIN],
   },
-  {
-    label: "Solicitar ser negocio",
-    href: "/solicitar-rol",
-    icon: <BuildingIcon className="h-5 w-5" />,
-    allowedRoles: [Rol.CLIENTE],
-    requiresNoPendingRoleRequest: true,
-  },
-  {
-    label: "Mis solicitudes de rol",
-    href: "/solicitar-rol/estado",
-    icon: <UserIcon className="h-5 w-5" />,
-    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA],
-  },
+
   {
     label: "Usuarios",
     href: "/admin/usuarios",
@@ -200,7 +188,7 @@ export function Sidebar({
           {visibleItems.map((item) => {
             const href = item.href.split("?")[0];
             const isActive =
-              pathname === href || pathname.startsWith(href + "?");
+              pathname === href || pathname.startsWith(href + "/");
             return (
               <NavItem
                 key={item.href}

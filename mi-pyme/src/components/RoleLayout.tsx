@@ -45,11 +45,13 @@ export async function RoleLayout({
     <div className="flex min-h-screen flex-col app-background">
       <Navbar userRol={userRol as Rol} esDuenoDeNegocio={esDuenoDeNegocio} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          userRol={userRol as Rol}
-          tieneSolicitudPendiente={tieneSolicitudPendiente}
-        />
-        <main className="flex-1 overflow-y-auto p-6">
+        <div className="hidden lg:flex">
+          <Sidebar
+            userRol={userRol as Rol}
+            tieneSolicitudPendiente={tieneSolicitudPendiente}
+          />
+        </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6">
           {children}
         </main>
       </div>

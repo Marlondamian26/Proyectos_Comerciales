@@ -1,4 +1,5 @@
 import { RoleLayout } from "@/components/RoleLayout";
+import { MobileTabBar } from "@/components/MobileTabBar";
 import { Rol } from "@/lib/auth/roles";
 
 export default async function ClienteLayout({
@@ -7,6 +8,7 @@ export default async function ClienteLayout({
   return (
     <RoleLayout requiredRoles={[Rol.CLIENTE, Rol.ADMIN]}>
       {children}
+      <MobileTabBar />
     </RoleLayout>
   );
 }
