@@ -86,7 +86,7 @@ export function Card({
       {image && (
         <div className={cn(
           "relative w-full overflow-hidden rounded-t-xl",
-          imageAspectRatio ? aspectRatioMap[imageAspectRatio] : "aspect-[4/3]"
+          imageAspectRatio ? aspectRatioMap[imageAspectRatio] : "aspect-square sm:aspect-[4/3]"
         )}>
           <Image
             src={image.src}

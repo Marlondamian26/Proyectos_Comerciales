@@ -117,9 +117,6 @@ function horarioServicioGeneral() {
   return { lunes:["09:00","10:00","11:00"], martes:["09:00","10:00","11:00"], miercoles:["09:00","10:00","11:00"], jueves:["09:00","10:00","11:00"], viernes:["09:00","10:00","11:00"] };
 }
 
-async function logSeed(eventType: string, targetId?: string | null, meta?: Record<string, unknown>) {
-  await prisma.auditLog.create({ data: { eventType, targetId: targetId ?? null, meta: (meta ?? {}) as Prisma.InputJsonValue, timestamp: SEED_DATE } });
-}
 
 async function main() {
   console.log("🌱 Seed reducido Mi-Pyme (4 negocios)...");
@@ -150,30 +147,40 @@ async function main() {
   ];
   for (const adm of admins) {
     const hash = await bcrypt.hash(adm.password, BCRYPT_ROUNDS);
-    await prisma.user.upsert({ where: { email: adm.email }, update: { nombre: adm.nombre, rol: "ADMIN", isActive: true }, create: { email: adm.email, username: adm.username, nombre: adm.nombre, password: hash, rol: "ADMIN", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
+    await prisma.user.upsert({ where: { email: adm.email }, update: { nombre: adm.nombre, username: adm.username, rol: "ADMIN", isActive: true }, create: { email: adm.email, username: adm.username, nombre: adm.nombre, password: hash, rol: "ADMIN", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
   }
 
   for (let i = 1; i <= 3; i++) {
     const email = `cliente${i}@test.com`;
     const hash = await bcrypt.hash(CLIENTE_PASSWORD, BCRYPT_ROUNDS);
-    await prisma.user.upsert({ where: { email }, update: { rol: "CLIENTE" }, create: { email, username: `cliente${i}`, nombre: `Cliente ${i}`, password: hash, rol: "CLIENTE", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
+    await prisma.user.upsert({ where: { email }, update: { rol: "CLIENTE", username: `cliente${i}` }, create: { email, username: `cliente${i}`, nombre: `Cliente ${i}`, password: hash, rol: "CLIENTE", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
   }
 
   for (let i = 1; i <= 1; i++) {
     const email = `logistica${i}@test.com`;
     const hash = await bcrypt.hash(LOGISTICA_PASSWORD, BCRYPT_ROUNDS);
-    await prisma.user.upsert({ where: { email }, update: { rol: "LOGISTICA" }, create: { email, username: `logistica${i}`, nombre: `Logística ${i}`, password: hash, rol: "LOGISTICA", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
+    await prisma.user.upsert({ where: { email }, update: { rol: "LOGISTICA", username: `logistica${i}` }, create: { email, username: `logistica${i}`, nombre: `Logística ${i}`, password: hash, rol: "LOGISTICA", provincia: "Pinar del Río", municipio: "Pinar del Río", isActive: true } });
   }
 
   for (const neg of NEGOCIOS) {
     const ownerHash = await bcrypt.hash(NEGOCIO_PASSWORD, BCRYPT_ROUNDS);
-    const owner = await prisma.user.upsert({ where: { email: neg.emailPropietario }, update: { rol: "NEGOCIO" }, create: { email: neg.emailPropietario, username: neg.usernamePropietario, nombre: neg.nombrePropietario, password: ownerHash, rol: "NEGOCIO", provincia: neg.provincia, municipio: neg.municipio, isActive: true } });
+    let owner = await prisma.user.findUnique({ where: { email: neg.emailPropietario } });
+    if (owner) {
+      owner = await prisma.user.update({ where: { id: owner.id }, data: { rol: "NEGOCIO", nombre: neg.nombrePropietario, isActive: true } });
+    } else {
+      const existingByUsername = await prisma.user.findUnique({ where: { username: neg.usernamePropietario } });
+      if (existingByUsername) {
+        owner = await prisma.user.update({ where: { id: existingByUsername.id }, data: { email: neg.emailPropietario, rol: "NEGOCIO", nombre: neg.nombrePropietario, password: ownerHash, provincia: neg.provincia, municipio: neg.municipio, isActive: true } });
+      } else {
+        owner = await prisma.user.create({ data: { email: neg.emailPropietario, username: neg.usernamePropietario, nombre: neg.nombrePropietario, password: ownerHash, rol: "NEGOCIO", provincia: neg.provincia, municipio: neg.municipio, isActive: true } });
+      }
+    }
     const area = await prisma.area.findUnique({ where: { slug: neg.areaSlug } });
     const subarea = await prisma.subarea.findUnique({ where: { slug: neg.subareaSlug } });
     const negocio = await prisma.negocio.upsert({
       where: { slug: neg.slug },
-      update: { nombre: neg.nombre, descripcion: neg.descripcion, activo: true, areaId: area?.id, telefono: neg.telefono, emailContacto: neg.emailContacto, direccionCompleta: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
-      create: { slug: neg.slug, nombre: neg.nombre, descripcion: neg.descripcion, activo: true, userId: owner.id, areaId: area?.id, municipio: neg.municipio, provincia: neg.provincia, telefono: neg.telefono, emailContacto: neg.emailContacto, direccionCompleta: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, modoPrecio: "IVA_INCLUIDO", permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
+      update: { nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
+      create: { slug: neg.slug, nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), municipio: neg.municipio, provincia: neg.provincia, telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, modoPrecio: "IVA_INCLUIDO", permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
     });
     if (subarea) {
       await prisma.negocio.update({ where: { id: negocio.id }, data: { subareas: { connect: { id: subarea.id } } } }).catch(() => {});
@@ -197,11 +204,14 @@ async function main() {
         create: { id: sid, negocioId: negocio.id, subareaId: subarea?.id, nombre: s.nombre, descripcion: s.descripcion, duracionMinutos: s.duracionMinutos, capacidad: s.capacidad, precio: s.precio, imagenUrl: s.imagenUrl, horariosDisponibles: s.horariosDisponibles as Prisma.InputJsonValue, tratamientoIVA: s.tratamientoIVA, activo: true },
       });
     }
-    // horario negocio mínimo
-    const dias = ["LUNES","MARTES","MIERCOLES","JUEVES","VIERNES","SABADO","DOMINGO"] as const;
-    for (const dia of dias) {
-      const h = await prisma.horarioNegocio.findFirst({ where: { negocioId: negocio.id, diaSemana: dia } });
-      if (!h) await prisma.horarioNegocio.create({ data: { negocioId: negocio.id, diaSemana: dia, horaInicio: "08:00", horaFin: "18:00", activo: dia !== "DOMINGO" } });
+    // horario negocio mínimo (diaSemana: 0=Dom .. 6=Sab, según schema Int)
+    const dias: Array<{ diaSemana: number; activo: boolean }> = [
+      { diaSemana: 1, activo: true }, { diaSemana: 2, activo: true }, { diaSemana: 3, activo: true },
+      { diaSemana: 4, activo: true }, { diaSemana: 5, activo: true }, { diaSemana: 6, activo: true }, { diaSemana: 0, activo: false },
+    ];
+    for (const { diaSemana, activo } of dias) {
+      const h = await prisma.horarioNegocio.findFirst({ where: { negocioId: negocio.id, diaSemana } });
+      if (!h) await prisma.horarioNegocio.create({ data: { negocioId: negocio.id, diaSemana, horaInicio: "08:00", horaFin: "18:00", activo } });
     }
   }
 

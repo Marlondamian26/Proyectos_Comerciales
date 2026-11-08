@@ -63,20 +63,20 @@ vi.mock("@/components/LogoutButton", () => ({
 }));
 
 describe("Navbar surface", () => {
-  it("uses an opaque background without backdrop blur", () => {
+  it("uses a frosted-glass background with backdrop blur", () => {
     const { container } = render(<Navbar />);
     const header = container.querySelector("header");
 
-    expect(header).toHaveClass("bg-background");
-    expect(header?.className).not.toMatch(/bg-background-alt\/95|backdrop-blur/);
+    expect(header?.className).toMatch(/bg-background\/(60|80|95)/);
+    expect(header?.className).toMatch(/backdrop-blur-xl/);
   });
 
-  it("keeps the public home navbar on a solid semantic background", async () => {
+  it("keeps the public home navbar with frosted-glass styling", async () => {
     const homePage = await HomePage({ searchParams: Promise.resolve({}) });
     const { container } = render(homePage);
     const navbar = container.querySelector("main.app-background > nav");
 
-    expect(navbar).toHaveClass("bg-background");
-    expect(navbar?.className).not.toMatch(/bg-background-alt\/95|backdrop-blur/);
+    expect(navbar?.className).toMatch(/bg-background\/(60|80|95)/);
+    expect(navbar?.className).toMatch(/backdrop-blur-xl/);
   });
 });
