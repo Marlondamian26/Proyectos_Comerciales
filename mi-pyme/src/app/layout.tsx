@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 import "@/styles/tokens.css";
 import "@/styles/gradients.css";
-import { Suspense } from "react";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,11 +33,7 @@ export default async function RootLayout({
     <html lang="es" className={inter.className} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
-          <ThemeProvider>
-            <Suspense fallback={<div className="animate-pulse" />}>
-              {children}
-            </Suspense>
-          </ThemeProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </SessionProvider>
       </body>
     </html>
