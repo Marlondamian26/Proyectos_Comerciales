@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { obtenerServicioConCuposAction } from "@/lib/actions";
 import { TransporteForm } from "@/components/servicios/TransporteForm";
+import { ReservarLink } from "@/components/ui/ReservarLink";
 
 interface ServicioDetalle {
   id: string;
@@ -202,30 +203,24 @@ export default async function ServicioDetallePage({
             )}
           </div>
 
-          {isTransporte ? (
-            <TransporteForm servicioId={servicio.id} disponible={disponible} />
-          ) : (
-            <Button
-              variant={disponible ? "primary" : "outline"}
-              size="lg"
-              className="w-full"
-              asChild
-              disabled={!disponible}
-            >
-              <Link
-                href={
-                  disponible
-                    ? `/reservas?servicioId=${servicio.id}`
-                    : "#"
-                }
-                onClick={(e) => {
-                  if (!disponible) e.preventDefault();
-                }}
+            {isTransporte ? (
+              <TransporteForm servicioId={servicio.id} disponible={disponible} />
+            ) : (
+              <Button
+                variant={disponible ? "primary" : "outline"}
+                size="lg"
+                className="w-full"
+                asChild
+                disabled={!disponible}
               >
-                {disponible ? "Reservar ahora" : "Sin cupos disponibles hoy"}
-              </Link>
-            </Button>
-          )}
+                <ReservarLink
+                  href={disponible ? `/reservas?servicioId=${servicio.id}` : "#"}
+                  disabled={!disponible}
+                >
+                  {disponible ? "Reservar ahora" : "Sin cupos disponibles hoy"}
+                </ReservarLink>
+              </Button>
+            )}
         </div>
       </div>
     </main>

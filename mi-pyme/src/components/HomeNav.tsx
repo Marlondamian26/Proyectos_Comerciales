@@ -35,7 +35,6 @@ export function HomeNav() {
             width={140}
             height={40}
             sizes="(max-width: 640px) 100px, 140px"
-            priority
             className="h-7 w-auto object-contain sm:h-9"
           />
         </Link>

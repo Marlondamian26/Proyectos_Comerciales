@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
@@ -125,7 +126,9 @@ export default async function HomePage({
       {/* Sort Bar */}
       <section className="border-b bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-          <SortControls currentSort={sortParam} />
+          <Suspense fallback={<div className="h-9 w-52 animate-pulse rounded-md bg-muted/40" />}>
+            <SortControls currentSort={sortParam} />
+          </Suspense>
         </div>
       </section>
 

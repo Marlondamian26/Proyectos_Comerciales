@@ -1,11 +1,12 @@
-import Link from "next/link";
 import { listarServiciosConCupos } from "@/lib/actions";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Clock, Users, ArrowRight, Home } from "lucide-react";
+import { ReservarLink } from "@/components/ui/ReservarLink";
+import { Users, ArrowRight, Clock } from "lucide-react";
 import type { ServicioConCupos } from "@/services/CatalogService";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +41,7 @@ export default async function ServiciosPage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <div className="mb-12">
             <div className="mb-6 flex items-center justify-between gap-4">
-              <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
-                <Home className="h-4 w-4" />
-                Volver al inicio
-              </Link>
+              <BackToDashboard href="/cliente" />
               <ThemeToggle />
             </div>
             <div className="text-center">
@@ -134,26 +132,13 @@ export default async function ServiciosPage({
                       asChild
                       disabled={!disponible}
                     >
-                      <Link
-                        href={
-                          disponible
-                            ? `/servicios/${servicio.id}`
-                            : "#"
-                        }
-                        aria-label={
-                          disponible
-                            ? `Ver ${servicio.nombre}`
-                            : `${servicio.nombre} sin cupos hoy`
-                        }
-                        onClick={(e) => {
-                          if (!disponible) {
-                            e.preventDefault();
-                          }
-                        }}
+                      <ReservarLink
+                        href={disponible ? `/servicios/${servicio.id}` : "#"}
+                        disabled={!disponible}
                       >
                         {isTransporte ? "Contratar transporte" : "Reservar ahora"}
                         <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
+                      </ReservarLink>
                     </Button>
                   </Card>
                 );

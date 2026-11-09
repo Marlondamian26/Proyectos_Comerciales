@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { auth } from "@/lib/auth";
 import { listarUsuariosAdminAction } from "@/lib/actions";
 import type { RolUsuarioAdmin } from "@/services/AdminUserService";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function AdminUsuariosPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <BackToDashboard href="/admin" />
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Administración de usuarios</h1>

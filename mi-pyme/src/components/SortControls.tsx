@@ -2,7 +2,7 @@
 
 import { Star } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 type SortOption = "popularity-desc" | "popularity-asc" | "alpha-asc" | "alpha-desc";
@@ -21,26 +21,21 @@ export function SortControls({ currentSort }: SortControlsProps) {
     { value: "alpha-desc", label: "Z - A" },
   ];
 
-  const [mounted, setMounted] = useState(false);
   const [selectedSort, setSelectedSort] = useState<SortOption>(currentSort);
-
-  useEffect(() => {
-    setMounted(true);
-    const sortParam = searchParams.get("sort") as SortOption | null;
-    if (sortParam && options.some((opt) => opt.value === sortParam)) {
-      setSelectedSort(sortParam);
-    } else {
-      setSelectedSort(currentSort);
-    }
-  }, [searchParams, currentSort, options]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSortChange = useCallback(
     (value: SortOption) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("sort", value);
-      const query = params.toString();
-      router.push(query ? `/?${query}` : "/", { scroll: false });
-      setSelectedSort(value);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("sort", value);
+        const query = params.toString();
+        router.replace(query ? `/?${query}` : "/", { scroll: false });
+        setSelectedSort(value);
+      }, 300);
     },
     [router, searchParams]
   );
@@ -53,7 +48,7 @@ export function SortControls({ currentSort }: SortControlsProps) {
       </div>
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ordenar resultados">
         {options.map((opt) => {
-          const isActive = mounted ? selectedSort === opt.value : currentSort === opt.value;
+          const isActive = selectedSort === opt.value;
           return (
             <button
               key={opt.value}
@@ -62,7 +57,7 @@ export function SortControls({ currentSort }: SortControlsProps) {
               aria-checked={isActive}
               onClick={() => handleSortChange(opt.value)}
               className={cn(
-                "text-sm px-3 py-1.5 rounded-lg border transition-colors",
+                "text-sm px-3 py-1.5 rounded-lg border transition-colors min-h-[44px]",
                 isActive
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-background border-border hover:border-primary/50 text-foreground"

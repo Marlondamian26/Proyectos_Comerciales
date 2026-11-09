@@ -1,4 +1,5 @@
 import { NotificacionList } from "@/components/notificaciones/NotificacionList";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const metadata = {
   title: "Mis notificaciones - Mi-Pyme",
@@ -8,6 +9,7 @@ export const metadata = {
 export default function NotificacionesPage() {
   return (
     <main className="container mx-auto py-6 px-4">
+      <BackToDashboard href="/cliente" />
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Mis notificaciones</h1>
         <p className="text-sm text-muted-foreground mt-1">

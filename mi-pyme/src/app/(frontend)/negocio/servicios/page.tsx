@@ -3,6 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario, listarServicios, listarAreasAction } from "@/lib/actions";
 import ServiciosPanel from "@/components/negocio/ServicioForm";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +35,14 @@ export default async function ServiciosPage() {
   const subareasDb = negocioSubareas.map((ns) => ns.subarea);
 
   return (
-    <ServiciosPanel
-      negocioId={negocio.id}
-      servicios={servicios}
-      areas={areas}
-      subareasIniciales={subareasDb}
-    />
+    <>
+      <BackToDashboard href="/negocio" />
+      <ServiciosPanel
+        negocioId={negocio.id}
+        servicios={servicios}
+        areas={areas}
+        subareasIniciales={subareasDb}
+      />
+    </>
   );
 }

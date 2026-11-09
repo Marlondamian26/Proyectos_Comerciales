@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario } from "@/lib/actions";
 import CuponesPanel from "@/components/negocio/CuponesPanel";
 import { listarCuponesAction } from "@/lib/actions";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,11 @@ export default async function CuponesPage() {
   const { cupones } = await listarCuponesAction(negocio.id);
 
   return (
-    <div className="p-6">
-      <CuponesPanel cupones={cupones ?? []} />
-    </div>
+    <>
+      <BackToDashboard href="/negocio" />
+      <div className="p-6">
+        <CuponesPanel cupones={cupones ?? []} />
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
@@ -23,6 +23,23 @@ type ConfirmacionData = {
 };
 
 export default function CheckoutConfirmacionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="max-w-4xl mx-auto py-12 px-6">
+          <DashboardBackLink />
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </main>
+      }
+    >
+      <CheckoutConfirmacionInner />
+    </Suspense>
+  );
+}
+
+function CheckoutConfirmacionInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pedidoParam = searchParams.get("pedidos");

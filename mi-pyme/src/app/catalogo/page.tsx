@@ -1,3 +1,4 @@
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
@@ -11,7 +12,6 @@ import {
 } from "@/lib/actions";
 import { catalogoAddToCart, catalogoReserve } from "./actions";
 import Link from "next/link";
-import { Home } from "lucide-react";
 import type {
   ProductoConDisponibilidad,
   ServicioConCupos,
@@ -125,12 +125,7 @@ export default async function CatalogoPage({
     <main className="container py-12">
       <header className="mb-12">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2 whitespace-nowrap">
-              <Home className="h-4 w-4" />
-              Volver al inicio
-            </Button>
-          </Link>
+          <BackToDashboard href="/cliente" />
           <ThemeToggle />
         </div>
         <h1 className="text-3xl font-bold mb-2" id="catalogo-title">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Home } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 type Profile = {
   nombre?: string;
@@ -50,7 +50,7 @@ export function DashboardBackLink() {
   if (loading) {
     return (
       <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-        <Home className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" />
         Cargando...
       </span>
     );
@@ -59,9 +59,13 @@ export function DashboardBackLink() {
   const href = rol ? ROLE_DASHBOARD[rol] ?? "/" : "/";
 
   return (
-    <Link href={href} className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground transition-colors">
-      <Home className="h-4 w-4" />
-      Volver a inicio
+    <Link
+      href={href}
+      className="inline-flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
+      aria-label="Volver al dashboard"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Volver al dashboard
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario } from "@/lib/actions";
 import PromocionesPanel from "@/components/negocio/PromocionesPanel";
 import { listarPromocionesAction } from "@/lib/actions";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,11 @@ export default async function PromocionesPage() {
   const { promociones } = await listarPromocionesAction(negocio.id);
 
   return (
-    <div className="p-6">
-      <PromocionesPanel promociones={promociones ?? []} />
-    </div>
+    <>
+      <BackToDashboard href="/negocio" />
+      <div className="p-6">
+        <PromocionesPanel promociones={promociones ?? []} />
+      </div>
+    </>
   );
 }

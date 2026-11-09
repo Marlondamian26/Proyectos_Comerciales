@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario } from "@/lib/actions";
 import CombosPanel from "@/components/negocio/CombosPanel";
 import { listarCombosAction } from "@/lib/actions";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,11 @@ export default async function CombosPage() {
   const { combos } = await listarCombosAction({ negocioId: negocio.id });
 
   return (
-    <div className="p-6">
-      <CombosPanel combos={combos ?? []} />
-    </div>
+    <>
+      <BackToDashboard href="/negocio" />
+      <div className="p-6">
+        <CombosPanel combos={combos ?? []} />
+      </div>
+    </>
   );
 }

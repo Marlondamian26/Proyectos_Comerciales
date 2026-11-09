@@ -3,6 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario, listarInventarioDeNegocioAction } from "@/lib/actions";
 import InventarioTable from "@/components/negocio/InventarioTable";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,5 +23,10 @@ export default async function InventarioPage() {
 
   const inventario = await listarInventarioDeNegocioAction(negocio.id);
 
-  return <InventarioTable negocioId={negocio.id} inventario={inventario} />;
+  return (
+    <>
+      <BackToDashboard href="/negocio" />
+      <InventarioTable negocioId={negocio.id} inventario={inventario} />
+    </>
+  );
 }

@@ -3,6 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario, listOpcionesDeNegocioAction } from "@/lib/actions";
 import OpcionLogisticaForm from "@/components/negocio/OpcionLogisticaForm";
+import { BackToDashboard } from "@/components/ui/BackToDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,12 @@ export default async function LogisticaPage() {
   const opciones = await listOpcionesDeNegocioAction(negocio.id);
 
   return (
-    <OpcionLogisticaForm
-      negocioId={negocio.id}
-      opciones={opciones as unknown as Parameters<typeof OpcionLogisticaForm>[0]["opciones"]}
-    />
+    <>
+      <BackToDashboard href="/negocio" />
+      <OpcionLogisticaForm
+        negocioId={negocio.id}
+        opciones={opciones as unknown as Parameters<typeof OpcionLogisticaForm>[0]["opciones"]}
+      />
+    </>
   );
 }
