@@ -4,12 +4,11 @@ import { cn } from "@/lib/utils";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/components/ThemeProvider";
-import { useId, useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export function ThemeToggle() {
-  const { theme, resolvedTheme, ready, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const buttonId = useId();
 
   const labels = {
     light: "Cambiar a modo oscuro",
@@ -23,8 +22,8 @@ export function ThemeToggle() {
     system: "Siguiendo preferencia del sistema",
   };
 
-  const currentLabel = ready ? labels[resolvedTheme] : "Cargando preferencia de tema";
-  const currentDescription = ready ? descriptions[resolvedTheme] : "Inicializando tema";
+  const currentLabel = labels[resolvedTheme];
+  const currentDescription = descriptions[resolvedTheme];
 
   const options = [
     { value: "light" as const, label: "Claro", icon: <Sun className="h-4 w-4" />, description: "Forzar modo claro" },
@@ -35,7 +34,7 @@ export function ThemeToggle() {
   return (
     <div className="relative inline-flex" data-testid="theme-toggle">
       <Button
-        id={buttonId}
+        id="theme-toggle-button"
         type="button"
         variant="ghost"
         size="sm"
@@ -43,7 +42,7 @@ export function ThemeToggle() {
         className="gap-2 min-w-[7.5rem] justify-start text-muted-foreground hover:text-foreground transition-colors duration-200"
         aria-label={currentLabel}
         aria-pressed={theme === "dark"}
-        aria-describedby={`${buttonId}-description`}
+        aria-describedby="theme-toggle-description"
         title={currentLabel}
       >
         {theme === "dark" ? (
@@ -53,11 +52,11 @@ export function ThemeToggle() {
         ) : (
           <Monitor className="h-4 w-4 transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
         )}
-        <span className="truncate">{ready ? (isDark ? "Oscuro" : theme === "light" ? "Claro" : "Sistema") : "Tema"}</span>
+        <span className="truncate">{isDark ? "Oscuro" : theme === "light" ? "Claro" : "Sistema"}</span>
       </Button>
 
       <div
-        id={`${buttonId}-description`}
+        id="theme-toggle-description"
         className="sr-only"
         aria-live="polite"
         aria-atomic="true"
@@ -66,7 +65,7 @@ export function ThemeToggle() {
       </div>
 
       <ThemeDropdown
-        buttonId={buttonId}
+        buttonId="theme-toggle-button"
         currentTheme={theme}
         options={options}
         onSelect={setTheme}
