@@ -42,7 +42,9 @@ export default async function CatalogoPage({
   const areas = await listarAreas();
   const areaId = filtros.areaId || areas.find((area) => area.slug === filtros.area)?.id;
 
-  const page = parseInt(filtros.page || "1", 10);
+  const page = Math.max(1, parseInt(filtros.page ?? "1", 10) || 1);
+
+  const querySanitizado = (filtros.q ?? "").trim().slice(0, 100).toLowerCase();
 
   const [productos, servicios, subareas] = await Promise.all([
     listarProductosConDisponibilidad({
@@ -56,13 +58,16 @@ export default async function CatalogoPage({
     listarSubareas(areaId),
   ]);
 
-  const query = filtros.q?.toLowerCase() || "";
+  const query = querySanitizado;
 
   const productosFiltrados = productos.filter((p) => {
+    const nombre = p.nombre?.toLowerCase() ?? "";
+    const descripcion = p.descripcion?.toLowerCase() ?? "";
+    const negocioNombre = p.negocio?.nombre?.toLowerCase() ?? "";
     const matchesQuery =
-      p.nombre.toLowerCase().includes(query) ||
-      p.descripcion?.toLowerCase().includes(query) ||
-      p.negocio.nombre.toLowerCase().includes(query);
+      nombre.includes(query) ||
+      descripcion.includes(query) ||
+      negocioNombre.includes(query);
     if (!matchesQuery) return false;
 
     if (filtros.disponibleHoy === "true") {
@@ -75,10 +80,13 @@ export default async function CatalogoPage({
   });
 
   const serviciosFiltrados = servicios.filter((s) => {
+    const nombre = s.nombre?.toLowerCase() ?? "";
+    const descripcion = s.descripcion?.toLowerCase() ?? "";
+    const negocioNombre = s.negocio?.nombre?.toLowerCase() ?? "";
     const matchesQuery =
-      s.nombre.toLowerCase().includes(query) ||
-      s.descripcion?.toLowerCase().includes(query) ||
-      s.negocio.nombre.toLowerCase().includes(query);
+      nombre.includes(query) ||
+      descripcion.includes(query) ||
+      negocioNombre.includes(query);
     if (!matchesQuery) return false;
 
     if (filtros.disponibleHoy === "true") {
@@ -295,10 +303,10 @@ export default async function CatalogoPage({
                         footer={
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-semibold">
-                              ${producto.precio.toFixed(2)}
+                              ${Number(producto.precio ?? 0).toFixed(2)}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {producto.negocio.nombre} · {producto.unidadMedida}
+                              {producto.negocio?.nombre ?? "Negocio"} · {producto.unidadMedida}
                             </span>
                           </div>
                         }
@@ -445,7 +453,7 @@ export default async function CatalogoPage({
                             {servicio.capacidad}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {servicio.negocio.nombre}
+                            {servicio.negocio?.nombre ?? "Negocio"}
                           </span>
                         </div>
                       }
