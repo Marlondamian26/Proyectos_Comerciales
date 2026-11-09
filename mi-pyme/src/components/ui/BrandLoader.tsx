@@ -27,7 +27,6 @@ export function BrandLoader({
             alt="Mi-Pyme"
             width={180}
             height={52}
-            priority
             className="h-12 w-auto object-contain"
           />
         </div>

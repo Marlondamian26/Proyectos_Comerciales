@@ -105,12 +105,17 @@ export function GlobalSearchBar({ userRol, compact }: GlobalSearchBarProps) {
         });
         if (!res.ok) throw new Error("Search failed");
         const data: SearchResponse = await res.json();
+        if (abortControllerRef.current.signal.aborted) return;
         setResults(data);
         setIsOpen(true);
       } catch {
+        if (abortControllerRef.current.signal.aborted) return;
         setError(true);
+        setResults(null);
       } finally {
-        setIsLoading(false);
+        if (!abortControllerRef.current.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }, DEBOUNCE_MS);
 
