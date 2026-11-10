@@ -9,7 +9,7 @@ import { Rol } from "@/lib/auth/roles";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
-import { ChevronDown, User, Settings, Menu, X } from "lucide-react";
+import { ChevronDown, User, Settings, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -79,9 +79,28 @@ export function Navbar({ userRol }: NavbarProps) {
         )}
 
         <div className="hidden items-center gap-2 md:flex">
-          <NotificacionBell />
-          <ThemeToggle />
-          <UserMenu name={userName} image={userImage} />
+          {session ? (
+            <>
+              <NotificacionBell />
+              <ThemeToggle />
+              <UserMenu name={userName} image={userImage} />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-surface-raised text-foreground"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                href="/auth/registro"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Registrarse
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -115,11 +134,32 @@ export function Navbar({ userRol }: NavbarProps) {
               </Link>
             </nav>
             <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
-              <div className="flex items-center gap-2">
-                <ThemeToggle />
-                <NotificacionBell />
-              </div>
-              <UserMenu name={userName} image={userImage} />
+              {session ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <NotificacionBell />
+                  </div>
+                  <UserMenu name={userName} image={userImage} />
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg border border-border text-base font-medium text-foreground min-h-[44px]"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/auth/registro"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground text-base font-medium min-h-[44px] hover:bg-primary/90 transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Registrarse
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
