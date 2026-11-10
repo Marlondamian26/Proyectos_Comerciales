@@ -152,6 +152,21 @@ export function Sidebar({
     }
   }, [collapsed]);
 
+  // Bloquear scroll del body cuando el drawer móvil está abierto
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, [mobileOpen]);
+
   const toggle = () => setCollapsed((prev) => !prev);
 
   const visibleItems = sidebarItems.filter(
@@ -219,6 +234,7 @@ export function Sidebar({
             bg-background border-r border-border shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
             translate-x-0 sm:translate-x-full
+            pb-[env(safe-area-inset-bottom)]
           ">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Menú</h2>

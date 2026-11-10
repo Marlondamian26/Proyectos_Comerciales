@@ -167,7 +167,10 @@ export default async function HomePage({
           {serviciosSlice.length === 0 ? (
             <EmptyStatePreset preset="search" />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            <div
+              className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4"
+              data-testid="servicios-populares-grid"
+            >
               {serviciosSlice.map((servicio) => (
                 <Card
                   key={servicio.id}
@@ -445,25 +448,64 @@ export default async function HomePage({
       {/* CTA Section */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-primary to-secondary p-8 sm:p-16 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              ¿Listo para empezar?
-            </h2>
-            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-              Únete a cientos de negocios que ya confían en Mi-Pyme para gestionar su operación diaria.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link href="/auth/registro">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[200px]">
+          <div className="
+            relative overflow-hidden rounded-2xl sm:rounded-3xl
+            bg-gradient-to-br from-primary via-primary to-interactive-secondary
+            p-6 sm:p-12 lg:p-16 text-center
+          ">
+            {/* Blobs decorativos sutiles */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true">
+              <div className="absolute top-0 left-1/4 w-64 sm:w-72 h-64 sm:h-72 bg-white/30 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-1/4 w-80 sm:w-96 h-80 sm:h-96 bg-white/20 rounded-full blur-3xl" />
+            </div>
+
+            <div className="relative z-10 max-w-2xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+                ¿Listo para empezar?
+              </h2>
+              <p className="text-base sm:text-lg text-white/90 mb-6 sm:mb-8">
+                Únete a cientos de negocios que ya confían en Mi-Pyme para gestionar su operación diaria.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                <Link
+                  href="/auth/registro"
+                  className="
+                    inline-flex items-center justify-center gap-2
+                    w-full sm:w-auto
+                    h-12 px-6
+                    rounded-lg
+                    bg-white text-primary
+                    font-semibold
+                    hover:bg-white/95
+                    active:scale-[0.98]
+                    transition-all
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary
+                    min-h-[48px]
+                  "
+                >
                   Crear cuenta gratis
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/contacto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-white/20 text-white hover:bg-white/10">
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/contacto"
+                  className="
+                    inline-flex items-center justify-center gap-2
+                    w-full sm:w-auto
+                    h-12 px-6
+                    rounded-lg
+                    border-2 border-white/60 text-white
+                    font-semibold
+                    hover:bg-white/10 hover:border-white
+                    active:scale-[0.98]
+                    transition-all
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary
+                    min-h-[48px]
+                  "
+                >
                   Contactar ventas
-                </Button>
-              </Link>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
