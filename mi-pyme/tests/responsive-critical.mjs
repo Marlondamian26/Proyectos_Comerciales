@@ -19,24 +19,26 @@ const stickyRoutes = [
 ];
 
 for (const route of stickyRoutes) {
-  test(`navbar sticky en ${route} (mobile 390x844)`, async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`http://localhost:3000${route}`);
-    await page.waitForLoadState("networkidle");
+  for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    test(`navbar sticky en ${route} (${viewport.width}x${viewport.height})`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto(`http://localhost:3000${route}`);
+      await page.waitForLoadState("networkidle");
 
-    const navbar = page.locator("header, nav[aria-label='Navegación principal']").first();
-    await expect(navbar).toBeVisible();
+      const navbar = page.locator("header, nav[aria-label='Navegación principal']").first();
+      await expect(navbar).toBeVisible();
 
-    let box = await navbar.boundingBox();
-    expect(box?.y).toBe(0);
+      let box = await navbar.boundingBox();
+      expect(box?.y).toBe(0);
 
-    // Scroll 500px
-    await page.evaluate(() => window.scrollTo(0, 500));
-    await page.waitForTimeout(300);
+      // Scroll 500px
+      await page.evaluate(() => window.scrollTo(0, 500));
+      await page.waitForTimeout(300);
 
-    box = await navbar.boundingBox();
-    expect(box?.y).toBe(0);
-  });
+      box = await navbar.boundingBox();
+      expect(box?.y).toBe(0);
+    });
+  }
 }
 
 /* ============================================================
@@ -67,8 +69,27 @@ for (const g of grids) {
 }
 
 /* ============================================================
-   Problema 3 — Imágenes del catálogo sin errores de carga
+   Problema 4 — Negocios Destacados: 1 col mobile / 2 tablet / 3 desktop
    ============================================================ */
+const negocioGridCases = [
+  { width: 390, expected: 1 },
+  { width: 768, expected: 2 },
+  { width: 1440, expected: 3 },
+];
+
+for (const c of negocioGridCases) {
+  test(`Negocios Destacados ${c.expected} columna(s) en ${c.width}px`, async ({ page }) => {
+    await page.setViewportSize({ width: c.width, height: 900 });
+    await page.goto("/");
+
+    const grid = page.locator('[data-testid="negocios-destacados-grid"]').first();
+    await expect(grid).toBeVisible();
+
+    const gridCols = await grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns);
+    const columnCount = gridCols.split(" ").filter(Boolean).length;
+    expect(columnCount).toBe(c.expected);
+  });
+}
 test("todas las imágenes del catálogo cargan sin error 4xx/5xx", async ({ page }) => {
   const errors: Array<{ url: string; status: number }> = [];
 

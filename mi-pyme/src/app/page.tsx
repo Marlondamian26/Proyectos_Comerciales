@@ -292,7 +292,13 @@ export default async function HomePage({
           {negociosSlice.length === 0 ? (
             <EmptyStatePreset preset="search" />
           ) : (
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
+            <div
+              className="
+                grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                gap-2 sm:gap-4
+              "
+              data-testid="negocios-destacados-grid"
+            >
               {negociosSlice.map((negocio) => (
                 <Card
                   key={negocio.id}
@@ -302,11 +308,11 @@ export default async function HomePage({
                     variant: negocio.activo ? "success" : "warning",
                   }}
                 >
-                  <div className="p-4 sm:p-6">
-                    <h3 className="text-lg font-semibold mb-2">{negocio.nombre}</h3>
-                    {negocio.descripcion && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {negocio.descripcion}
+                <div className="p-3 sm:p-4">
+                  <h3 className="text-sm sm:text-base font-semibold mb-1 line-clamp-1">{negocio.nombre}</h3>
+                  {negocio.descripcion && (
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mb-3">
+                      {negocio.descripcion}
                       </p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
