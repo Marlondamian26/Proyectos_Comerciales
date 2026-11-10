@@ -292,7 +292,7 @@ export default async function HomePage({
           {negociosSlice.length === 0 ? (
             <EmptyStatePreset preset="search" />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
               {negociosSlice.map((negocio) => (
                 <Card
                   key={negocio.id}
@@ -359,7 +359,7 @@ export default async function HomePage({
                 Entrega rápida para productos de los mejores negocios
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
               {negociosConEnvio.map((negocio) => (
                 <Card
                   key={negocio.id}

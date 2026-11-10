@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
-import { Navbar } from "@/components/Navbar";
 import { NegocioMobileDrawer } from "@/components/negocio/NegocioMobileDrawer";
 import { RegistroNotification } from "@/components/RegistroNotification";
 import { NegocioService } from "@/services/NegocioService";
@@ -31,8 +30,7 @@ export default async function NegocioLayout({
 
   return (
     <div className="flex min-h-screen flex-col app-background">
-      <Navbar userRol={userRol as Rol} esDuenoDeNegocio={true} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         <NegocioMobileDrawer userRol={userRol} />
         <main className="flex-1 overflow-y-auto p-6">
           {children}

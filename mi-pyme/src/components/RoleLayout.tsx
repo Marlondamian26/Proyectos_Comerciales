@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { Rol } from "@/lib/auth/roles";
-import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { redirect } from "next/navigation";
 import { NegocioService } from "@/services/NegocioService";
@@ -43,8 +42,7 @@ export async function RoleLayout({
 
   return (
     <div className="flex min-h-screen flex-col app-background">
-      <Navbar userRol={userRol as Rol} esDuenoDeNegocio={esDuenoDeNegocio} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         <div className="hidden lg:flex">
           <Sidebar
             userRol={userRol as Rol}

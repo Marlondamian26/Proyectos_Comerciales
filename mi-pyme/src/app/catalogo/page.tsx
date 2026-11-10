@@ -143,7 +143,7 @@ export default async function CatalogoPage({
           <span className="h-5 w-72 max-w-full animate-pulse rounded bg-muted" />
         </div>
         <span className="h-12 w-full animate-pulse rounded-lg bg-muted" />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {[1,2,3,4,5,6,7,8].map((_, i) => (
             <div key={i} className="animate-pulse rounded-xl border border-border bg-surface p-4">
               <span className="h-24 w-full animate-pulse rounded bg-muted" />
@@ -296,7 +296,7 @@ export default async function CatalogoPage({
           />
         ) : (
           <>
-            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Productos">
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3" aria-label="Productos">
               {combined
                 .filter((item) => item._tipo === "producto")
                 .map((producto) => {
@@ -442,7 +442,7 @@ export default async function CatalogoPage({
             }}
           />
         ) : (
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Servicios">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3" aria-label="Servicios">
             {combined
               .filter((item) => item._tipo === "servicio")
               .map((servicio) => {
@@ -455,7 +455,7 @@ export default async function CatalogoPage({
                       title={servicio.nombre}
                       description={servicio.descripcion ?? undefined}
                       image={{
-                        src: servicio.imagenUrl || "/placeholder-service.jpg",
+                        src: servicio.imagenUrl || "/placeholder-service.svg",
                         alt: servicio.nombre,
                       }}
                       badge={{

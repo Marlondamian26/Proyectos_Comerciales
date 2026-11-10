@@ -65,7 +65,7 @@ export default async function ServiciosPage({
               />
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
               {servicios.map((servicio) => {
                 const cupos = servicio.cuposDisponiblesHoy;
                 const disponible = cupos?.disponible ?? servicio.activo;
@@ -75,7 +75,7 @@ export default async function ServiciosPage({
                   <Card
                     key={servicio.id}
                     image={{
-                      src: servicio.imagenUrl || "/placeholder-service.jpg",
+                      src: servicio.imagenUrl || "/placeholder-service.svg",
                       alt: servicio.nombre,
                     }}
                     badge={{

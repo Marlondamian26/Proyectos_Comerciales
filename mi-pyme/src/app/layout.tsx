@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Navbar } from "@/components/Navbar";
 import "./globals.css";
 import "@/styles/tokens.css";
 import "@/styles/gradients.css";
@@ -39,7 +40,10 @@ export default async function RootLayout({
     <html lang="es" className={inter.className} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <Navbar />
+            {children}
+          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>
