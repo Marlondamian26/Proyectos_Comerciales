@@ -213,7 +213,7 @@ export default async function HomePage({
                     )}
                     <div className="flex flex-col gap-2 sm:flex-row">
                       {servicio.permiteReservas !== false && (
-                        <Button variant="primary" size="sm" className="flex-1 w-full" asChild>
+                        <Button variant="primary" size="sm" className="flex-1 w-full sm:text-base" asChild>
                           <Link href={`/reservas?servicioId=${servicio.id}`}>
                             Reservar ahora
                             <ArrowRight className="h-4 w-4 ml-2" />
@@ -221,7 +221,7 @@ export default async function HomePage({
                         </Button>
                       )}
                       <Link href={`/catalogo?servicioId=${servicio.id}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full">
+                        <Button variant="outline" size="sm" className="w-full sm:text-base">
                           Ver más
                         </Button>
                       </Link>
@@ -255,7 +255,7 @@ export default async function HomePage({
               Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
             {areasSlice.map((area) => (
               <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
                 <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
@@ -355,7 +355,7 @@ export default async function HomePage({
                         </span>
                       )}
                     </div>
-                    <Button variant="primary" size="sm" className="w-full" asChild>
+                    <Button variant="primary" size="sm" className="w-full sm:text-base" asChild>
                       <Link href={`/catalogo?negocioId=${negocio.id}`}>
                         Ver productos
                         <ArrowRight className="h-4 w-4 ml-2" />
@@ -431,7 +431,7 @@ export default async function HomePage({
                         Logística
                       </span>
                     </div>
-                    <Button variant="primary" size="sm" className="w-full" asChild>
+                    <Button variant="primary" size="sm" className="w-full sm:text-base" asChild>
                       <Link href={`/catalogo?negocioId=${negocio.id}`}>
                         Ver productos
                         <ArrowRight className="h-4 w-4 ml-2" />
