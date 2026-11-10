@@ -1,12 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     process.on("unhandledRejection", (reason) => {
-      console.error("[UNHANDLED REJECTION]", {
-        reason:
-          reason instanceof Error
-            ? { message: reason.message, stack: reason.stack }
-            : reason,
-      });
+      console.error("[UNHANDLED REJECTION]", reason);
     });
 
     process.on("uncaughtException", (error) => {

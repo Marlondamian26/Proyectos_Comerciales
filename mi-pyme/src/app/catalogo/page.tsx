@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BackToDashboard } from "@/components/ui/BackToDashboard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +12,12 @@ import {
   listarSubareas,
 } from "@/lib/actions";
 import { catalogoAddToCart, catalogoReserve } from "./actions";
+import { CatalogoContent } from "./catalogo-content";
 import Link from "next/link";
+import {
+  ProductGridSkeleton,
+  ServiceGridSkeleton,
+} from "@/components/skeletons/LoadingSkeletons";
 import type {
   ProductoConDisponibilidad,
   ServicioConCupos,
@@ -130,7 +136,25 @@ export default async function CatalogoPage({
   ).length;
 
   return (
-    <main className="container py-12">
+    <Suspense fallback={
+      <div className="container py-12 space-y-8">
+        <div className="space-y-3">
+          <span className="h-9 w-48 animate-pulse rounded bg-muted" />
+          <span className="h-5 w-72 max-w-full animate-pulse rounded bg-muted" />
+        </div>
+        <span className="h-12 w-full animate-pulse rounded-lg bg-muted" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1,2,3,4,5,6,7,8].map((_, i) => (
+            <div key={i} className="animate-pulse rounded-xl border border-border bg-surface p-4">
+              <span className="h-24 w-full animate-pulse rounded bg-muted" />
+              <span className="mt-4 h-5 w-3/4 animate-pulse rounded bg-muted" />
+              <span className="mt-2 h-4 w-1/2 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    }>
+      <main className="container py-12">
       <header className="mb-12">
         <div className="mb-4 flex items-center justify-between gap-4">
           <BackToDashboard href="/cliente" />
@@ -156,15 +180,7 @@ export default async function CatalogoPage({
               <label htmlFor="q" className="text-sm font-medium">
                 Buscar
               </label>
-              <input
-                type="search"
-                id="q"
-                name="q"
-                defaultValue={query}
-                placeholder="Buscar productos, servicios, negocios..."
-                className="rounded-md border px-3 py-2 text-sm"
-                aria-label="Buscar en catálogo"
-              />
+              <CatalogoContent initialQ={query} />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -497,5 +513,6 @@ export default async function CatalogoPage({
         )}
       </section>
     </main>
+    </Suspense>
   );
 }

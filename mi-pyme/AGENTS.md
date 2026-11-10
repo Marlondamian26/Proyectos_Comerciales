@@ -95,3 +95,28 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 - **PROHIBIDO**: `console.log` en producción.
 - **PROHIBIDO**: dark patterns (falsos countdowns, "casi agotado", popups forzados).
 - **OBLIGATORIO**: correr `npm run test:a11y` antes de mergear.
+
+## Buscadores y Server Components (Prevención de error React #441)
+
+### Obligaciones
+
+- **OBLIGATORIO**: `searchParams` y `params` deben `await`earse en Next.js 15+ Server Components.
+- **OBLIGATORIO**: `auth()`, `cookies()`, `headers()` deben `await`earse en Server Components.
+- **OBLIGATORIO**: `useSearchParams` debe estar envuelto en `<Suspense>` en Client Components.
+- **OBLIGATORIO**: `useEffect` que navega (`router.push`/`replace`) debe tener debounce (300ms) y depender solo del valor debounced.
+- **OBLIGATORIO**: sanitizar query de Prisma (`trim`, `slice(0, 100)`, `mode: "insensitive"`).
+- **OBLIGATORIO**: manejar resultados vacíos con `EmptyState`.
+- **OBLIGATORIO**: serializar datos Server → Client (`Decimal` → `toString()`, `Date` → `toISOString()`).
+- **OBLIGATORIO**: todos los buscadores usan el patrón canónico (`SearchInput` + `useDebounce` + `<Suspense>`).
+
+### Prohibiciones
+
+- **PROHIBIDO**: acceder a `searchParams.q` sin `await`.
+- **PROHIBIDO**: `router.push`/`replace` en `useEffect` sin debounce.
+- **PROHIBIDO**: incluir `router` o `searchParams` en deps de `useEffect` que navega.
+- **PROHIBIDO**: pasar `Decimal` o `Date` directamente a Client Components.
+- **PROHIBIDO**: usar `defaultValue` en inputs de búsqueda controlados por Client Components.
+
+### Tests de arquitectura
+
+`src/tests/architecture-search.test.ts` verifica automáticamente que ninguna de estas reglas se ha revertido. Si un test falla, es una regresión real.

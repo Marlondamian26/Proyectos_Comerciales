@@ -4,7 +4,7 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 
 validateAuthEnv();
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ["*"],
@@ -68,7 +68,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-};
+} satisfies NextConfig;
 
 const analyzedConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AlertCircle, RefreshCw, Home } from "lucide-react";
@@ -12,10 +11,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Application error:", error);
-  }, [error]);
-
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4">
       <div className="absolute top-4 right-4">
@@ -30,6 +25,11 @@ export default function Error({
           <p className="text-sm text-muted-foreground mt-2">
             Ocurrió un error inesperado. Por favor, inténtalo de nuevo.
           </p>
+          {error.digest && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Código de error: {error.digest}
+            </p>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button variant="primary" onClick={reset} className="w-full sm:w-auto">

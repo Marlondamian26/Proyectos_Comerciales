@@ -124,3 +124,21 @@ Cada uno con `TODO` en el código correspondiente y referencia en `SERVICE_ARCHI
 - **Focus visible**: `ring-2 ring-ring ring-offset-2`.
 - **Prohibido**: animaciones decorativas, `console.log`, dark patterns.
 - **Obligatorio**: `npm run test:a11y` antes de mergear.
+
+## Buscadores y Server Components (Prevención de error React #441)
+
+- **OBLIGATORIO**: `searchParams` y `params` deben `await`earse en Next.js 15+ Server Components.
+- **OBLIGATORIO**: `auth()`, `cookies()`, `headers()` deben `await`earse.
+- **OBLIGATORIO**: `useSearchParams` debe estar dentro de `<Suspense>`.
+- **OBLIGATORIO**: `useEffect` que navega debe tener debounce (300ms) y solo depender del valor debounced.
+- **OBLIGATORIO**: sanitizar query de Prisma (`trim`, `slice(0, 100)`, `mode: "insensitive"`).
+- **OBLIGATORIO**: manejar resultados vacíos con `EmptyState`.
+- **OBLIGATORIO**: serializar datos Server → Client (`Decimal` → `toString()`, `Date` → `toISOString()`).
+- **OBLIGATORIO**: todos los buscadores usan el patrón canónico (`SearchInput` + `useDebounce` + `<Suspense>`).
+
+- **PROHIBIDO**: acceder a `searchParams.q` sin `await`.
+- **PROHIBIDO**: `router.push`/`replace` en `useEffect` sin debounce.
+- **PROHIBIDO**: incluir `router` o `searchParams` en deps de `useEffect` que navega.
+- **PROHIBIDO**: pasar `Decimal` o `Date` directamente a Client Components.
+
+Tests de arquitectura: `src/tests/architecture-search.test.ts`.
