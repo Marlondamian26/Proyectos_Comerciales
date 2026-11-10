@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 import { Badge } from "./Badge";
+import { CARD_TYPOGRAPHY } from "./CardTypography";
 
 export interface CardProps {
   title?: string;
@@ -120,11 +121,23 @@ export function Card({
                 {icon}
               </span>
             )}
-            {title && <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>}
+            {title && (
+              <h3
+                className={`${CARD_TYPOGRAPHY.title} tracking-tight text-foreground`}
+                data-testid="card-title"
+              >
+                {title}
+              </h3>
+            )}
           </div>
         )}
         {description && (
-          <p className="text-sm text-secondary leading-relaxed">{description}</p>
+          <p
+            className={`${CARD_TYPOGRAPHY.subtitle} leading-relaxed`}
+            data-testid="card-subtitle"
+          >
+            {description}
+          </p>
         )}
         <div className="mt-4 flex-1">{children}</div>
       </div>

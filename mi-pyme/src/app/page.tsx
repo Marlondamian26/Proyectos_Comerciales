@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { SortControls } from "@/components/SortControls";
-import { HomeNav } from "@/components/HomeNav";
+import { CARD_TYPOGRAPHY } from "@/components/ui/CardTypography";
 import {
   ShoppingBag,
   ArrowRight,
@@ -67,7 +67,7 @@ export default async function HomePage({
       <div className="app-blob app-blob--secondary bottom-20 right-20 w-96 h-96" />
       <div className="app-blob app-blob--accent top-1/2 left-1/3 w-80 h-80" />
       {/* Navigation */}
-      <HomeNav />
+      {/* HomeNav eliminado: navbar única en layout.tsx raíz */}
 
       {/* Hero Section */}
       <section className="relative border-b border-border bg-background-alt">
@@ -197,9 +197,17 @@ export default async function HomePage({
                   }
                 >
                   <div className="p-4 sm:p-6 pt-0">
-                    <h3 className="text-lg font-semibold mb-2">{servicio.nombre}</h3>
+                    <h3
+                      className={`${CARD_TYPOGRAPHY.title} mb-2`}
+                      data-testid="card-title"
+                    >
+                      {servicio.nombre}
+                    </h3>
                     {servicio.descripcion && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                      <p
+                        className={`${CARD_TYPOGRAPHY.subtitle} mb-4`}
+                        data-testid="card-subtitle"
+                      >
                         {servicio.descripcion}
                       </p>
                     )}
@@ -247,17 +255,27 @@ export default async function HomePage({
               Descubre negocios organizados por categorías para encontrar exactamente lo que necesitas
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
             {areasSlice.map((area) => (
               <Link key={area.id} href={`/catalogo?area=${area.slug}`}>
                 <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                  <div className="p-4 sm:p-6">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
-                      <ShoppingBag className="h-6 w-6" />
+                  <div className="p-3 sm:p-4 flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">{area.nombre}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">/{area.slug}</p>
-                    <span className="inline-flex items-center text-sm text-primary font-medium">
+                    <h3
+                      className={`${CARD_TYPOGRAPHY.title} mb-2 text-center`}
+                      data-testid="card-title"
+                    >
+                      {area.nombre}
+                    </h3>
+                    <p
+                      className={`${CARD_TYPOGRAPHY.subtitle} mb-4 text-center`}
+                      data-testid="card-subtitle"
+                    >
+                      /{area.slug}
+                    </p>
+                    <span className="inline-flex items-center text-xs sm:text-sm text-primary font-medium">
                       Ver más <ChevronRight className="h-4 w-4 ml-1" />
                     </span>
                   </div>
@@ -309,12 +327,20 @@ export default async function HomePage({
                   }}
                 >
                 <div className="p-3 sm:p-4">
-                  <h3 className="text-sm sm:text-base font-semibold mb-1 line-clamp-1">{negocio.nombre}</h3>
+                  <h3
+                    className={`${CARD_TYPOGRAPHY.title} mb-1`}
+                    data-testid="card-title"
+                  >
+                    {negocio.nombre}
+                  </h3>
                   {negocio.descripcion && (
-                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 mb-3">
+                    <p
+                      className={`${CARD_TYPOGRAPHY.subtitle} mb-3`}
+                      data-testid="card-subtitle"
+                    >
                       {negocio.descripcion}
-                      </p>
-                    )}
+                    </p>
+                  )}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
                       {negocio.area && (
                         <span className="flex items-center gap-1">
@@ -375,13 +401,21 @@ export default async function HomePage({
                     variant: "success",
                   }}
                 >
-                  <div className="p-6">
+                  <div className="p-3 sm:p-4">
                     <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent/10 text-accent mb-4">
                       <Truck className="h-6 w-6" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">{negocio.nombre}</h3>
+                    <h3
+                      className={`${CARD_TYPOGRAPHY.title} mb-2`}
+                      data-testid="card-title"
+                    >
+                      {negocio.nombre}
+                    </h3>
                     {negocio.descripcion && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                      <p
+                        className={`${CARD_TYPOGRAPHY.subtitle} mb-4`}
+                        data-testid="card-subtitle"
+                      >
                         {negocio.descripcion}
                       </p>
                     )}
