@@ -24,6 +24,12 @@ export const metadata: Metadata = {
     "reservas",
     "logística",
   ],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
 };
 
 export default async function RootLayout({

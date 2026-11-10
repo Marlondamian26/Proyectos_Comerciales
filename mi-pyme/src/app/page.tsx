@@ -99,13 +99,13 @@ export default async function HomePage({
               {isLoggedIn ? (
                 <>
                   <Link href={dashboardUrl}>
-                    <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
-                      Ir a mi dashboard
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
+                      <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
+                        Ir a mi dashboard
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
                   </Link>
                   <Link href="/catalogo">
-                    <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px]">
                       Explorar catálogo
                     </Button>
                   </Link>
@@ -113,13 +113,13 @@ export default async function HomePage({
               ) : (
                 <>
                   <Link href="/auth/registro">
-                    <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
+                    <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
                       Comenzar gratis
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </Link>
                   <Link href="/catalogo">
-                    <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px]">
                       Explorar catálogo
                     </Button>
                   </Link>
@@ -454,13 +454,13 @@ export default async function HomePage({
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href="/auth/registro">
-                <Button size="lg" variant="secondary" className="min-w-[200px]">
+                <Button size="lg" variant="secondary" className="w-full sm:w-auto sm:min-w-[200px]">
                   Crear cuenta gratis
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
               <Link href="/contacto">
-                <Button size="lg" variant="outline" className="min-w-[200px] border-white/20 text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-white/20 text-white hover:bg-white/10">
                   Contactar ventas
                 </Button>
               </Link>

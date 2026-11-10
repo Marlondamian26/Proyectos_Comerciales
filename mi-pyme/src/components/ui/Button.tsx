@@ -76,11 +76,11 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-sm gap-1.5 min-h-[36px] min-w-[36px]",
-  md: "h-10 px-4 text-sm gap-2 min-h-[40px] min-w-[40px]",
+  sm: "h-10 px-3 text-sm gap-1.5 min-h-[44px] min-w-[44px]",
+  md: "h-10 px-4 text-sm gap-2 min-h-[44px] min-w-[44px]",
   lg: "h-11 px-5 text-base gap-2.5 min-h-[44px] min-w-[44px]",
   xl: "h-12 px-6 text-lg gap-3 min-h-[48px] min-w-[48px]",
-  icon: "h-10 w-10 min-h-[44px] min-w-[44px] p-0",
+  icon: "h-11 w-11 min-h-[44px] min-w-[44px] p-0",
 };
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

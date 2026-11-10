@@ -20,6 +20,7 @@ import {
   FileBarChartIcon,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -141,6 +142,7 @@ export function Sidebar({
       return false;
     }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -163,44 +165,92 @@ export function Sidebar({
   );
 
   return (
-    <aside
-      className={cn(
-        "relative flex flex-col border-r bg-background transition-[width] duration-300 ease-out",
-        collapsed ? "w-16" : "w-64"
-      )}
-      aria-label="Navegación principal"
-    >
-      <button
-        onClick={toggle}
+    <>
+      {/* Desktop sidebar */}
+      <aside
         className={cn(
-          "absolute -right-3 top-6 z-10 flex h-6 w-6 items-center justify-center",
-          "rounded-full border bg-background shadow-subtle hover:bg-muted",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          "hidden lg:flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
+          collapsed ? "w-16" : "w-64"
         )}
-        aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-        aria-expanded={!collapsed}
+        aria-label="Navegación principal"
       >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
+        <button
+          onClick={toggle}
+          className={cn(
+            "absolute -right-3 top-6 z-10 flex h-11 w-11 items-center justify-center",
+            "rounded-full border bg-background shadow-subtle hover:bg-muted",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          )}
+          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
 
-      <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
-        <ul className="space-y-1">
-          {visibleItems.map((item) => {
-            const href = item.href.split("?")[0];
-            const isActive =
-              pathname === href || pathname.startsWith(href + "/");
-            return (
-              <NavItem
-                key={item.href}
-                item={item}
-                collapsed={collapsed}
-                isActive={isActive}
-              />
-            );
-          })}
-        </ul>
-      </nav>
-    </aside>
+        <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
+          <ul className="space-y-1">
+            {visibleItems.map((item) => {
+              const href = item.href.split("?")[0];
+              const isActive =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <NavItem
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  isActive={isActive}
+                />
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="
+            fixed inset-y-0 left-0 z-50 w-72
+            bg-background border-r border-border shadow-xl overflow-y-auto
+            lg:hidden transform transition-transform duration-300 ease-in-out
+            translate-x-0 sm:translate-x-full
+          ">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">Menú</h2>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Cerrar menú"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
+              <ul className="space-y-1">
+                {visibleItems.map((item) => {
+                  const href = item.href.split("?")[0];
+                  const isActive =
+                    pathname === href || pathname.startsWith(href + "/");
+                  return (
+                    <NavItem
+                      key={item.href}
+                      item={item}
+                      collapsed={false}
+                      isActive={isActive}
+                    />
+                  );
+                })}
+              </ul>
+            </nav>
+          </aside>
+        </>
+      )}
+    </>
   );
 }
 

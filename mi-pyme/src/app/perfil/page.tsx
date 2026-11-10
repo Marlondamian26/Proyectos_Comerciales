@@ -420,7 +420,7 @@ export default function PerfilPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={saving} className="min-w-[160px]">
+              <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                 {saving ? (
                   <>
                     <Loading size="sm" className="mr-2" />
@@ -672,7 +672,7 @@ export default function PerfilPage() {
             <Button
               variant="destructive"
               onClick={openDeleteModal}
-              className="min-w-[160px]"
+              className="w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar mi cuenta

@@ -139,7 +139,7 @@ export function MobileTabBar({
               {showLabels && (
                 <span
                   className={cn(
-                    "mt-0.5 text-xs font-medium",
+                    "mt-0.5 text-sm font-medium",
                     active ? "text-primary" : "text-secondary"
                   )}
                 >

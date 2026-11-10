@@ -112,12 +112,12 @@ export function Toast({
         <button
           onClick={onClose}
           className={cn(
-            "flex-shrink-0 text-current hover:opacity-70 transition-opacity rounded-full p-0.5",
+            "flex-shrink-0 flex items-center justify-center h-11 w-11 rounded-full text-current hover:bg-surface-raised transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           )}
           aria-label="Cerrar notificación"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       )}
     </div>
@@ -144,7 +144,10 @@ export function ToastContainer({
 }) {
   return (
     <div
-      className="fixed top-4 right-4 z-[var(--z-toast)] flex flex-col gap-3 max-w-sm w-full"
+      className={cn(
+        "fixed z-[var(--z-toast)] top-4 left-4 right-4 flex flex-col gap-3 w-full",
+        "sm:top-4 sm:right-4 sm:left-auto sm:w-auto sm:max-w-sm"
+      )}
       aria-live="polite"
       aria-relevant="additions"
       aria-label="Notificaciones"

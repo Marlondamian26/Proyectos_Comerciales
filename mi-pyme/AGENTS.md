@@ -96,6 +96,27 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 - **PROHIBIDO**: dark patterns (falsos countdowns, "casi agotado", popups forzados).
 - **OBLIGATORIO**: correr `npm run test:a11y` antes de mergear.
 
+### Reglas Responsive (Auditoría UI/UX Desktop + Mobile)
+
+- **OBLIGATORIO**: `html, body { overflow-x: hidden; max-width: 100vw; }` en `globals.css`.
+- **OBLIGATORIO**: `* { min-width: 0; }` global en `globals.css`.
+- **OBLIGATORIO**: `env(safe-area-inset-*)` padding en `body` (notch iOS).
+- **OBLIGATORIO**: `viewport` metadata con `maximumScale: 5` y `userScalable: true` en `layout.tsx`.
+- **OBLIGATORIO**: touch targets ≥ 44×44px (`min-h-[44px] min-w-[44px]`).
+- **OBLIGATORIO**: body text ≥ 16px en mobile (`text-base`), labels ≥ 14px (`text-sm`).
+- **OBLIGATORIO**: `next/image` con `fill`/`width/height`, `object-cover` y `sizes` correcto.
+- **OBLIGATORIO**: modales full-screen en mobile (`fixed inset-0 w-full h-full`).
+- **OBLIGATORIO**: tablas → cards en mobile.
+- **OBLIGATORIO**: sidebar → drawer en mobile (`hidden lg:flex` + drawer lateral).
+- **OBLIGATORIO**: cards full-width en mobile (`rounded-none sm:rounded-xl`, `border-0 sm:border`).
+- **OBLIGATORIO**: formularios y botones `w-full` en mobile, `sm:w-auto` en desktop.
+- **OBLIGATORIO**: toasts full-width arriba en mobile, esquina arriba-derecha en desktop.
+- **OBLIGATORIO**: mobile-first (320px antes que 768px); escribir estilos base mobile, luego `sm:`/`md:`/`lg:`.
+- **PROHIBIDO**: hardcodear anchos fijos (`w-[500px]`, `min-w-[200px]` sin fallback responsive).
+- **PROHIBIDO**: grids sin responsive (`grid-cols-3` sin `sm:`/`md:`/`lg:`).
+- **PROHIBIDO**: `userScalable: false` ni `maximumScale: 1` en viewport.
+- **PROHIBIDO**: valores de color/espaciado hardcodeados (usar tokens semánticos).
+
 ## Buscadores y Server Components (Prevención de error React #441)
 
 ### Obligaciones

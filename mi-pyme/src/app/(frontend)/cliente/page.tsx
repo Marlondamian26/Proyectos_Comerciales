@@ -70,7 +70,7 @@ export default async function Page() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 sm:gap-4">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
           <Card className="hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary"><ShoppingBag className="h-5 w-5" /></div>
@@ -155,7 +155,7 @@ export default async function Page() {
 
         <section>
           <h2 className="text-xl font-semibold mb-4">Acciones rápidas</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <Link href="/catalogo"><Button variant="outline" className="w-full justify-start min-h-[44px]"><ShoppingBag className="h-4 w-4 mr-2" />Catálogo</Button></Link>
             <Link href="/servicios"><Button variant="outline" className="w-full justify-start min-h-[44px]"><Calendar className="h-4 w-4 mr-2" />Reservar</Button></Link>
             <Link href="/notificaciones"><Button variant="outline" className="w-full justify-start min-h-[44px]"><Receipt className="h-4 w-4 mr-2" />Notificaciones</Button></Link>

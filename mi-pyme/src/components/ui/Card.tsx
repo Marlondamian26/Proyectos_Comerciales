@@ -71,12 +71,12 @@ export function Card({
   return (
     <Wrapper
       className={cn(
-        "flex flex-col rounded-xl transition-all duration-200",
+        "flex flex-col transition-all duration-200 rounded-none sm:rounded-xl border-0 sm:border",
         variantClasses[variant],
         shadowClasses[shadow],
         hoverLift && onClick && "hover:shadow-xl hover:-translate-y-0.5",
         hoverLift && !onClick && "group hover:shadow-lg",
-        gradientBorder && "relative before:absolute before:inset-0 before:rounded-xl before:bg-gradient-primary before:p-[1px] before:-z-10",
+        gradientBorder && "relative before:absolute before:inset-0 before:rounded-none sm:before:rounded-xl before:bg-gradient-primary before:p-[1px] before:-z-10",
         onClick && "cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className
       )}

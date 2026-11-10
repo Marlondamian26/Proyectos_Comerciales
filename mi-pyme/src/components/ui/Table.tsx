@@ -178,7 +178,7 @@ export function Table<T>({
               >
                 {columns.map((col) => (
                   <div key={col.key} className="flex justify-between gap-2">
-                    <span className="text-xs font-medium text-secondary">
+                    <span className="text-sm font-medium text-secondary">
                       {col.header}
                     </span>
                     <span className="text-sm text-foreground text-right">

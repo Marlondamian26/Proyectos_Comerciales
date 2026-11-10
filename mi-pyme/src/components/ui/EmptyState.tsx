@@ -79,7 +79,7 @@ export function EmptyState({
       {action && (
         <Button
           variant={action.variant ?? "primary"}
-          className="mt-2 min-w-[200px]"
+          className="mt-2 w-full sm:w-auto sm:min-w-[200px]"
           asChild={!!action.href}
         >
           {action.href ? (
