@@ -2,42 +2,51 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { LogOut } from "lucide-react";
 
 export function LogoutButton() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const handleLogout = async () => {
     if (loading) return;
     setLoading(true);
 
     try {
+      // 1. Limpiar cookies del servidor (endpoint propio)
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
 
-      await signOut({
-        callbackUrl: "/auth/login",
-        redirect: false,
-      });
+      // 2. Cerrar sesión en NextAuth (cliente)
+      await signOut({ callbackUrl: "/auth/login", redirect: false });
 
-      if (typeof window !== "undefined") {
-        const theme = localStorage.getItem("theme");
-        localStorage.clear();
-        sessionStorage.clear();
-        if (theme) localStorage.setItem("theme", theme);
-      }
+      // 3. Navegar al login y forzar refresh de la página
+      router.push("/auth/login");
+      router.refresh();
 
-      window.location.href = "/auth/login";
+      // 4. Fallback: recarga forzada si router.refresh no basta
+      setTimeout(() => {
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
+      }, 100);
     } catch (error) {
       console.error("[LOGOUT] Error:", error);
-      window.location.href = "/auth/login";
+      // Fallback definitivo
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login";
+      }
     }
   };
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <Button

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import Link from "next/link";
 import Image from "next/image";
@@ -30,7 +31,9 @@ export default async function HomePage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   const session = await auth();
-  void session;
+  const isLoggedIn = !!session?.user;
+  const userRol = session?.user?.rol;
+  const dashboardUrl = userRol ? getDashboardPath(userRol) : "/cliente";
 
   const sortParam = (await searchParams).sort as SortOption || "popularity-desc";
 
@@ -93,17 +96,35 @@ export default async function HomePage({
               Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href="/auth/registro">
-                <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
-                  Comenzar gratis
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/catalogo">
-                <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
-                  Explorar catálogo
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link href={dashboardUrl}>
+                    <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
+                      Ir a mi dashboard
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </Link>
+                  <Link href="/catalogo">
+                    <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
+                      Explorar catálogo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/auth/registro">
+                    <Button size="lg" className="min-w-[180px] sm:min-w-[200px]">
+                      Comenzar gratis
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </Link>
+                  <Link href="/catalogo">
+                    <Button size="lg" variant="outline" className="min-w-[180px] sm:min-w-[200px]">
+                      Explorar catálogo
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 text-sm text-muted-foreground sm:flex-row sm:gap-6">
               <div className="flex items-center gap-2">

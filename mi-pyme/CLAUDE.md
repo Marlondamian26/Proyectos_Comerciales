@@ -142,3 +142,22 @@ Cada uno con `TODO` en el código correspondiente y referencia en `SERVICE_ARCHI
 - **PROHIBIDO**: pasar `Decimal` o `Date` directamente a Client Components.
 
 Tests de arquitectura: `src/tests/architecture-search.test.ts`.
+
+## Sesiones e invalidación (Prevención de regresiones de sesión)
+
+- **OBLIGATORIO**: incrementar `sessionVersion` al cambiar password, rol o estado de cuenta.
+- **OBLIGATORIO**: validar `sessionVersion` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: validar `isActive` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: `callbackUrl` preservado en redirecciones a login.
+- **OBLIGATORIO**: `<SessionProvider>` envuelve todo el árbol en `layout.tsx`.
+- **OBLIGATORIO**: `pages.signOut` definido en `auth.config.ts`.
+- **OBLIGATORIO**: logout elimina cookies del servidor y del cliente.
+- **OBLIGATORIO**: home es accesible anónimo y logueado (contenido adaptativo).
+- **OBLIGATORIO**: `mustChangePassword: true` bloquea navegación excepto `/perfil/cambiar-password`.
+
+- **PROHIBIDO**: `new Response().headers` para eliminar cookies en logout (usar `cookies()` de next/headers).
+- **PROHIBIDO**: `void session` sin usar la sesión en Server Components.
+- **PROHIBIDO**: `window.location.href` como navegación principal en logout.
+- **PROHIBIDO**: hardcodear rutas de redirección en componentes de logout.
+
+Tests de arquitectura: `src/tests/architecture-session.test.ts`.

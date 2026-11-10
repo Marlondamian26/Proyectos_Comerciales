@@ -120,3 +120,28 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 ### Tests de arquitectura
 
 `src/tests/architecture-search.test.ts` verifica automáticamente que ninguna de estas reglas se ha revertido. Si un test falla, es una regresión real.
+
+## Sesiones e invalidación (Prevención de regresiones de sesión)
+
+### Obligaciones
+
+- **OBLIGATORIO**: incrementar `sessionVersion` al cambiar password, rol o estado de cuenta.
+- **OBLIGATORIO**: validar `sessionVersion` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: validar `isActive` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: `callbackUrl` preservado en redirecciones a login.
+- **OBLIGATORIO**: `<SessionProvider>` envuelve todo el árbol en `layout.tsx`.
+- **OBLIGATORIO**: `pages.signOut` definido en `auth.config.ts`.
+- **OBLIGATORIO**: logout elimina cookies del servidor (`cookies()` de next/headers) y del cliente (`signOut`).
+- **OBLIGATORIO**: home es accesible anónimo y logueado (contenido adaptativo).
+- **OBLIGATORIO**: `mustChangePassword: true` bloquea navegación excepto `/perfil/cambiar-password`.
+
+### Prohibiciones
+
+- **PROHIBIDO**: `new Response().headers` para eliminar cookies en logout (usar `cookies()` de next/headers).
+- **PROHIBIDO**: `void session` sin usar la sesión en Server Components.
+- **PROHIBIDO**: `window.location.href` como navegación principal en logout (usar `router.push` + `router.refresh`).
+- **PROHIBIDO**: hardcodear rutas de redirección en componentes de logout.
+
+### Tests de arquitectura
+
+`src/tests/architecture-session.test.ts` verifica automáticamente que ninguna de estas reglas se ha revertido. Si un test falla, es una regresión real.

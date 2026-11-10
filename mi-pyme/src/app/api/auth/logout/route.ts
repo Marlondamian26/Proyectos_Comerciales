@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST() {
-  const cookieStore = new Response().headers;
-  const response = NextResponse.json({ success: true, redirectUrl: "/auth/login" });
+  const cookieStore = await cookies();
 
   const authCookies = [
     "next-auth.session-token",
@@ -22,19 +22,10 @@ export async function POST() {
   ];
 
   for (const cookieName of authCookies) {
-    response.cookies.delete({ name: cookieName, path: "/" });
-    response.cookies.delete({ name: cookieName, path: "/", secure: true, sameSite: "lax" });
-    response.cookies.set(cookieName, "", { maxAge: 0, path: "/", httpOnly: true });
-    response.cookies.set(cookieName, "", {
-      maxAge: 0,
-      path: "/",
-      secure: true,
-      httpOnly: true,
-      sameSite: "lax",
-    });
+    cookieStore.delete(cookieName);
   }
 
-  return response;
+  return NextResponse.json({ success: true, redirectUrl: "/auth/login" });
 }
 
 export async function GET() {

@@ -42,6 +42,7 @@ export const authOptions: NextAuthConfig = {
   trustHost: true,
   pages: {
     signIn: "/auth/login",
+    signOut: "/auth/login",
     error: "/auth/login",
     newUser: "/auth/registro",
   },
@@ -77,8 +78,8 @@ export const authOptions: NextAuthConfig = {
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user && user.id) {
+    async jwt({ token, user, trigger }) {
+      if (user) {
         token.id = user.id as string;
       }
       if (user && (user as { rol?: Rol }).rol) {
@@ -103,6 +104,34 @@ export const authOptions: NextAuthConfig = {
 
       if (user && !token.rememberMe) {
         token.exp = Math.floor(Date.now() / 1000) + TWENTY_FOUR_HOURS;
+      }
+
+      // En cada refresh del token (trigger === "update"), validar sessionVersion e isActive
+      // contra la base de datos para invalidar sesiones en eventos críticos
+      if (token.id && trigger === "update") {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            sessionVersion: true,
+            isActive: true,
+            rol: true,
+            fotoPerfilUrl: true,
+            mustChangePassword: true,
+          },
+        });
+
+        if (!dbUser || !dbUser.isActive) {
+          return null; // Invalidar sesión: usuario inactivo o eliminado
+        }
+
+        if (dbUser.sessionVersion !== token.sessionVersion) {
+          return null; // Invalidar sesión: sessionVersion cambió (password, rol, suspensión)
+        }
+
+        // Sincronizar datos que pueden haber cambiado
+        token.rol = dbUser.rol;
+        token.mustChangePassword = dbUser.mustChangePassword;
+        token.fotoPerfilUrl = dbUser.fotoPerfilUrl ?? null;
       }
 
       return token;
