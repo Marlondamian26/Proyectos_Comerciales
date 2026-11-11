@@ -108,9 +108,9 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
               <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Token invalido o expirado</h2>
+            <h2 className="text-xl font-bold mb-2">Token inválido o expirado</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              El enlace de recuperacion no es valido o ha expirado. Por favor, solicita uno nuevo.
+              El enlace de recuperación no es válido o ha expirado. Por favor, solicita uno nuevo.
             </p>
             <Link href="/auth/recuperar">
               <Button className="w-full">Solicitar nuevo enlace</Button>
@@ -133,9 +133,9 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
               <CheckCircle className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Contrasena actualizada</h2>
+            <h2 className="text-xl font-bold mb-2">Contraseña actualizada</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Tu contrasena ha sido restablecida correctamente. Ahora puedes iniciar sesion.
+              Tu contraseña ha sido restablecida correctamente. Ahora puedes iniciar sesión.
             </p>
             <Link href="/auth/login">
               <Button className="w-full">Iniciar Sesion</Button>
@@ -170,8 +170,8 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl">
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Nueva contrasena</h2>
-              <p className="text-muted-foreground mt-2">Ingresa tu nueva contrasena</p>
+              <h2 className="text-2xl font-bold text-foreground">Nueva contraseña</h2>
+              <p className="text-muted-foreground mt-2">Ingresa tu nueva contraseña</p>
             </div>
             <ThemeToggle />
           </div>
@@ -195,7 +195,7 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Minimo 10 caracteres, una letra y un numero"
+                  placeholder="Mínimo 10 caracteres, una letra y un número"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-describedby="password-requirements"
@@ -246,7 +246,7 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Repite la contrasena"
+                  placeholder="Repite la contraseña"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="flex h-11 w-full rounded-lg border border-input bg-background pl-10 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
@@ -274,7 +274,7 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
                   Actualizando...
                 </span>
               ) : (
-                "Restablecer contrasena"
+                "Restablecer contraseña"
               )}
             </Button>
           </form>

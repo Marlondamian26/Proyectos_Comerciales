@@ -56,6 +56,7 @@ export default function RegistroPage() {
     municipio: "",
   });
   const [quieroVender, setQuieroVender] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -98,6 +99,8 @@ export default function RegistroPage() {
 
     if (!form.municipio.trim()) newErrors.municipio = "El municipio es obligatorio";
 
+    if (!aceptaTerminos) newErrors.terminos = "Debes aceptar los Términos y Condiciones y la Política de Privacidad";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -130,6 +133,7 @@ export default function RegistroPage() {
         provincia: form.provincia,
         municipio: form.municipio,
         quieroVender: quieroVender,
+        aceptaTerminos,
         callbackUrl: resolvedCallbackUrl,
       });
 
@@ -430,10 +434,42 @@ export default function RegistroPage() {
                 </label>
               </div>
 
+              {/* Checkbox de términos obligatorio */}
+              <div className="flex items-start gap-3 py-4">
+                <div className="flex items-center h-5 mt-0.5">
+                  <input
+                    id="acepta-terminos"
+                    type="checkbox"
+                    checked={aceptaTerminos}
+                    onChange={(e) => setAceptaTerminos(e.target.checked)}
+                    required
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                    aria-describedby="terminos-description"
+                  />
+                </div>
+                <label htmlFor="acepta-terminos" id="terminos-description" className="text-sm text-muted-foreground leading-relaxed">
+                  He leído y acepto los{" "}
+                  <Link href="/terminos" target="_blank" className="text-primary underline hover:text-primary/80">
+                    Términos y Condiciones
+                  </Link>{" "}
+                  y la{" "}
+                  <Link href="/privacidad" target="_blank" className="text-primary underline hover:text-primary/80">
+                    Política de Privacidad
+                  </Link>
+                  de Mi-Pyme.
+                </label>
+              </div>
+
+              {errors.terminos && (
+                <p className="text-sm text-destructive" role="alert">
+                  {errors.terminos}
+                </p>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-11 text-base font-medium shadow-lg shadow-secondary/25 hover:shadow-xl hover:shadow-secondary/30 transition-all"
-                disabled={loading}
+                disabled={loading || !aceptaTerminos}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">

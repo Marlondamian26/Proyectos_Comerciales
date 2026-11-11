@@ -34,6 +34,8 @@ model User {
   updatedAt                                                     DateTime                  @updatedAt
   fotoPerfilUrl                       String?
   fotoPerfilPublicId                  String?
+  aceptoTerminosEn                    DateTime?
+  aceptoTerminosVersion               String?
   accounts                                                      Account[]
   auditLogs                                                     AuditLog[]
   carritos                                                      Carrito[]
@@ -104,11 +106,14 @@ model Session {
 /// El campo `token` guarda el hash SHA-256 del token plano.
 /// El token plano solo existe en memoria (email/link), nunca se persiste.
 model VerificationToken {
-  identifier String
-  token      String   @unique
+  id         String   @id @default(cuid())
+  identifier String   // email del usuario
+  token      String   @unique  // hash SHA-256
   expires    DateTime
+  createdAt  DateTime @default(now())
 
-  @@unique([identifier, token])
+  @@index([identifier])
+  @@index([expires])
 }
 
 model Negocio {

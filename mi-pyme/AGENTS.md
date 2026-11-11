@@ -166,3 +166,31 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 ### Tests de arquitectura
 
 `src/tests/architecture-session.test.ts` verifica automáticamente que ninguna de estas reglas se ha revertido. Si un test falla, es una regresión real.
+
+## Reglas Legales (Fase Legal)
+
+> **Fuente de verdad**: `docs/legal.md`. Los documentos legales requieren revisión por abogado antes del lanzamiento público.
+
+### Obligaciones
+
+- **OBLIGATORIO**: el registro público incluye checkbox de aceptación de Términos y Condiciones y Política de Privacidad.
+- **OBLIGATORIO**: validación en servidor de `aceptaTerminos` en `registrarUsuario` (`src/lib/actions.ts`).
+- **OBLIGATORIO**: registrar `aceptoTerminosEn` y `aceptoTerminosVersion` en el modelo `User` de Prisma.
+- **OBLIGATORIO**: el checkout muestra aviso de Términos y Condiciones y Política de Privacidad antes de confirmar.
+- **OBLIGATORIO**: el footer incluye enlaces a `/privacidad`, `/terminos` y `/devoluciones`.
+- **OBLIGATORIO**: cada página legal tiene `metadata` con `title`, `description` y `robots`.
+- **OBLIGATORIO**: actualizar `lastUpdated` en los documentos si cambian.
+- **OBLIGATORIO**: los 3 documentos legales declaran transferencia internacional de datos (Vercel, Supabase, Cloudinary, Resend en EE.UU.).
+
+### Prohibiciones
+
+- **PROHIBIDO**: publicar cambios en documentos legales sin revisión de abogado.
+- **PROHIBIDO**: permitir registro sin aceptar términos (checkbox + validación servidor).
+- **PROHIBIDO**: implementar Política de Cookies ni banner de cookies (fase posterior).
+
+### Pendientes
+
+- ⏳ Revisión por abogado antes del lanzamiento público.
+- ⏳ Política de Cookies (fase posterior).
+- ⏳ Banner de cookies (si se añaden analytics).
+- ⏳ Aviso legal (si se opera en España).

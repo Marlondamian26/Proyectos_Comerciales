@@ -2053,6 +2053,7 @@ export async function registrarUsuario(
     provincia?: string;
     municipio?: string;
     quieroVender?: boolean;
+    aceptaTerminos?: boolean;
     callbackUrl?: string;
   },
 ): Promise<{ success: boolean; userId?: string; error?: string }> {
@@ -2074,6 +2075,10 @@ export async function registrarUsuario(
     const passwordValidation = validarPassword(datos.password);
     if (!passwordValidation.valida) {
       return { success: false, error: passwordValidation.errores.join("; ") };
+    }
+
+    if (!datos.aceptaTerminos) {
+      return { success: false, error: "Debes aceptar los Términos y Condiciones y la Política de Privacidad" };
     }
 
     const existingEmail = await prisma.user.findUnique({
@@ -2101,6 +2106,8 @@ export async function registrarUsuario(
         rol: "CLIENTE",
         provincia: datos.provincia,
         municipio: datos.municipio,
+        aceptoTerminosEn: new Date(),
+        aceptoTerminosVersion: "2026-11",
       },
     });
 

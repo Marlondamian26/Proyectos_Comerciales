@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navbar } from "@/components/Navbar";
+import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { auth } from "@/lib/auth";
 import "./globals.css";
 import "@/styles/tokens.css";
@@ -41,11 +43,14 @@ export default async function RootLayout({
   const userRol = session?.user?.rol;
 
   return (
-    <html lang="es" className={inter.className} suppressHydrationWarning>
+    <html lang="es" className={inter.className} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
           <ThemeProvider>
             <Navbar userRol={userRol} />
+            <Suspense fallback={null}>
+              <ScrollRestoration />
+            </Suspense>
             {children}
           </ThemeProvider>
         </SessionProvider>

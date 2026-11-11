@@ -93,9 +93,9 @@ export default function RecuperarPage() {
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-foreground">Recuperar contrasena</h1>
+              <h1 className="text-2xl font-bold text-foreground">Recuperar contraseña</h1>
               <p className="text-muted-foreground mt-2">
-                Ingresa tu email y te enviaremos instrucciones para restablecer tu contrasena.
+                Ingresa tu email y te enviaremos instrucciones para restablecer tu contraseña.
               </p>
             </div>
           </div>
@@ -107,12 +107,12 @@ export default function RecuperarPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Correo enviado</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Si el email existe en nuestro sistema, recibiras instrucciones para restablecer tu contrasena.
+                Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.
               </p>
               <Link href="/auth/login">
                 <Button variant="outline" className="w-full">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver al inicio de sesion
+              Volver al inicio de sesión
                 </Button>
               </Link>
             </div>
@@ -165,7 +165,7 @@ export default function RecuperarPage() {
           <div className="mt-6 text-center">
             <Link href="/auth/login" className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors">
               <ArrowLeft className="h-3.5 w-3.5" />
-              Volver al inicio de sesion
+              Volver al inicio de sesión
             </Link>
           </div>
         </div>

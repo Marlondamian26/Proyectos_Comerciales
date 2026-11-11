@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingOverlay } from "@/components/ui/Loading";
@@ -591,7 +592,7 @@ export default function CheckoutPage() {
 
         <div className="lg:col-span-1">
           <ResumenTotales totales={checkout.totales as TotalesCheckoutFiscal} className="sticky top-6" />
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex gap-3 flex-col sm:flex-row">
             {pasoActual > 0 && (
               <Button variant="outline" onClick={handlePrevStep}>
                 Anterior
@@ -602,13 +603,25 @@ export default function CheckoutPage() {
                 Continuar
               </Button>
             ) : (
-              <Button
-                onClick={handleConfirmar}
-                loading={submitting}
-                className="flex-1"
-              >
-                Confirmar y pagar
-              </Button>
+              <>
+                <div className="rounded-lg border border-border bg-surface-raised p-4 text-sm text-muted-foreground">
+                  Al confirmar tu pedido, aceptas nuestros{" "}
+                  <Link href="/terminos" target="_blank" className="text-primary underline hover:text-primary/80">
+                    Términos y Condiciones
+                  </Link>{" "}
+                  y nuestra{" "}
+                  <Link href="/privacidad" target="_blank" className="text-primary underline hover:text-primary/80">
+                    Política de Privacidad
+                  </Link>.
+                </div>
+                <Button
+                  onClick={handleConfirmar}
+                  loading={submitting}
+                  className="flex-1 mt-4 sm:mt-0"
+                >
+                  Confirmar y pagar
+                </Button>
+              </>
             )}
           </div>
         </div>

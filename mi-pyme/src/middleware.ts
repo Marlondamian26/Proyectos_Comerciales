@@ -13,7 +13,7 @@ const rolToPath: Record<string, string> = {
   ADMIN: "/admin",
 };
 
-const publicPaths = ["/login", "/api/auth", "/api", "/catalogo", "/servicios", "/auth/registro", "/auth/login", "/auth/recuperar", "/auth/resetear", "/contacto", "/images", "/_next"];
+const publicPaths = ["/login", "/api/auth", "/api", "/catalogo", "/servicios", "/auth/registro", "/auth/login", "/auth/recuperar", "/auth/resetear", "/privacidad", "/terminos", "/devoluciones", "/contacto", "/images", "/_next"];
 
 const mustChangePasswordPaths = [
   "/perfil/cambiar-password",

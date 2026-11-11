@@ -553,10 +553,119 @@ export default async function HomePage({
 
       {/* Footer */}
       <footer className="border-t bg-background py-12">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Mi-Pyme - Plataforma para pequeños comercios
-          </p>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+            {/* Columna 1: Logo + descripción */}
+            <div>
+              <Link href="/" className="flex items-center gap-2 mb-4">
+                <span className="text-lg font-bold text-foreground">Mi-Pyme</span>
+              </Link>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Tu centro comercial virtual. Conectamos negocios locales con
+                clientes en toda Cuba.
+              </p>
+            </div>
+
+            {/* Columna 2: Enlaces de navegación */}
+            <div>
+              <h3 className="font-semibold text-sm mb-3 text-foreground">
+                Plataforma
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="/catalogo" className="hover:text-foreground">
+                    Catálogo
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/servicios" className="hover:text-foreground">
+                    Servicios
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/combos" className="hover:text-foreground">
+                    Combos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/transporte" className="hover:text-foreground">
+                    Transporte
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Columna 3: Legal */}
+            <div>
+              <h3 className="font-semibold text-sm mb-3 text-foreground">
+                Legal
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link
+                    href="/privacidad"
+                    className="hover:text-foreground"
+                  >
+                    Política de Privacidad
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terminos" className="hover:text-foreground">
+                    Términos y Condiciones
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/devoluciones"
+                    className="hover:text-foreground"
+                  >
+                    Política de Devoluciones
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Columna 4: Contacto */}
+            <div>
+              <h3 className="font-semibold text-sm mb-3 text-foreground">
+                Contacto
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <a
+                    href="mailto:soporte@mi-pyme.cu"
+                    className="hover:text-foreground"
+                  >
+                    soporte@mi-pyme.cu
+                  </a>
+                </li>
+                <li>
+                  <Link href="/contacto" className="hover:text-foreground">
+                    Formulario de contacto
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Línea inferior */}
+          <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+            <p>
+              © {new Date().getFullYear()} Mi-Pyme. Todos los derechos
+              reservados.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/privacidad" className="hover:text-foreground">
+                Privacidad
+              </Link>
+              <Link href="/terminos" className="hover:text-foreground">
+                Términos
+              </Link>
+              <Link href="/devoluciones" className="hover:text-foreground">
+                Devoluciones
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </main>

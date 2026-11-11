@@ -15,9 +15,9 @@ export class ConsoleEmailProvider implements IEmailProvider {
     console.log("  Para  :", email.to);
     console.log("  Asunto:", email.subject);
     console.log("  --- HTML ---");
-    console.log(esProd ? "[contenido oculto en producción]" : email.html);
+    console.log(esProd ? "[contenido oculto en producción]" : "[contenido HTML omitido por seguridad]");
     console.log("  --- Texto ---");
-    console.log(email.text ?? "(sin texto)");
+    console.log(esProd ? "[contenido omitido en producción]" : "[contenido omitido por seguridad]");
     console.log("[fin email]");
 
     return { ok: true, mensajeId: `console-${Date.now()}` };

@@ -241,8 +241,11 @@ export default function LoginPage() {
                     Recordarme
                   </span>
                 </label>
-                <Link href="/auth/recuperar" className="text-sm text-primary hover:text-primary-hover font-medium transition-colors">
-                  Olvidaste tu contrasena?
+                <Link
+                  href="/auth/recuperar"
+                  className="text-sm text-primary hover:text-primary-hover font-medium transition-colors min-h-[44px] inline-flex items-center"
+                >
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
 
