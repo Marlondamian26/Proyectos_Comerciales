@@ -1,0 +1,194 @@
+@AGENTS.md
+
+# Normas de Calidad (Fase 2, Punto 7)
+
+- Verificar que `new Date` siempre lleve paréntesis `()`. Verificar typos en
+  nombres de campos de interfaces antes de commitear.
+- Las interfaces públicas (`*Params`, `*DTO`) deben revisarse ortográficamente.
+- Usar plural para arrays, singular para entidades individuales.
+- Ejecutar `npx tsc --noEmit` y `npm test` antes de commitear.
+
+# Reglas de Arquitectura (Fase 2, Punto 8)
+
+## Framework-agnostic
+
+- **Los servicios en `src/services/` NO deben importar Next.js.** Verificado por
+  `src/tests/architecture.test.ts`.
+- **Los servicios NO deben importar `@nestjs/*`.** La migración a Nest.js es
+  Fase 4; no se añade código preparativo ahora.
+- Si un servicio necesita funcionalidad de Next.js (p.ej. headers, cookies),
+  **inyección de dependencia** — el servicio recibe un callback/interfaz, no
+  importa Next.js directamente.
+
+## Migración a Nest.js (Fase 4)
+
+- `nest-compat.ts` y `ServiceRegistry.ts` **no existen actualmente**. Ver
+  `SERVICE_ARCHITECTURE.md` → "Migración a Nest.js (Fase 4)".
+- Si se añade un servicio nuevo, no se prepara para Nest.js (no hay providers,
+  tokens, ni nest-compat). La migración se implementará en Fase 4.
+- `InMemoryEventBus` existe como scaffolding — no se usa activamente. No
+  eliminar sin revisar.
+
+# Reglas de Autenticación y Seguridad (Etapa 5)
+
+> **Fuente de verdad**: estas reglas están verificadas automáticamente por
+> `src/tests/architecture-auth.test.ts`. Si un test falla, se corrige el código,
+> no el test. Si el test es demasiado estricto (falso positivo), se refina el
+> regex — nunca se elimina ni se relaja la regla.
+
+## Prohibiciones
+
+- **PROHIBIDO** permitir selección de rol distinto de `CLIENTE` en el registro público.
+  - La única vía para obtener rol `NEGOCIO` es la solicitud de alta + aprobación del admin (Fase 1, Punto 3).
+  - La única vía para obtener rol `ADMIN` o `LOGISTICA` es asignación por un admin existente.
+
+- **PROHIBIDO** crear endpoints que otorguen roles sin aprobación explícita del admin.
+
+- **PROHIBIDO** guardar tokens de reset, verificación o cualquier credencial temporal en texto plano.
+  - Siempre hashear antes de almacenar (SHA-256 para tokens de alta entropía).
+
+- **PROHIBIDO** transportar tokens en query strings (`?token=...`) en endpoints que validan o consumen el token.
+  - Los tokens van en POST body o headers.
+
+- **PROHIBIDO** loggear passwords, tokens, secrets ni `NEXTAUTH_SECRET` en consola, archivos o servicios de logging.
+
+- **PROHIBIDO** omitir validación de propiedad del recurso en mutaciones.
+  - Toda mutación que afecta a un recurso debe validar que el usuario sea dueño o tenga permiso (usar `assertPertenencia` de `src/services/utils/permisos.ts`).
+
+- **PROHIBIDO** permitir login a usuarios con `isActive: false` o sin verificar `mustChangePassword`.
+
+- **PROHIBIDO** implementar endpoints `/api/admin/*` sin validación de rol `ADMIN`.
+
+## Obligaciones
+
+- **OBLIGATORIO** añadir rate limiting a endpoints públicos de auth (login, registro, recuperación).
+  - Estado actual: pendiente (Fase 3). Si se añade un endpoint público de auth, incluir rate limiting o marcar `[TODO Fase 3]` explícito.
+
+- **OBLIGATORIO** registrar eventos de auth en `AuditLog`:
+  - `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `LOGOUT`, `REGISTRO_USUARIO`, `PASSWORD_RESET_SOLICITADO`, `PASSWORD_RESET_COMPLETADO`, `PASSWORD_CAMBIADO`, `ROL_CAMBIADO`.
+
+- **OBLIGATORIO** incrementar `sessionVersion` al cambiar password, rol o estado de cuenta.
+
+- **OBLIGATORIO** usar la política de contraseña centralizada (`validarPassword` de `src/lib/auth/password-policy.ts`).
+
+- **OBLIGATORIO** usar bcrypt con 12 rounds (constante `BCRYPT_ROUNDS` en `src/lib/auth/constants.ts`).
+
+- **OBLIGATORIO** normalizar emails y usernames a lowercase antes de guardar o buscar.
+
+- **OBLIGATORIO** que los tests de auth cubran casos de escalada de privilegios y acceso no autorizado.
+- **OBLIGATORIO**: al añadir un campo de auditoría a `User` (ej. `lastLoginAt`), implementar su escritura en el mismo PR. No dejar campos huérfanos.
+
+## Convenciones
+
+- Toda lógica de auth vive en `src/lib/auth/` (framework-agnostic donde sea posible).
+- Los helpers de auth (`token-hash`, `password-policy`, `constants`) **no** importan Next.js.
+- Los eventos de auditoría usan el helper `logAudit` de `src/services/utils/audit.ts`.
+- Los mensajes de error de login son genéricos (anti-enumeración): "Credenciales inválidas" para todos los casos.
+
+## Pendientes conocidos (Fase 3/4)
+
+- ⏳ Rate limiting (login, registro, recuperación).
+- ⏳ Lockout por intentos fallidos (`failedLoginAttempts`, `lockedUntil` — campos ya en schema).
+- ⏳ 2FA para admin.
+- ⏳ Verificación de email real (requiere proveedor SMTP).
+- ⏳ Multi-rol (N:N) — workaround actual: dueño de negocio accede a `/negocio` sin importar su rol.
+- ⏳ Structured logging (winston/pino).
+- ⏳ Logout revocation server-side (base: `sessionVersion`).
+- ⏳ **Documentos legales** — implementados (`/privacidad`, `/terminos`, `/devoluciones`), pendiente revisión por abogado.
+- ⏳ **Política de Cookies** — fase posterior.
+- ⏳ **Banner de cookies** — si se añaden analytics.
+
+Cada uno con `TODO` en el código correspondiente y referencia en `SERVICE_ARCHITECTURE.md`.
+
+---
+
+## Checklist antes de commitear
+
+1. `npm run test` — todos los tests pasan.
+2. `npx tsc --noEmit` — sin errores de tipo.
+3. `npm run lint` — sin errores de lint.
+4. `npm run test:a11y` — tests de accesibilidad pasan (light + dark mode).
+5. Si el PR toca UI: verifica contraste de colores y accesibilidad con axe-core.
+
+---
+
+## UI/UX — Reglas de Diseño (Fase 3.5)
+
+- **Tokens primero**: todo componente usa tokens, nunca valores hardcodeados.
+- **Mobile-first**: 320px antes que desktop. Touch targets ≥ 44×44px.
+- **Accesibilidad AA**: contraste ≥ 4.5:1 texto, ≥ 3:1 bordes/elementos.
+- **Light + dark**: verificar ambos en cada cambio.
+- **Motion con propósito**: 100/200/300ms. `prefers-reduced-motion` respetado.
+- **Body text ≥ 16px** (`--text-base`).
+- **Skeletons > spinners** siempre que sea posible.
+- **Empty states accionables**, no solo informativos.
+- **`next/image` con `width`/`height`/`alt`** (o `fill`).
+- **`aria-label` en icon-only buttons**.
+- **Focus visible**: `ring-2 ring-ring ring-offset-2`.
+- **Prohibido**: animaciones decorativas, `console.log`, dark patterns.
+- **Obligatorio**: `npm run test:a11y` antes de mergear.
+
+## Buscadores y Server Components (Prevención de error React #441)
+
+- **OBLIGATORIO**: `searchParams` y `params` deben `await`earse en Next.js 15+ Server Components.
+- **OBLIGATORIO**: `auth()`, `cookies()`, `headers()` deben `await`earse.
+- **OBLIGATORIO**: `useSearchParams` debe estar dentro de `<Suspense>`.
+- **OBLIGATORIO**: `useEffect` que navega debe tener debounce (300ms) y solo depender del valor debounced.
+- **OBLIGATORIO**: sanitizar query de Prisma (`trim`, `slice(0, 100)`, `mode: "insensitive"`).
+- **OBLIGATORIO**: manejar resultados vacíos con `EmptyState`.
+- **OBLIGATORIO**: serializar datos Server → Client (`Decimal` → `toString()`, `Date` → `toISOString()`).
+- **OBLIGATORIO**: todos los buscadores usan el patrón canónico (`SearchInput` + `useDebounce` + `<Suspense>`).
+
+- **PROHIBIDO**: acceder a `searchParams.q` sin `await`.
+- **PROHIBIDO**: `router.push`/`replace` en `useEffect` sin debounce.
+- **PROHIBIDO**: incluir `router` o `searchParams` en deps de `useEffect` que navega.
+- **PROHIBIDO**: pasar `Decimal` o `Date` directamente a Client Components.
+
+Tests de arquitectura: `src/tests/architecture-search.test.ts`.
+
+## Sesiones e invalidación (Prevención de regresiones de sesión)
+
+- **OBLIGATORIO**: incrementar `sessionVersion` al cambiar password, rol o estado de cuenta.
+- **OBLIGATORIO**: validar `sessionVersion` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: validar `isActive` en `callbacks.jwt` con `trigger === "update"`.
+- **OBLIGATORIO**: `callbackUrl` preservado en redirecciones a login.
+- **OBLIGATORIO**: `<SessionProvider>` envuelve todo el árbol en `layout.tsx`.
+- **OBLIGATORIO**: `pages.signOut` definido en `auth.config.ts`.
+- **OBLIGATORIO**: logout elimina cookies del servidor y del cliente.
+- **OBLIGATORIO**: home es accesible anónimo y logueado (contenido adaptativo).
+- **OBLIGATORIO**: `mustChangePassword: true` bloquea navegación excepto `/perfil/cambiar-password`.
+
+- **PROHIBIDO**: `new Response().headers` para eliminar cookies en logout (usar `cookies()` de next/headers).
+- **PROHIBIDO**: `void session` sin usar la sesión en Server Components.
+- **PROHIBIDO**: `window.location.href` como navegación principal en logout.
+- **PROHIBIDO**: hardcodear rutas de redirección en componentes de logout.
+
+Tests de arquitectura: `src/tests/architecture-session.test.ts`.
+
+# Reglas Legales (Fase Legal)
+
+> **Fuente de verdad**: `docs/legal.md`. Los documentos legales requieren revisión por abogado antes del lanzamiento público.
+
+## Obligaciones
+
+- **OBLIGATORIO**: el registro público incluye checkbox de aceptación de Términos y Condiciones y Política de Privacidad.
+- **OBLIGATORIO**: validación en servidor de `aceptaTerminos` en `registrarUsuario` (`src/lib/actions.ts`).
+- **OBLIGATORIO**: registrar `aceptoTerminosEn` y `aceptoTerminosVersion` en el modelo `User` de Prisma.
+- **OBLIGATORIO**: el checkout muestra aviso de Términos y Condiciones y Política de Privacidad antes de confirmar.
+- **OBLIGATORIO**: el footer incluye enlaces a `/privacidad`, `/terminos` y `/devoluciones`.
+- **OBLIGATORIO**: cada página legal tiene `metadata` con `title`, `description` y `robots`.
+- **OBLIGATORIO**: actualizar `lastUpdated` en los documentos si cambian.
+- **OBLIGATORIO**: los 3 documentos legales declaran transferencia internacional de datos (Vercel, Supabase, Cloudinary, Resend en EE.UU.).
+
+## Prohibiciones
+
+- **PROHIBIDO**: publicar cambios en documentos legales sin revisión de abogado.
+- **PROHIBIDO**: permitir registro sin aceptar términos (checkbox + validación servidor).
+- **PROHIBIDO**: implementar Política de Cookies ni banner de cookies (fase posterior).
+
+## Pendientes
+
+- ⏳ Revisión por abogado antes del lanzamiento público.
+- ⏳ Política de Cookies (fase posterior).
+- ⏳ Banner de cookies (si se añaden analytics).
+- ⏳ Aviso legal (si se opera en España).

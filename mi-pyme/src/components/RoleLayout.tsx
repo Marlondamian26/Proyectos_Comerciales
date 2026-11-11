@@ -1,0 +1,58 @@
+import { auth } from "@/lib/auth";
+import { Rol } from "@/lib/auth/roles";
+import { Sidebar } from "@/components/Sidebar";
+import { redirect } from "next/navigation";
+import { NegocioService } from "@/services/NegocioService";
+import { SolicitudAltaService } from "@/services/SolicitudAltaService";
+import { getCache } from "@/infrastructure";
+
+const negocioService = new NegocioService(getCache());
+const solicitudAltaService = new SolicitudAltaService();
+
+export interface RoleLayoutProps {
+  children: React.ReactNode;
+  requiredRoles?: Rol[];
+}
+
+export async function RoleLayout({
+  children,
+  requiredRoles,
+}: RoleLayoutProps) {
+  const session = await auth();
+  const userRol = session?.user?.rol;
+
+  if (!session || !userRol) {
+    redirect("/login");
+  }
+
+  if (requiredRoles && !requiredRoles.includes(userRol as Rol)) {
+    redirect("/");
+  }
+
+  let esDuenoDeNegocio = false;
+  let tieneSolicitudPendiente = false;
+  if (session.user.id) {
+    esDuenoDeNegocio = await negocioService.esPropietarioDeAlgunNegocio(session.user.id);
+    if (userRol === Rol.CLIENTE) {
+      tieneSolicitudPendiente = await solicitudAltaService.tieneSolicitudPendiente(
+        session.user.id
+      );
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col app-background">
+      <div className="flex flex-1">
+        <div className="hidden lg:flex">
+          <Sidebar
+            userRol={userRol as Rol}
+            tieneSolicitudPendiente={tieneSolicitudPendiente}
+          />
+        </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}

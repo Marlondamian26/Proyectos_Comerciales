@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  mi-pyme:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mi-pyme
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./data/mipyme.db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-me-in-production}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Development service with hot reload
+  mi-pyme-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: mi-pyme-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:./data/mipyme.db
+      - NEXTAUTH_SECRET=dev-secret-change-me
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./public:/app/public
+      - ./data:/app/data
+      - ./package.json:/app/package.json
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data

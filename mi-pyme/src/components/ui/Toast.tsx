@@ -1,0 +1,207 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
+import React, { useEffect, useState } from "react";
+
+export type ToastVariant = "success" | "error" | "warning" | "info";
+
+export interface ToastProps {
+  message: string;
+  variant?: ToastVariant;
+  duration?: number;
+  onClose?: () => void;
+  className?: string;
+  title?: string;
+  action?: React.ReactNode;
+}
+
+const toastIcons: Record<ToastVariant, React.ReactNode> = {
+  success: <CheckCircle className="h-5 w-5 flex-shrink-0" />,
+  error: <AlertCircle className="h-5 w-5 flex-shrink-0" />,
+  warning: <AlertTriangle className="h-5 w-5 flex-shrink-0" />,
+  info: <Info className="h-5 w-5 flex-shrink-0" />,
+};
+
+const toastClasses: Record<ToastVariant, string> = {
+  success: "bg-success/10 text-success border-success/20",
+  error: "bg-destructive/10 text-destructive border-destructive/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  info: "bg-info/10 text-info border-info/20",
+};
+
+export function Toast({
+  message,
+  variant = "info",
+  duration = 4000,
+  onClose,
+  className,
+  title,
+  action,
+}: ToastProps) {
+  const [progress, setProgress] = React.useState(100);
+
+   useEffect(() => {
+    if (!onClose || !duration) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProgress(100);
+      return;
+    }
+
+    setProgress(100);
+    const interval = 50;
+    const steps = duration / interval;
+    const decrement = 100 / steps;
+
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          onClose();
+          return 0;
+        }
+        return prev - decrement;
+      });
+    }, interval);
+
+    const timeout = setTimeout(() => {
+      clearInterval(timer);
+      onClose();
+    }, duration);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
+    };
+  }, [onClose, duration]);
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-lg",
+        "animate-slide-down",
+        toastClasses[variant],
+        className
+      )}
+      role="alert"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div
+        className="absolute bottom-0 left-0 h-0.5 w-full bg-foreground/10"
+        style={{ width: `${progress}%` }}
+      >
+        <div
+          className="h-full rounded-full bg-current transition-all"
+          style={{ width: `${progress}%`, opacity: 0.3 }}
+        />
+      </div>
+      {toastIcons[variant]}
+      <div className="flex-1 min-w-0">
+        {title && (
+          <p className="font-semibold text-foreground">{title}</p>
+        )}
+        <p className="text-sm leading-relaxed">{message}</p>
+        {action && (
+          <div className="mt-2">
+            {action}
+          </div>
+        )}
+      </div>
+      {onClose && (
+        <button
+          onClick={onClose}
+          className={cn(
+            "flex-shrink-0 flex items-center justify-center h-11 w-11 rounded-full text-current hover:bg-surface-raised transition-all",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          )}
+          aria-label="Cerrar notificación"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+Toast.displayName = "Toast";
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  variant: ToastVariant;
+  title?: string;
+  duration?: number;
+  action?: React.ReactNode;
+}
+
+export function ToastContainer({
+  toasts,
+  onDismiss,
+}: {
+  toasts: ToastItem[];
+  onDismiss: (id: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "fixed z-[var(--z-toast)] top-4 left-4 right-4 flex flex-col gap-3 w-full",
+        "sm:top-4 sm:right-4 sm:left-auto sm:w-auto sm:max-w-sm"
+      )}
+      aria-live="polite"
+      aria-relevant="additions"
+      aria-label="Notificaciones"
+    >
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          variant={toast.variant}
+          title={toast.title}
+          duration={toast.duration}
+          action={toast.action}
+          onClose={() => onDismiss(toast.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+ToastContainer.displayName = "ToastContainer";
+
+export function useToast() {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = (toast: Omit<ToastItem, "id">) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newToast = { ...toast, id };
+    setToasts((prev) => [...prev, newToast]);
+    return id;
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const success = (message: string, options?: Partial<ToastItem>) =>
+    addToast({ message, variant: "success", ...options });
+
+  const error = (message: string, options?: Partial<ToastItem>) =>
+    addToast({ message, variant: "error", ...options });
+
+  const warning = (message: string, options?: Partial<ToastItem>) =>
+    addToast({ message, variant: "warning", ...options });
+
+  const info = (message: string, options?: Partial<ToastItem>) =>
+    addToast({ message, variant: "info", ...options });
+
+  return {
+    toasts,
+    addToast,
+    dismissToast,
+    success,
+    error,
+    warning,
+    info,
+  };
+}

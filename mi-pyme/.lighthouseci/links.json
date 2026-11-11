@@ -1,0 +1,15 @@
+{
+  "http://localhost:3000/": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957159014-70218.report.html",
+  "http://localhost:3000/auth/login": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957159486-54945.report.html",
+  "http://localhost:3000/auth/registro": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957159771-24498.report.html",
+  "http://localhost:3000/catalogo": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957160192-30784.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Fcarrito": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957160607-62410.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Freservas": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957161308-30759.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Fpedidos": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957161718-12240.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Fnegocio": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957162565-24236.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Fcliente": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957163219-56759.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Flogistica": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957163644-99538.report.html",
+  "http://localhost:3000/auth/registro?callbackUrl=%2Fadmin": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957164111-9338.report.html",
+  "http://localhost:3000/contacto": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957164630-42612.report.html",
+  "http://localhost:3000/servicios": "https://storage.googleapis.com/lighthouse-infrastructure.appspot.com/reports/1790957165156-5243.report.html"
+}

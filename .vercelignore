@@ -1,0 +1,8 @@
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db.*
+mi-pyme/prisma/migrations/20261009120000_init_schema

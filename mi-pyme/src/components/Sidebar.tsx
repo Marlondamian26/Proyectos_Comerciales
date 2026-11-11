@@ -1,0 +1,326 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Rol } from "@/lib/auth/roles";
+import {
+  HomeIcon,
+  ShoppingCartIcon,
+  CalendarIcon,
+  PackageIcon,
+  ReceiptIcon,
+  CreditCardIcon,
+  UsersIcon,
+  BuildingIcon,
+  TruckIcon,
+  CogIcon,
+  UserIcon,
+  FileBarChartIcon,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
+
+export interface SidebarItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  allowedRoles: Rol[];
+  requiresNegocioOwnership?: boolean;
+  requiresNoPendingRoleRequest?: boolean;
+}
+
+export const sidebarItems: SidebarItem[] = [
+  {
+    label: "Resumen",
+    href: "/",
+    icon: <HomeIcon className="h-5 w-5" />,
+    allowedRoles: [],
+  },
+  {
+    label: "Catálogo",
+    href: "/catalogo",
+    icon: <PackageIcon className="h-5 w-5" />,
+    allowedRoles: [],
+  },
+  {
+    label: "Carrito",
+    href: "/carrito",
+    icon: <ShoppingCartIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE],
+  },
+  {
+    label: "Pedidos",
+    href: "/pedidos",
+    icon: <ShoppingCartIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA],
+  },
+  {
+    label: "Reservas",
+    href: "/reservas",
+    icon: <CalendarIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE],
+  },
+  {
+    label: "Facturas",
+    href: "/facturas",
+    icon: <ReceiptIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.ADMIN],
+  },
+  {
+    label: "Pagos",
+    href: "/pagos",
+    icon: <CreditCardIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.ADMIN],
+  },
+  {
+    label: "Proveedores",
+    href: "/logistica",
+    icon: <TruckIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.LOGISTICA, Rol.ADMIN],
+  },
+  {
+    label: "Solicitudes de rol",
+    href: "/admin/solicitudes-rol",
+    icon: <CogIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+
+  {
+    label: "Usuarios",
+    href: "/admin/usuarios",
+    icon: <UsersIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Áreas",
+    href: "/admin?tab=areas",
+    icon: <BuildingIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Configuración",
+    href: "/admin?tab=config",
+    icon: <CogIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Reporte fiscal",
+    href: "/admin/reportes/fiscal",
+    icon: <FileBarChartIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.ADMIN],
+  },
+  {
+    label: "Mi perfil",
+    href: "/perfil",
+    icon: <UserIcon className="h-5 w-5" />,
+    allowedRoles: [Rol.CLIENTE, Rol.NEGOCIO, Rol.LOGISTICA, Rol.ADMIN],
+  },
+];
+
+export interface SidebarProps {
+  userRol?: Rol;
+  esDuenoDeNegocio?: boolean;
+  tieneSolicitudPendiente?: boolean;
+}
+
+const SIDEBAR_COLLAPSED_KEY = "mi-pyme-sidebar-collapsed";
+
+export function Sidebar({
+  userRol,
+  esDuenoDeNegocio,
+  tieneSolicitudPendiente = false,
+}: SidebarProps) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // localStorage no disponible (modo incógnito, etc.)
+    }
+  }, [collapsed]);
+
+  // Bloquear scroll del body cuando el drawer móvil está abierto
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, [mobileOpen]);
+
+  const toggle = () => setCollapsed((prev) => !prev);
+
+  const visibleItems = sidebarItems.filter(
+    (item) =>
+      (
+        item.allowedRoles.length === 0 ||
+        (userRol && item.allowedRoles.includes(userRol)) ||
+        (item.requiresNegocioOwnership && esDuenoDeNegocio)
+      ) &&
+      (!item.requiresNoPendingRoleRequest || !tieneSolicitudPendiente)
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar con toggle al lado */}
+      <div className="relative hidden lg:block">
+        <aside
+          className={cn(
+            "flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
+            collapsed ? "w-20" : "w-64"
+          )}
+          aria-label="Navegación principal"
+        >
+          <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
+            <ul className="space-y-1">
+              {visibleItems.map((item) => {
+                const href = item.href.split("?")[0];
+                const isActive =
+                  pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <NavItem
+                    key={item.href}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={isActive}
+                  />
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
+
+        {/* Botón de toggle - fuera del sidebar, al lado derecho */}
+        <button
+          onClick={toggle}
+          className={cn(
+            "absolute top-6 z-10 h-10 w-10 rounded-full",
+            collapsed ? "left-[2.5rem]" : "left-[16rem]",
+            "bg-background border border-border shadow-sm",
+            "flex items-center justify-center",
+            "hover:bg-surface-raised",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          )}
+          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+      </div>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="
+            fixed inset-y-0 left-0 z-50 w-72
+            bg-background border-r border-border shadow-xl overflow-y-auto
+            lg:hidden transform transition-transform duration-300 ease-in-out
+            translate-x-0 sm:translate-x-full
+            pb-[env(safe-area-inset-bottom)]
+          ">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">Menú</h2>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="h-11 w-11 inline-flex items-center justify-center rounded-lg hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Cerrar menú"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
+              <ul className="space-y-1">
+                {visibleItems.map((item) => {
+                  const href = item.href.split("?")[0];
+                  const isActive =
+                    pathname === href || pathname.startsWith(href + "/");
+                  return (
+                    <NavItem
+                      key={item.href}
+                      item={item}
+                      collapsed={false}
+                      isActive={isActive}
+                    />
+                  );
+                })}
+              </ul>
+            </nav>
+          </aside>
+        </>
+      )}
+    </>
+  );
+}
+
+function NavItem({
+  item,
+  collapsed,
+  isActive,
+}: {
+  item: SidebarItem;
+  collapsed: boolean;
+  isActive: boolean;
+}) {
+  return (
+    <div className="relative group">
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+          "hover:bg-muted hover:text-foreground dark:hover:bg-white dark:hover:text-secondary-300",
+          isActive
+            ? "bg-muted text-foreground"
+            : "text-muted-foreground",
+          collapsed ? "justify-center px-2" : ""
+        )}
+        aria-current={isActive ? "page" : undefined}
+        aria-label={collapsed ? item.label : undefined}
+      >
+        <span className="flex-shrink-0" aria-hidden="true">
+          {item.icon}
+        </span>
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
+
+      {collapsed && (
+        <div
+          role="tooltip"
+          className={cn(
+            "absolute left-full ml-2 top-1/2 -translate-y-1/2 z-[1100]",
+            "hidden group-hover:block group-focus-within:block",
+            "px-3 py-1.5 rounded-md bg-popover text-popover-foreground",
+            "text-sm whitespace-nowrap shadow-medium pointer-events-none"
+          )}
+        >
+          {item.label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Sidebar.displayName = "Sidebar";

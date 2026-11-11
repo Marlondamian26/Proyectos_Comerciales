@@ -1,0 +1,170 @@
+import { PrismaClient, Rol } from "@/generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import bcrypt from "bcryptjs";
+import path from "path";
+import { vi } from "vitest";
+import { fechaHoy } from "@/shared/utils/fecha";
+
+// matchMedia polyfill for jsdom
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = (query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
+}
+
+const dbPath = path.join(process.cwd(), "data", "mipyme.db");
+const sqliteUrl = `file:${dbPath}`;
+
+process.env.DATABASE_URL = sqliteUrl;
+process.env.DIRECT_URL = sqliteUrl;
+
+const adapter = new PrismaLibSql({ url: sqliteUrl });
+export const prisma = new PrismaClient({ adapter });
+
+export async function setupTestData() {
+  await prisma.$executeRawUnsafe(`DELETE FROM "FacturaItem";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Factura";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PedidoItem";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Pedido";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PromocionUso";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "CuponUso";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "ComboUso";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "ComboItem";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Promocion";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Cupon";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Combo";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "OpcionLogistica";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "ProveedorLogistico";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Reserva";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "CarritoItem";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Carrito";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "DisponibilidadProducto";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Inventario";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Servicio";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Producto";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Pago";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "HorarioNegocio";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Notificacion";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PreferenciaMonedaUsuario";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "TasaCambio";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "PreferenciaNotificacion";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "NegocioSubarea";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Negocio";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "User";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Area";`);
+  await prisma.$executeRawUnsafe(`DELETE FROM "Subarea";`);
+
+  const area = await prisma.area.create({
+    data: { nombre: "Servicios", slug: "servicios", activo: true },
+  });
+
+  const subarea = await prisma.subarea.create({
+    data: {
+      nombre: "Belleza",
+      slug: "belleza",
+      areaId: area.id,
+      activo: true,
+    },
+  });
+
+  const negocio = await prisma.negocio.create({
+    data: {
+      nombre: "Spa Premium",
+      slug: "spa-premium",
+      activo: true,
+      areaId: area.id,
+      regimenFiscal: "GENERAL",
+      tasaIVA: 10,
+      modoPrecio: "IVA_INCLUIDO",
+      nit: "123456789",
+    },
+  });
+
+  await prisma.negocioSubarea.create({
+    data: { negocioId: negocio.id, subareaId: subarea.id },
+  });
+
+  const password = await bcrypt.hash("password123", 10);
+  const usuario = await prisma.user.create({
+    data: {
+      email: "cliente@test.com",
+      password,
+      nombre: "Cliente Test",
+      rol: Rol.CLIENTE,
+    },
+  });
+
+  const producto = await prisma.producto.create({
+    data: {
+      negocioId: negocio.id,
+      subareaId: subarea.id,
+      nombre: "Kit de Belleza",
+      descripcion: "Kit completo de belleza",
+      precio: 25.5,
+      unidadMedida: "unidad",
+      imagenUrl: "https://example.com/kit.jpg",
+      activo: true,
+      disponibleHoy: true,
+    },
+  });
+
+  const servicio = await prisma.servicio.create({
+    data: {
+      negocioId: negocio.id,
+      subareaId: subarea.id,
+      nombre: "Manicura",
+      descripcion: "Servicio de manicura",
+      duracionMinutos: 60,
+      horariosDisponibles: JSON.stringify([]),
+      capacidad: 5,
+      imagenUrl: "https://example.com/manicura.jpg",
+      activo: true,
+    },
+  });
+
+  const inventario = await prisma.inventario.create({
+    data: {
+      productoId: producto.id,
+      cantidadActual: 100,
+      puntoReorden: 10,
+      ubicacion: "Almacén A",
+    },
+  });
+
+  // Disponibilidad diaria explícita para el producto de prueba.
+  // Se crea para hoy y los próximos 7 días con cantidad = stock (100)
+  // para que el producto sea "Disponible hoy" bajo la nueva regla.
+  const hoy = fechaHoy();
+  for (let i = 0; i <= 7; i++) {
+    const fecha = new Date(hoy);
+    fecha.setUTCDate(fecha.getUTCDate() + i);
+    await prisma.disponibilidadProducto.create({
+      data: {
+        productoId: producto.id,
+        fecha,
+        cantidad: 100,
+      },
+    });
+  }
+
+  return {
+    usuario,
+    negocio,
+    area,
+    subarea,
+    producto,
+    servicio,
+    inventario,
+  };
+}
+
+export async function cleanupTestData() {
+  await prisma.$disconnect();
+}

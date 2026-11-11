@@ -1,0 +1,9 @@
+node_modules/
+package.json
+package-lock.json
+.env*
+*.db
+/data/mipyme.db
+/data/*.db
+/data/cache/*
+.vercel

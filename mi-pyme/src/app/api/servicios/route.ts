@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server";
+import { listarServiciosConCupos } from "@/lib/actions";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+
+    const filtros = {
+      ...(searchParams.get("area") && {
+        area: searchParams.get("area")!,
+      }),
+      ...(searchParams.get("areaId") && {
+        areaId: searchParams.get("areaId")!,
+      }),
+      ...(searchParams.get("subareaId") && {
+        subareaId: searchParams.get("subareaId")!,
+      }),
+      ...(searchParams.get("negocioId") && {
+        negocioId: searchParams.get("negocioId")!,
+      }),
+      ...(searchParams.get("activo") !== null && {
+        activo: searchParams.get("activo") === "true",
+      }),
+      ...(searchParams.get("tipo") && {
+        tipo: searchParams.get("tipo")!,
+      }),
+    };
+
+    const servicios = await listarServiciosConCupos(filtros);
+    return NextResponse.json(servicios);
+  } catch (error) {
+    console.error("Error fetching servicios:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch servicios" },
+      { status: 500 }
+    );
+  }
+}
