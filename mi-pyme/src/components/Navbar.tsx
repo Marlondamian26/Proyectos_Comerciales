@@ -47,13 +47,13 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-border bg-background/90 backdrop-blur-xl shadow-sm"
-          : "border-b border-border/30 bg-background/60 backdrop-blur-md"
+          ? "border-b border-border bg-background/95 backdrop-blur-xl shadow-sm dark:bg-background/95 dark:border-border"
+          : "border-b border-border/30 bg-background/70 backdrop-blur-md dark:bg-background/80 dark:border-border/50"
       )}
       role="banner"
     >
       <nav
-        className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:h-16 sm:gap-4 sm:px-6 lg:px-8"
+        className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:h-16 sm:gap-4 sm:px-8 lg:px-8"
         aria-label="Navegación principal"
       >
         <Link
@@ -67,7 +67,7 @@ export function Navbar({ userRol }: NavbarProps) {
             width={140}
             height={40}
             sizes="(max-width: 640px) 100px, 140px"
-            className="h-7 w-auto object-contain sm:h-9"
+            className="h-7 w-auto object-contain sm:h-9 dark:brightness-0 dark:invert"
           />
         </Link>
 

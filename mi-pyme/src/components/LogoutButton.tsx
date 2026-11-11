@@ -57,11 +57,13 @@ export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
     <Button
       variant="ghost"
       size={variant === "mobile" ? "sm" : "sm"}
-      className={cn(
-        "gap-2",
-        variant === "mobile" ? "w-full justify-start" : "justify-between px-4",
-        "disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
-      )}
+className={cn(
+  "gap-2",
+  variant === "mobile"
+    ? "w-full justify-start"
+    : "justify-between px-4 bg-primary text-primary-foreground hover:bg-primary/90",
+  "disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+)}
       onClick={handleLogout}
       disabled={loading}
       aria-label="Cerrar sesión"

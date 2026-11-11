@@ -214,7 +214,7 @@ export function Sidebar({
           onClick={toggle}
           className={cn(
             "absolute top-6 z-10 h-10 w-10 rounded-full",
-            collapsed ? "left-[17.5rem]" : "left-[16rem]",
+            collapsed ? "left-[2.5rem]" : "left-[16rem]",
             "bg-background border border-border shadow-sm",
             "flex items-center justify-center",
             "hover:bg-surface-raised",

@@ -181,11 +181,6 @@ export default async function Page() {
         </section>
       </div>
 
-      <footer className="border-t bg-background py-8">
-        <div className="mx-auto max-w-3xl px-4 text-center">
-          <p className="text-sm text-muted-foreground">Mi-Pyme - Plataforma para pequeños comercios</p>
-        </div>
-      </footer>
       <RegistroNotification />
     </main>
   );
