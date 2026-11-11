@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Navbar } from "@/components/Navbar";
+import { AuthAwareNavbar } from "@/components/Navbar/AuthAwareNavbar";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { auth } from "@/lib/auth";
 import "./globals.css";
@@ -47,7 +47,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
           <ThemeProvider>
-            <Navbar userRol={userRol} />
+            <AuthAwareNavbar userRol={userRol} />
             <Suspense fallback={null}>
               <ScrollRestoration />
             </Suspense>

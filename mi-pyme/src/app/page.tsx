@@ -181,6 +181,9 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* Divisor borroso entre hero y la siguiente sección */}
+      <div className="section-divider-hero" />
+
       {/* Sort Bar */}
       <section className="bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">

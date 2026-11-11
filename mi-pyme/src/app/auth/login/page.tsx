@@ -134,7 +134,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-background via-primary/5 to-surface-base/90 dark:from-background dark:via-primary/10 dark:to-surface-base/90">
         <div className="w-full max-w-md animate-fade-in-up">
 {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
