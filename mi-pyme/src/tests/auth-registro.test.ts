@@ -70,6 +70,7 @@ describe("registrarUsuario — auto-login", () => {
       password: "Password123!",
       provincia: "La Habana",
       municipio: "La Habana",
+      aceptaTerminos: true,
     });
 
     expect(result).toBeUndefined();
@@ -97,6 +98,7 @@ describe("registrarUsuario — auto-login", () => {
       provincia: "La Habana",
       municipio: "La Habana",
       quieroVender: true,
+      aceptaTerminos: true,
     });
 
     expect(result).toBeUndefined();
@@ -117,6 +119,7 @@ describe("registrarUsuario — auto-login", () => {
       password: "Password123!",
       provincia: "La Habana",
       municipio: "La Habana",
+      aceptaTerminos: true,
     });
 
     expect(result).toEqual({

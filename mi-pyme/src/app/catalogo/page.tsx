@@ -296,7 +296,7 @@ export default async function CatalogoPage({
           />
         ) : (
           <>
-            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3" aria-label="Productos">
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4" aria-label="Productos">
               {combined
                 .filter((item) => item._tipo === "producto")
                 .map((producto) => {
@@ -306,6 +306,7 @@ export default async function CatalogoPage({
                   return (
                     <li key={producto.id}>
                       <Card
+                        className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                         title={producto.nombre}
                         description={producto.descripcion ?? undefined}
                         image={{
@@ -442,7 +443,7 @@ export default async function CatalogoPage({
             }}
           />
         ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3" aria-label="Servicios">
+          <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4" aria-label="Servicios">
             {combined
               .filter((item) => item._tipo === "servicio")
               .map((servicio) => {
@@ -452,6 +453,7 @@ export default async function CatalogoPage({
                 return (
                   <li key={servicio.id}>
                     <Card
+                      className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                       title={servicio.nombre}
                       description={servicio.descripcion ?? undefined}
                       image={{

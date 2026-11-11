@@ -127,7 +127,7 @@ describe("B2: Token hashing on password reset", () => {
     expect(verifyToken("wrong-token", hashed)).toBe(false);
   });
 
-  it("should accept reset with the raw token from the recuperar response", async () => {
+  it("should NOT return the raw token in the recuperar response (anti-leak)", async () => {
     const recuperarRequest = new Request("http://localhost:3000/api/auth/recuperar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -135,13 +135,34 @@ describe("B2: Token hashing on password reset", () => {
     });
 
     const recuperarRes = await recuperarPOST(recuperarRequest);
-    const recuperarBody = await recuperarRes.json();
+
+    expect(recuperarRes.status).toBe(200);
+
+    const storedToken = await prisma.verificationToken.findFirst({
+      where: { identifier: testData.usuario.email },
+    });
+    expect(storedToken).not.toBeNull();
+    expect(storedToken!.token).toHaveLength(64);
+    expect(storedToken!.token).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("should accept reset with a valid token and invalidate it after use", async () => {
+    const rawToken = crypto.randomUUID();
+    const tokenHash = hashToken(rawToken);
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: testData.usuario.email,
+        token: tokenHash,
+        expires: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
 
     const resetearRequest = new Request("http://localhost:3000/api/auth/resetear", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        token: recuperarBody.token,
+        token: rawToken,
         password: VALID_PASSWORD,
       }),
     });
@@ -153,6 +174,12 @@ describe("B2: Token hashing on password reset", () => {
       where: { identifier: testData.usuario.email },
     });
     expect(deletedToken).toBeNull();
+
+    const user = await prisma.user.findUnique({
+      where: { email: testData.usuario.email },
+      select: { sessionVersion: true },
+    });
+    expect(user!.sessionVersion).toBeGreaterThan(0);
   });
 });
 
