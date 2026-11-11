@@ -36,6 +36,7 @@ import { PromocionService } from "@/services/PromocionService";
 import { CuponService } from "@/services/CuponService";
 import { ComboService } from "@/services/ComboService";
 import { DescuentoService } from "@/services/DescuentoService";
+import { HeroImageService } from "@/services/HeroImageService";
 import { NotificacionService } from "@/services/NotificacionService";
 import {
   AdminUserService,
@@ -4326,4 +4327,51 @@ export async function emitirNotificacionAction(evento: EventoNotificacion) {
   await requireRole([Rol.ADMIN]);
   await notificacionService.emitirOrThrow(evento);
   return { ok: true };
+}
+
+export async function listarHeroImagesAction() {
+  const service = new HeroImageService();
+  return service.listarActivas();
+}
+
+export async function crearHeroImageAction(datos: {
+  url: string;
+  publicId?: string | null;
+  alt?: string;
+  orden?: number;
+}) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HeroImageService();
+  return service.crear(datos);
+}
+
+export async function actualizarHeroImageAction(
+  id: string,
+  datos: Partial<{
+    url: string;
+    publicId: string | null;
+    alt: string;
+    orden: number;
+    activa: boolean;
+  }>
+) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HeroImageService();
+  return service.actualizar(id, datos);
+}
+
+export async function eliminarHeroImageAction(id: string) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HeroImageService();
+  await service.eliminar(id);
+  revalidatePath("/");
+  revalidatePath("/admin/hero");
+}
+
+export async function reordenarHeroImagesAction(ids: string[]) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HeroImageService();
+  await service.reordenar(ids);
+  revalidatePath("/");
+  revalidatePath("/admin/hero");
 }

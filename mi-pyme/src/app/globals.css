@@ -561,6 +561,33 @@
     color: var(--color-text-primary);
   }
 
+  /* Divisores gradientes entre secciones */
+  .section-divider {
+    position: relative;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .section-divider::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-border, hsl(var(--border))) 20%,
+      var(--color-border, hsl(var(--border))) 80%,
+      transparent 100%
+    );
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  [data-theme="dark"] .section-divider::after {
+    opacity: 0.25;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

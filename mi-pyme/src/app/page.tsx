@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
+import prisma from "@/lib/db/prisma";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -9,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { SortControls } from "@/components/SortControls";
 import { CARD_TYPOGRAPHY } from "@/components/ui/CardTypography";
+import { HeroCarousel } from "@/components/home/HeroCarousel";
 import {
   ShoppingBag,
   ArrowRight,
@@ -55,6 +57,36 @@ export default async function HomePage({
     listarServicios(sortServicio),
   ]);
 
+  const heroImagesDb = await prisma.heroImage.findMany({
+    where: { activa: true },
+    orderBy: { orden: "asc" },
+  });
+
+  const heroImages =
+    heroImagesDb.length > 0
+      ? heroImagesDb.map((img) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+        }))
+      : [
+          {
+            id: "1",
+            url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80",
+            alt: "Marketplace local",
+          },
+          {
+            id: "2",
+            url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80",
+            alt: "Tienda de barrio",
+          },
+          {
+            id: "3",
+            url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=1920&q=80",
+            alt: "Compras en la comunidad",
+          },
+        ];
+
   const areasSlice = areas.slice(0, 6);
   const negociosSlice = negocios.slice(0, 6);
   const serviciosSlice = servicios.slice(0, 6);
@@ -69,89 +101,95 @@ export default async function HomePage({
       {/* Navigation */}
       {/* HomeNav eliminado: navbar única en layout.tsx raíz */}
 
-      {/* Hero Section */}
-      <section className="relative border-b border-border bg-background-alt">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-secondary/10 blur-3xl" />
-        </div>
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              <CheckCircle className="h-4 w-4" />
-              Plataforma #1 para PYMEs
-            </div>
-            <div className="mb-6 flex justify-center">
-              <Image
-                src="/images/logos/logo-principal.png"
-                alt="Mi-Pyme"
-                width={768}
-                height={288}
-                sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
-                priority
-                className="mx-auto h-36 w-auto object-contain sm:h-44 md:h-56 lg:h-64"
-              />
-            </div>
-            <p className="mx-auto mb-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {isLoggedIn ? (
-                <>
-                  <Link href={dashboardUrl}>
-                      <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
-                        Ir a mi dashboard
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                  </Link>
-                  <Link href="/catalogo">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px]">
-                      Explorar catálogo
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/auth/registro">
+      {/* Hero Section con Carrusel */}
+      <section className="relative min-h-[70vh] sm:min-h-[80vh] overflow-hidden">
+        {/* Carrusel de fondo */}
+        <HeroCarousel images={heroImages} />
+
+        {/* Overlay gradiente con la paleta de Mi-Pyme + oscuro para contraste */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/55 via-primary/35 to-interactive-secondary/60" />
+        <div className="absolute inset-0 bg-black/25" />
+
+        {/* Contenido del hero */}
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center pt-12 sm:pt-16 pb-8 sm:pb-12">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white">
+            <CheckCircle className="h-4 w-4" />
+            Plataforma #1 para PYMEs
+          </div>
+
+          <div className="mb-6 flex justify-center">
+            <Image
+              src="/images/logos/logo-principal.png"
+              alt="Mi-Pyme"
+              width={768}
+              height={288}
+              sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
+              priority
+              className="mx-auto h-28 sm:h-32 md:h-36 w-auto object-contain drop-shadow-lg"
+            />
+          </div>
+
+          <p className="mx-auto mb-8 max-w-2xl text-base sm:text-lg text-white/95 drop-shadow-md leading-7">
+            Tu plataforma integral para negocios locales. Catálogo, reservas, logística, facturación y ventas en un solo lugar.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {isLoggedIn ? (
+              <>
+                <Link href={dashboardUrl}>
                     <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
-                      Comenzar gratis
+                      Ir a mi dashboard
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
-                  </Link>
-                  <Link href="/catalogo">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px]">
-                      Explorar catálogo
-                    </Button>
-                  </Link>
-                </>
-              )}
+                </Link>
+                <Link href="/catalogo">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-2 border-white/60 text-white hover:bg-white/10">
+                    Explorar catálogo
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/registro">
+                  <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
+                    Comenzar gratis
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/catalogo">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-2 border-white/60 text-white hover:bg-white/10">
+                    Explorar catálogo
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 text-sm text-white/90 sm:flex-row sm:gap-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-white" />
+              <span>Gratis para comenzar</span>
             </div>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 text-sm text-muted-foreground sm:flex-row sm:gap-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Gratis para comenzar</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Sin tarjeta de crédito</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Soporte 24/7</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-white" />
+              <span>Sin tarjeta de crédito</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-white" />
+              <span>Soporte 24/7</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Sort Bar */}
-      <section className="border-b bg-muted/20">
+      <section className="bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <Suspense fallback={<div className="h-9 w-52 animate-pulse rounded-md bg-muted/40" />}>
             <SortControls currentSort={sortParam} />
           </Suspense>
         </div>
       </section>
+      <div className="section-divider" />
 
       {/* Servicios Populares */}
       <section className="py-16 sm:py-24">

@@ -1004,3 +1004,16 @@ enum EstadoSolicitud {
   CANCELADA
   SUSPENDIDA
 }
+
+model HeroImage {
+  id          String   @id @default(cuid())
+  url         String
+  publicId    String?
+  alt         String   @default("Imagen del hero")
+  orden       Int      @default(0)
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([activa, orden])
+}

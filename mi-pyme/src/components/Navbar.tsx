@@ -36,8 +36,9 @@ export function Navbar({ userRol }: NavbarProps) {
     session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -46,8 +47,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-border bg-background/95 backdrop-blur-xl shadow-sm"
-          : "border-b border-border/40 bg-background/80 backdrop-blur-xl saturate-[180%]"
+          ? "border-b border-border bg-background/90 backdrop-blur-xl shadow-sm"
+          : "border-b border-border/30 bg-background/60 backdrop-blur-md"
       )}
       role="banner"
     >
