@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthAwareNavbar } from "@/components/Navbar/AuthAwareNavbar";
+import { Footer } from "@/components/Footer";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { auth } from "@/lib/auth";
 import "./globals.css";
@@ -52,6 +53,7 @@ export default async function RootLayout({
               <ScrollRestoration />
             </Suspense>
             {children}
+            <Footer />
           </ThemeProvider>
         </SessionProvider>
       </body>

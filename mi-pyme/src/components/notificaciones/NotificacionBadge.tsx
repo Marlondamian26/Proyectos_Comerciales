@@ -52,7 +52,7 @@ const COLOR_POR_CATEGORIA: Record<string, string> = {
   reservas: "text-purple-500",
   pagos: "text-green-500",
   cuenta: "text-orange-500",
-  sistema: "text-gray-500",
+  sistema: "text-muted-foreground",
 };
 
 export function NotificacionBadge({ tipo, className, size = "md" }: NotificacionBadgeProps) {

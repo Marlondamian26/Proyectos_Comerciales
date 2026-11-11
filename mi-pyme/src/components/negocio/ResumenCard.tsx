@@ -39,7 +39,7 @@ export function ResumenCard({ resumen }: { resumen: DashboardResumenDTO }) {
       titulo: "Negocio",
       valor: resumen.negocio?.nombre ?? "—",
       icono: "🏪",
-      color: "text-slate-600",
+      color: "text-muted-foreground",
     },
   ];
 

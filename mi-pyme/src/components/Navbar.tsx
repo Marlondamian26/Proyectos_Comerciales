@@ -80,11 +80,12 @@ export function Navbar({ userRol }: NavbarProps) {
         )}
 
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {session ? (
             <>
               <NotificacionBell />
-              <ThemeToggle />
               <UserMenu name={userName} image={userImage} />
+              <LogoutButton />
             </>
           ) : (
             <>
@@ -135,13 +136,14 @@ export function Navbar({ userRol }: NavbarProps) {
               </Link>
             </nav>
             <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <NotificacionBell />
+              </div>
               {session ? (
                 <>
-                  <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <NotificacionBell />
-                  </div>
                   <UserMenu name={userName} image={userImage} />
+                  <LogoutButton variant="mobile" />
                 </>
               ) : (
                 <>

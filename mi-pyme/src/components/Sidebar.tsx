@@ -181,19 +181,43 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          "hidden lg:flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
-          collapsed ? "w-16" : "w-64"
-        )}
-        aria-label="Navegación principal"
-      >
+      {/* Desktop sidebar con toggle al lado */}
+      <div className="relative hidden lg:block">
+        <aside
+          className={cn(
+            "flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
+            collapsed ? "w-20" : "w-64"
+          )}
+          aria-label="Navegación principal"
+        >
+          <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
+            <ul className="space-y-1">
+              {visibleItems.map((item) => {
+                const href = item.href.split("?")[0];
+                const isActive =
+                  pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <NavItem
+                    key={item.href}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={isActive}
+                  />
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
+
+        {/* Botón de toggle - fuera del sidebar, al lado derecho */}
         <button
           onClick={toggle}
           className={cn(
-            "absolute -right-3 top-6 z-10 flex h-11 w-11 items-center justify-center",
-            "rounded-full border bg-background shadow-subtle hover:bg-muted",
+            "absolute top-6 z-10 h-10 w-10 rounded-full",
+            collapsed ? "left-[17.5rem]" : "left-[16rem]",
+            "bg-background border border-border shadow-sm",
+            "flex items-center justify-center",
+            "hover:bg-surface-raised",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           )}
           aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
@@ -201,25 +225,7 @@ export function Sidebar({
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
-
-        <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
-          <ul className="space-y-1">
-            {visibleItems.map((item) => {
-              const href = item.href.split("?")[0];
-              const isActive =
-                pathname === href || pathname.startsWith(href + "/");
-              return (
-                <NavItem
-                  key={item.href}
-                  item={item}
-                  collapsed={collapsed}
-                  isActive={isActive}
-                />
-              );
-            })}
-          </ul>
-        </nav>
-      </aside>
+      </div>
 
       {/* Mobile drawer */}
       {mobileOpen && (

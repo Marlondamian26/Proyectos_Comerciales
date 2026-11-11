@@ -4,9 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
 
-export function LogoutButton() {
+interface LogoutButtonProps {
+  variant?: "mobile" | "desktop";
+}
+
+export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
@@ -51,8 +56,12 @@ export function LogoutButton() {
   return (
     <Button
       variant="ghost"
-      size="sm"
-      className="gap-2 w-full justify-start"
+      size={variant === "mobile" ? "sm" : "sm"}
+      className={cn(
+        "gap-2",
+        variant === "mobile" ? "w-full justify-start" : "justify-between px-4",
+        "disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+      )}
       onClick={handleLogout}
       disabled={loading}
       aria-label="Cerrar sesión"
