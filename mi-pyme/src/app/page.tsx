@@ -125,7 +125,7 @@ export default async function HomePage({
               height={288}
               sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
               priority
-              className="mx-auto h-28 sm:h-32 md:h-36 w-auto object-contain drop-shadow-lg"
+              className="mx-auto h-32 sm:h-40 md:h-48 w-auto object-contain drop-shadow-lg"
             />
           </div>
 
