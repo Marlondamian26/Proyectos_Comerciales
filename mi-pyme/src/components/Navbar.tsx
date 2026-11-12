@@ -30,7 +30,6 @@ export interface NavbarProps {
 export function Navbar({ userRol }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
   const pathname = usePathname();
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
@@ -73,13 +72,11 @@ export function Navbar({ userRol }: NavbarProps) {
           />
         </Link>
 
-        {showSearch && (
-          <div className="hidden flex-1 justify-center md:flex">
-            <div className="w-full max-w-md">
-              <GlobalSearchBar userRol={userRol} />
-            </div>
+        <div className="flex-1 justify-center md:flex">
+          <div className="w-full max-w-md">
+            <GlobalSearchBar userRol={userRol} />
           </div>
-        )}
+        </div>
 
         <div className="hidden items-center gap-2 md:flex" data-testid="navbar-desktop-actions">
           <ThemeToggle />
@@ -128,11 +125,9 @@ export function Navbar({ userRol }: NavbarProps) {
       {mobileMenuOpen && (
         <div className="border-t border-border bg-background md:hidden">
           <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
-            {showSearch && (
-              <div className="w-full">
-                <GlobalSearchBar userRol={userRol} />
-              </div>
-            )}
+          <div className="w-full">
+            <GlobalSearchBar userRol={userRol} />
+          </div>
             <nav className="flex flex-col gap-1">
               <Link href="/catalogo" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 Catálogo

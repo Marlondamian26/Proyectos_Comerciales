@@ -41,10 +41,6 @@ export async function GET(request: Request) {
     const session = await auth();
     const userRol = session?.user?.rol ?? null;
 
-    if (!userRol) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
     const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: "Demasiadas solicitudes, intenta de nuevo" }, { status: 429 });
@@ -63,7 +59,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const cacheKey = getCacheKey(query, limit, offset, userRol);
+    const cacheKey = `${userRol ?? "anon"}:${query}:${limit}:${offset}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return NextResponse.json({
@@ -74,13 +70,14 @@ export async function GET(request: Request) {
 
     const searchTerm = `%${query}%`;
 
+    // Usuarios anónimos solo pueden buscar productos y servicios
+    const isAnon = !userRol;
+
     const [products, services, logistics, users] = await Promise.all([
       searchProducts(searchTerm, limit, offset),
       searchServices(searchTerm, limit, offset),
-      userRol === Rol.ADMIN || userRol === Rol.CLIENTE
-        ? searchBusinesses(searchTerm, limit, offset)
-        : Promise.resolve([]),
-      userRol === Rol.ADMIN ? searchUsers(searchTerm, limit, offset) : Promise.resolve([]),
+      isAnon ? Promise.resolve([]) : searchLogistics(searchTerm, limit, offset),
+      isAnon ? Promise.resolve([]) : searchUsersAndBusinesses(searchTerm, limit, offset, userRol),
     ]);
 
     const data = {
@@ -132,38 +129,78 @@ async function searchServices(searchTerm: string, limit: number, offset: number)
   });
 }
 
-async function searchBusinesses(searchTerm: string, limit: number, offset: number) {
-  return prisma.negocio.findMany({
+async function searchLogistics(searchTerm: string, limit: number, offset: number) {
+  return prisma.proveedorLogistico.findMany({
     where: {
       activo: true,
-      nombre: { contains: searchTerm },
-    },
-    select: { id: true, nombre: true },
-    take: limit,
-    skip: offset,
-    orderBy: { nombre: "asc" },
-  });
-}
-
-async function searchUsers(searchTerm: string, limit: number, offset: number) {
-  return prisma.user.findMany({
-    where: {
       OR: [
         { nombre: { contains: searchTerm } },
-        { email: { contains: searchTerm } },
-        { username: { contains: searchTerm } },
+        { zonaCobertura: { contains: searchTerm } },
+        { contacto: { contains: searchTerm } },
       ],
     },
-    select: { id: true, nombre: true, email: true, rol: true },
     take: limit,
     skip: offset,
     orderBy: { nombre: "asc" },
-  }).then((users) =>
-    users.map((u) => ({
-      id: u.id,
-      nombre: u.nombre,
-      email_masked: maskEmail(u.email),
-      rol: u.rol,
+  }).then((results) =>
+    results.map((r) => ({
+      id: r.id,
+      nombre: r.nombre,
+      negocio: { nombre: r.zonaCobertura ?? "Logística" },
     }))
   );
+}
+
+async function searchUsersAndBusinesses(searchTerm: string, limit: number, offset: number, userRol: string | null) {
+  const isAdmin = userRol === Rol.ADMIN;
+  const isClient = userRol === Rol.CLIENTE;
+
+  const [businesses, foundUsers] = await Promise.all([
+    (isAdmin || isClient
+      ? prisma.negocio.findMany({
+          where: {
+            activo: true,
+            nombre: { contains: searchTerm },
+          },
+          select: { id: true, nombre: true },
+          take: limit,
+          skip: offset,
+          orderBy: { nombre: "asc" },
+        })
+      : Promise.resolve([])),
+    isAdmin
+      ? prisma.user.findMany({
+          where: {
+            OR: [
+              { nombre: { contains: searchTerm } },
+              { email: { contains: searchTerm } },
+              { username: { contains: searchTerm } },
+            ],
+          },
+          select: { id: true, nombre: true, email: true, rol: true },
+          take: limit,
+          skip: offset,
+          orderBy: { nombre: "asc" },
+        }).then((users) =>
+          users.map((u) => ({
+            id: u.id,
+            nombre: u.nombre,
+            email_masked: maskEmail(u.email),
+            rol: u.rol,
+          }))
+        )
+      : Promise.resolve([]),
+  ]);
+
+  // Combinar negocios y usuarios en una sola lista de "users" para el componente
+  const combined = [
+    ...businesses.map((b) => ({
+      id: b.id,
+      nombre: b.nombre,
+      negocio: { nombre: b.nombre },
+    })),
+    ...foundUsers,
+  ];
+
+  return combined.slice(0, limit);
 }
