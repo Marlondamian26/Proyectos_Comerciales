@@ -3,7 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario, listarServicios, listarAreasAction } from "@/lib/actions";
 import ServiciosPanel from "@/components/negocio/ServicioForm";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function ServiciosPage() {
 
   return (
     <>
-      <BackToDashboard href="/negocio" />
+      <PageBackButton rol="NEGOCIO" />
       <ServiciosPanel
         negocioId={negocio.id}
         servicios={servicios}

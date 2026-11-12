@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +67,7 @@ export default async function AdminSolicitudesPage({
 
   return (
     <main className="min-h-screen">
-      <BackToDashboard href="/admin" />
+      <PageBackButton rol="ADMIN" />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">

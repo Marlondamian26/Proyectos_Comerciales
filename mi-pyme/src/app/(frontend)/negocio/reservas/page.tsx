@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario, listarReservasNegocioAction } from "@/lib/actions";
 import ReservasTable from "@/components/negocio/ReservasTable";
 import { CalendarCheck } from "lucide-react";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ export default async function ReservasPage() {
 
   return (
       <main className="min-h-screen">
-      <BackToDashboard href="/negocio" />
+      <PageBackButton rol="NEGOCIO" />
       <div className="flex items-center gap-3 mb-6">
         <CalendarCheck className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Reservas</h1>

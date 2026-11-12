@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listarServiciosConCupos } from "@/lib/actions";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
@@ -46,7 +46,7 @@ export default async function ServiciosPage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <div className="mb-12">
             <div className="mb-6 flex items-center justify-between gap-4">
-              <BackToDashboard href="/cliente" />
+              <PageBackButton rol="CLIENTE" />
               <ThemeToggle />
             </div>
             <div className="text-center">

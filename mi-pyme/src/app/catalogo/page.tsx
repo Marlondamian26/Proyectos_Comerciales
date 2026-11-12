@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
@@ -160,7 +160,7 @@ export default async function CatalogoPage({
       <main className="container py-12">
       <header className="mb-12">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <BackToDashboard href="/cliente" />
+          <PageBackButton rol="CLIENTE" />
           <ThemeToggle />
         </div>
         <h1 className="text-3xl font-bold mb-2" id="catalogo-title">

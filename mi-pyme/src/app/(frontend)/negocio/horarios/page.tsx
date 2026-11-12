@@ -3,7 +3,7 @@ import { Rol } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import { obtenerNegocioDelUsuario } from "@/lib/actions";
 import HorarioEditor from "@/components/negocio/HorarioEditor";
-import { BackToDashboard } from "@/components/ui/BackToDashboard";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ export default async function HorariosPage() {
 
   return (
     <>
-      <BackToDashboard href="/negocio" />
+      <PageBackButton rol="NEGOCIO" />
       <HorarioEditor negocioId={negocio.id} horariosIniciales={horariosNormalizados} />
     </>
   );
