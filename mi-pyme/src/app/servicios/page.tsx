@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listarServiciosConCupos } from "@/lib/actions";
 import { BackToDashboard } from "@/components/ui/BackToDashboard";
 import { Button } from "@/components/ui/Button";
@@ -6,6 +7,8 @@ import { DisponibilidadBadge } from "@/components/ui/DisponibilidadBadge";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReservarLink } from "@/components/ui/ReservarLink";
+import { auth } from "@/lib/auth";
+import { Rol } from "@/lib/auth/roles";
 import { Users, ArrowRight, Clock } from "lucide-react";
 import type { ServicioConCupos } from "@/services/CatalogService";
 
@@ -28,6 +31,8 @@ export default async function ServiciosPage({
   searchParams: Promise<{ area?: string; areaId?: string; negocioId?: string; tipo?: string }>;
 }) {
   const { area, areaId, negocioId, tipo } = await searchParams;
+  const session = await auth();
+  const canReserve = !session?.user || session.user.rol === Rol.CLIENTE;
   const servicios = (await listarServiciosConCupos({
     ...(area ? { area } : {}),
     ...(areaId ? { areaId } : {}),
@@ -125,21 +130,35 @@ export default async function ServiciosPage({
                         variante="servicio"
                       />
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="w-full"
-                      asChild
-                      disabled={!disponible}
-                    >
-                      <ReservarLink
-                        href={disponible ? `/servicios/${servicio.id}` : "#"}
+                    {canReserve ? (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full"
+                        asChild
                         disabled={!disponible}
                       >
-                        {isTransporte ? "Contratar transporte" : "Reservar ahora"}
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </ReservarLink>
-                    </Button>
+                        <ReservarLink
+                          href={disponible ? `/servicios/${servicio.id}` : "#"}
+                          disabled={!disponible}
+                        >
+                          {isTransporte ? "Contratar transporte" : "Reservar ahora"}
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </ReservarLink>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        asChild
+                      >
+                        <Link href={`/servicios/${servicio.id}`}>
+                          Ver detalles
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Link>
+                      </Button>
+                    )}
                   </Card>
                 );
               })}

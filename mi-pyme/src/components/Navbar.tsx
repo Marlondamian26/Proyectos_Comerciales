@@ -51,8 +51,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-navbar-border bg-navbar/85 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/90"
-          : "border-b border-navbar-border/30 bg-navbar/50 backdrop-blur-lg dark:bg-[var(--color-background)]/70"
+          ? "border-b border-navbar-border bg-navbar/80 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/85"
+          : "border-b border-navbar-border/30 bg-navbar/45 backdrop-blur-lg dark:bg-[var(--color-background)]/65"
       )}
       role="banner"
     >
@@ -88,7 +88,12 @@ export function Navbar({ userRol }: NavbarProps) {
           {session ? (
             <>
               <NotificacionBell />
-              <UserMenu name={userName} image={userImage} showLogout={!isDashboard} />
+              <UserMenu
+                name={userName}
+                image={userImage}
+                userRol={userRol}
+                showLogout={!isDashboard}
+              />
               {!isDashboard && <LogoutButton />}
             </>
           ) : (
@@ -138,17 +143,26 @@ export function Navbar({ userRol }: NavbarProps) {
               <Link href="/servicios" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 Servicios
               </Link>
-              <Link href="/perfil" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                Mi perfil
-              </Link>
+              {session && (
+                <Link href="/perfil" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  Mi perfil
+                </Link>
+              )}
             </nav>
             <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
-              <div className="flex items-center gap-2">
-                <NotificacionBell />
-              </div>
+              {session && (
+                <div className="flex items-center gap-2">
+                  <NotificacionBell />
+                </div>
+              )}
               {session ? (
                 <>
-                  <UserMenu name={userName} image={userImage} showLogout={!isDashboard} />
+                  <UserMenu
+                    name={userName}
+                    image={userImage}
+                    userRol={userRol}
+                    showLogout={!isDashboard}
+                  />
                   {!isDashboard && <LogoutButton variant="mobile" />}
                 </>
               ) : (
@@ -180,10 +194,12 @@ export function Navbar({ userRol }: NavbarProps) {
 function UserMenu({
   name,
   image,
+  userRol,
   showLogout,
 }: {
   name: string;
   image: string | null;
+  userRol?: Rol;
   showLogout: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -231,15 +247,17 @@ function UserMenu({
             <User className="h-4 w-4" />
             Mi perfil
           </Link>
-          <Link
-            href="/admin"
-            role="menuitem"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            onClick={() => setOpen(false)}
-          >
-            <Settings className="h-4 w-4" />
-            Configuración
-          </Link>
+          {userRol === Rol.ADMIN && (
+            <Link
+              href="/admin"
+              role="menuitem"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              onClick={() => setOpen(false)}
+            >
+              <Settings className="h-4 w-4" />
+              Configuración
+            </Link>
+          )}
           {showLogout && (
             <>
               <div role="separator" className="my-1 h-px bg-border" />

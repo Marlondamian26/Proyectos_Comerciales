@@ -1,7 +1,9 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { agregarAlCarrito, crearReserva } from "@/lib/actions";
+import { agregarAlCarrito } from "@/lib/actions";
+import { getDashboardPath } from "@/lib/auth/dashboard-paths";
+import { Rol } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -36,6 +38,13 @@ export async function catalogoReserve(formData: FormData) {
     });
     redirect(`/auth/registro?${params.toString()}`);
     return;
+  }
+  if (session.user.rol !== Rol.CLIENTE) {
+    redirect(
+      session.user.rol
+        ? getDashboardPath(session.user.rol)
+        : "/auth/login"
+    );
   }
   redirect(`/reservas?servicioId=${servicioId}`);
 }

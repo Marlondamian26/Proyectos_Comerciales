@@ -77,14 +77,27 @@ describe("DashboardChrome", () => {
   });
 
   it("does not add dashboard navigation to public routes", () => {
-    routeState.pathname = "/catalogo";
+    routeState.pathname = "/contacto";
     const { queryByTestId } = render(
       <DashboardChrome userRol="CLIENTE">
-        <div>Catálogo</div>
+        <div>Contacto</div>
       </DashboardChrome>
     );
 
     expect(queryByTestId("role-sidebar")).not.toBeInTheDocument();
     expect(queryByTestId("dashboard-toolbar")).not.toBeInTheDocument();
+  });
+
+  it("shows role navigation and dashboard actions on the sidebar's catalog view", () => {
+    routeState.pathname = "/catalogo";
+    const { getByTestId, getByRole } = render(
+      <DashboardChrome userRol="CLIENTE">
+        <div>Catálogo</div>
+      </DashboardChrome>
+    );
+
+    expect(getByTestId("role-sidebar")).toBeInTheDocument();
+    expect(getByTestId("back-to-home")).toHaveAttribute("href", "/");
+    expect(getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
   });
 });

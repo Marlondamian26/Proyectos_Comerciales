@@ -1,6 +1,7 @@
 const dashboardRoots = ["/cliente", "/negocio", "/logistica", "/admin"];
 const sharedDashboardRoutes = [
   "/carrito",
+  "/catalogo",
   "/facturas",
   "/mis-solicitudes",
   "/notificaciones",

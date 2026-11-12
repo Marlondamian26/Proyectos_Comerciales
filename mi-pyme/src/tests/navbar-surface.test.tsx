@@ -1,12 +1,19 @@
 import { fireEvent, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Navbar } from "@/components/Navbar";
 import { AuthAwareNavbar } from "@/components/Navbar/AuthAwareNavbar";
 import HomePage from "@/app/page";
+import { Rol } from "@/lib/auth/roles";
+
+const mockState = vi.hoisted(() => ({
+  session: null as null | { user: { name: string; email: string; rol: string } },
+  homeSession: null as null | { user: { rol: string } },
+  pathname: "/",
+}));
 
 vi.mock("@/lib/auth", () => ({
-  auth: vi.fn().mockResolvedValue(null),
+  auth: vi.fn(async () => mockState.homeSession),
 }));
 
 vi.mock("@/lib/actions", () => ({
@@ -28,11 +35,11 @@ vi.mock("@/components/SortControls", () => ({
 }));
 
 vi.mock("next-auth/react", () => ({
-  useSession: () => ({ data: null }),
+  useSession: () => ({ data: mockState.session }),
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => mockState.pathname,
 }));
 
 vi.mock("next/dynamic", () => ({
@@ -80,6 +87,13 @@ vi.mock("@/components/LogoutButton", () => ({
 }));
 
 describe("Navbar surface", () => {
+  beforeEach(() => {
+    mockState.session = null;
+    mockState.homeSession = null;
+    mockState.pathname = "/";
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+  });
+
   it("renders a theme toggle in desktop actions and outside the mobile drawer", () => {
     const { getByTestId, getAllByTestId } = render(<Navbar />);
 
@@ -103,19 +117,91 @@ describe("Navbar surface", () => {
     const { container } = render(<Navbar />);
     const header = container.querySelector("header");
 
-    expect(header?.className).toMatch(/bg-navbar\/50/);
+    expect(header?.className).toMatch(/bg-navbar\/45/);
     expect(header?.className).toContain("backdrop-blur-lg");
     expect(header?.className).toContain(
-      "dark:bg-[var(--color-background)]/70"
+      "dark:bg-[var(--color-background)]/65"
     );
 
     Object.defineProperty(window, "scrollY", { configurable: true, value: 16 });
     fireEvent.scroll(window);
 
-    expect(header?.className).toContain("bg-navbar/85");
+    expect(header?.className).toContain("bg-navbar/80");
     expect(header?.className).toContain(
-      "dark:bg-[var(--color-background)]/90"
+      "dark:bg-[var(--color-background)]/85"
     );
+  });
+
+  it("only exposes administrator settings to ADMIN users", () => {
+    mockState.session = {
+      user: { name: "Cliente", email: "cliente@example.com", rol: Rol.CLIENTE },
+    };
+    const clientView = render(
+      <Navbar userRol={Rol.CLIENTE} />
+    );
+
+    fireEvent.click(
+      clientView.getAllByRole("button", { name: "Menú de usuario" })[0]
+    );
+    expect(
+      clientView.queryByRole("menuitem", { name: "Configuración" })
+    ).not.toBeInTheDocument();
+    clientView.unmount();
+
+    mockState.session = {
+      user: { name: "Admin", email: "admin@example.com", rol: Rol.ADMIN },
+    };
+    const adminView = render(<Navbar userRol={Rol.ADMIN} />);
+    fireEvent.click(
+      adminView.getAllByRole("button", { name: "Menú de usuario" })[0]
+    );
+    expect(
+      adminView.getByRole("menuitem", { name: "Configuración" })
+    ).toHaveAttribute("href", "/admin");
+  });
+
+  it("keeps logout out of the navbar on dashboard and sidebar views", () => {
+    mockState.session = {
+      user: { name: "Cliente", email: "cliente@example.com", rol: Rol.CLIENTE },
+    };
+    mockState.pathname = "/catalogo";
+
+    const { queryByRole, rerender } = render(<Navbar userRol={Rol.CLIENTE} />);
+    expect(queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
+
+    mockState.pathname = "/cliente";
+    rerender(<Navbar userRol={Rol.CLIENTE} />);
+    expect(queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
+  });
+
+  it("does not show session-only links in the anonymous mobile menu", () => {
+    const { getByRole, queryByRole } = render(<Navbar />);
+
+    fireEvent.click(getByRole("button", { name: "Abrir menú" }));
+
+    expect(queryByRole("link", { name: "Mi perfil" })).not.toBeInTheDocument();
+    expect(queryByRole("button", { name: "Notificaciones" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [Rol.CLIENTE, "/cliente"],
+    [Rol.NEGOCIO, "/negocio"],
+    [Rol.LOGISTICA, "/logistica"],
+    [Rol.ADMIN, "/admin"],
+  ])("sends a signed-in %s user from both home CTAs to %s", async (role, dashboard) => {
+    mockState.homeSession = { user: { rol: role } };
+    const homePage = await HomePage({ searchParams: Promise.resolve({}) });
+    const { getAllByRole, queryByRole } = render(homePage);
+
+    const dashboardLinks = getAllByRole("link", { name: "Ir a mi dashboard" });
+    expect(dashboardLinks).toHaveLength(2);
+    expect(dashboardLinks.map((link) => link.getAttribute("href"))).toEqual([
+      dashboard,
+      dashboard,
+    ]);
+    expect(
+      queryByRole("link", { name: "Crear cuenta gratis" })
+    ).not.toBeInTheDocument();
   });
 
   it("does not duplicate the root navbar in the public home page", async () => {

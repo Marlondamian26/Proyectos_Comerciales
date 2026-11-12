@@ -41,7 +41,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         size="sm"
         onClick={() => setTheme(isDark ? "light" : "dark")}
         className={cn(
-          "text-muted-foreground hover:text-foreground transition-colors duration-200",
+          "text-foreground hover:text-foreground transition-colors duration-200",
           compact
             ? "h-11 w-11 min-w-11 justify-center px-0"
             : "gap-2 min-w-[7.5rem] justify-start"

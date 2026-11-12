@@ -74,6 +74,21 @@ test("theme toggle accessibility", async ({ page }) => {
   expect(accessibilityScanResults.violations).toEqual([]);
 });
 
+for (const theme of themes) {
+  test(`theme toggle - ${theme} mode enhanced contrast`, async ({ page }) => {
+    await setThemeBeforeNavigation(page, theme);
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(["wcag2aaa", "wcag21aaa"])
+      .include("[data-testid='theme-toggle']")
+      .analyze();
+
+    expect(accessibilityScanResults.violations).toEqual([]);
+  });
+}
+
 test("global navbar and footer render on mobile authentication pages", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/auth/login");

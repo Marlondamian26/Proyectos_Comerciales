@@ -8,6 +8,8 @@ import Image from "next/image";
 import { obtenerServicioConCuposAction } from "@/lib/actions";
 import { TransporteForm } from "@/components/servicios/TransporteForm";
 import { ReservarLink } from "@/components/ui/ReservarLink";
+import { auth } from "@/lib/auth";
+import { Rol } from "@/lib/auth/roles";
 
 interface ServicioDetalle {
   id: string;
@@ -53,6 +55,11 @@ export default async function ServicioDetallePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await auth();
+  const userRol = session?.user?.rol;
+  const canAddToCart =
+    userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
+  const canReserve = !session?.user || userRol === Rol.CLIENTE;
 
   const servicioResult = await obtenerServicioConCuposAction(id);
 
@@ -203,9 +210,9 @@ export default async function ServicioDetallePage({
             )}
           </div>
 
-            {isTransporte ? (
+            {isTransporte && canAddToCart ? (
               <TransporteForm servicioId={servicio.id} disponible={disponible} />
-            ) : (
+            ) : !isTransporte && canReserve ? (
               <Button
                 variant={disponible ? "primary" : "outline"}
                 size="lg"
@@ -220,6 +227,12 @@ export default async function ServicioDetallePage({
                   {disponible ? "Reservar ahora" : "Sin cupos disponibles hoy"}
                 </ReservarLink>
               </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground" role="status">
+                {isTransporte
+                  ? "Contratar transporte está disponible para clientes y administradores."
+                  : "Reservar este servicio está disponible para clientes."}
+              </p>
             )}
         </div>
       </div>

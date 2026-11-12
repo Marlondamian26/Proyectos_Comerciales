@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
+import { Rol } from "@/lib/auth/roles";
 import { listarAreas, listarNegocios, listarServicios } from "@/lib/actions";
 import prisma from "@/lib/db/prisma";
 import Link from "next/link";
@@ -36,6 +37,7 @@ export default async function HomePage({
   const isLoggedIn = !!session?.user;
   const userRol = session?.user?.rol;
   const dashboardUrl = userRol ? getDashboardPath(userRol) : "/cliente";
+  const canReserveFromHome = !isLoggedIn || userRol === Rol.CLIENTE;
 
   const sortParam = (await searchParams).sort as SortOption || "popularity-desc";
 
@@ -272,7 +274,7 @@ export default async function HomePage({
                       </p>
                     )}
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      {servicio.permiteReservas !== false && (
+                      {servicio.permiteReservas !== false && canReserveFromHome && (
                         <Button variant="primary" size="sm" className="flex-1 w-full sm:text-base" asChild>
                           <Link href={`/reservas?servicioId=${servicio.id}`}>
                             Reservar ahora
@@ -570,7 +572,7 @@ export default async function HomePage({
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <Link
-                  href="/auth/registro"
+                  href={isLoggedIn ? dashboardUrl : "/auth/registro"}
                   className="
                     inline-flex items-center justify-center gap-2
                     w-full sm:w-auto
@@ -585,7 +587,7 @@ export default async function HomePage({
                     min-h-[48px]
                   "
                 >
-                  Crear cuenta gratis
+                  {isLoggedIn ? "Ir a mi dashboard" : "Crear cuenta gratis"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

@@ -2,9 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Rol } from "@/lib/auth/roles";
+import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import {
   HomeIcon,
   ShoppingCartIcon,
@@ -50,7 +51,7 @@ export const sidebarItems: SidebarItem[] = [
     label: "Carrito",
     href: "/carrito",
     icon: <ShoppingCartIcon className="h-5 w-5" />,
-    allowedRoles: [Rol.CLIENTE],
+    allowedRoles: [Rol.CLIENTE, Rol.ADMIN],
   },
   {
     label: "Pedidos",
@@ -135,6 +136,7 @@ export function Sidebar({
   tieneSolicitudPendiente = false,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -170,15 +172,43 @@ export function Sidebar({
 
   const toggle = () => setCollapsed((prev) => !prev);
 
-  const visibleItems = sidebarItems.filter(
-    (item) =>
-      (
-        item.allowedRoles.length === 0 ||
-        (userRol && item.allowedRoles.includes(userRol)) ||
-        (item.requiresNegocioOwnership && esDuenoDeNegocio)
-      ) &&
-      (!item.requiresNoPendingRoleRequest || !tieneSolicitudPendiente)
-  );
+  const dashboardPath = userRol ? getDashboardPath(userRol) : "/";
+  const visibleItems = sidebarItems
+    .map((item) =>
+      item.label === "Resumen" ? { ...item, href: dashboardPath } : item
+    )
+    .filter(
+      (item) =>
+        (
+          item.allowedRoles.length === 0 ||
+          (userRol && item.allowedRoles.includes(userRol)) ||
+          (item.requiresNegocioOwnership && esDuenoDeNegocio)
+        ) &&
+        !(userRol === Rol.LOGISTICA && item.label === "Proveedores") &&
+        (!item.requiresNoPendingRoleRequest || !tieneSolicitudPendiente)
+    );
+
+  const isItemActive = (item: SidebarItem) => {
+    const [href, query] = item.href.split("?");
+    const hasQuery = Boolean(query);
+    const pathMatches =
+      pathname === href ||
+      (!hasQuery &&
+        item.label !== "Resumen" &&
+        pathname.startsWith(`${href}/`));
+    if (!pathMatches) return false;
+
+    const requiredParams = new URLSearchParams(query ?? "");
+    const queryMatches = [...requiredParams].every(
+      ([key, value]) => searchParams.get(key) === value
+    );
+    const adminTabSelected =
+      userRol === Rol.ADMIN &&
+      item.label === "Resumen" &&
+      searchParams.has("tab");
+
+    return queryMatches && !adminTabSelected;
+  };
 
   return (
     <>
@@ -197,7 +227,7 @@ export function Sidebar({
       <div className="relative hidden lg:block">
         <aside
           className={cn(
-            "flex min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/70 backdrop-blur-lg transition-[width] duration-300 ease-out",
+            "flex min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/65 backdrop-blur-lg transition-[width] duration-300 ease-out",
             collapsed ? "w-20" : "w-64"
           )}
           aria-label="Navegación principal"
@@ -205,15 +235,12 @@ export function Sidebar({
           <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
             <ul className="space-y-1">
               {visibleItems.map((item) => {
-                const href = item.href.split("?")[0];
-                const isActive =
-                  pathname === href || pathname.startsWith(href + "/");
                 return (
                   <NavItem
-                    key={item.href}
+                    key={item.label}
                     item={item}
                     collapsed={collapsed}
-                    isActive={isActive}
+                    isActive={isItemActive(item)}
                   />
                 );
               })}
@@ -249,7 +276,7 @@ export function Sidebar({
           />
           <aside id="dashboard-sidebar-mobile" className="
             fixed inset-y-0 left-0 z-50 w-72
-            bg-sidebar/90 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
+            bg-sidebar/85 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
             translate-x-0
             pb-[env(safe-area-inset-bottom)]
@@ -267,15 +294,12 @@ export function Sidebar({
             <nav className="flex-1 overflow-y-auto py-4" aria-label="Menú de panel">
               <ul className="space-y-1">
                 {visibleItems.map((item) => {
-                  const href = item.href.split("?")[0];
-                  const isActive =
-                    pathname === href || pathname.startsWith(href + "/");
                   return (
                     <NavItem
-                      key={item.href}
+                      key={item.label}
                       item={item}
                       collapsed={false}
-                      isActive={isActive}
+                      isActive={isItemActive(item)}
                     />
                   );
                 })}

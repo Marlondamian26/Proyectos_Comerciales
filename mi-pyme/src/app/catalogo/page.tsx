@@ -11,13 +11,11 @@ import {
   listarAreas,
   listarSubareas,
 } from "@/lib/actions";
+import { auth } from "@/lib/auth";
+import { Rol } from "@/lib/auth/roles";
 import { catalogoAddToCart, catalogoReserve } from "./actions";
 import { CatalogoContent } from "./catalogo-content";
 import Link from "next/link";
-import {
-  ProductGridSkeleton,
-  ServiceGridSkeleton,
-} from "@/components/skeletons/LoadingSkeletons";
 import type {
   ProductoConDisponibilidad,
   ServicioConCupos,
@@ -45,6 +43,11 @@ export default async function CatalogoPage({
   searchParams: Promise<CatalogoFiltros>;
 }) {
   const filtros = await searchParams;
+  const session = await auth();
+  const userRol = session?.user?.rol;
+  const canAddToCart =
+    !session?.user || userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
+  const canReserve = !session?.user || userRol === Rol.CLIENTE;
   const areas = await listarAreas();
   const areaId = filtros.areaId || areas.find((area) => area.slug === filtros.area)?.id;
 
@@ -334,30 +337,32 @@ export default async function CatalogoPage({
                             cantidad={cantidad}
                             variante="producto"
                           />
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="flex-1"
-                            formAction={catalogoAddToCart}
-                            disabled={!disponible}
-                            title={
-                              !disponible
-                                ? "No disponible hoy"
-                                : undefined
-                            }
-                            aria-label={
-                              disponible
-                                ? `Agregar ${producto.nombre} al carrito`
-                                : `${producto.nombre} no disponible hoy`
-                            }
-                          >
-                            <input
-                              type="hidden"
-                              name="productoId"
-                              value={producto.id}
-                            />
-                            Agregar al carrito
-                          </Button>
+                          {canAddToCart && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="flex-1"
+                              formAction={catalogoAddToCart}
+                              disabled={!disponible}
+                              title={
+                                !disponible
+                                  ? "No disponible hoy"
+                                  : undefined
+                              }
+                              aria-label={
+                                disponible
+                                  ? `Agregar ${producto.nombre} al carrito`
+                                  : `${producto.nombre} no disponible hoy`
+                              }
+                            >
+                              <input
+                                type="hidden"
+                                name="productoId"
+                                value={producto.id}
+                              />
+                              Agregar al carrito
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -482,30 +487,32 @@ export default async function CatalogoPage({
                           cantidad={cantidadCupos}
                           variante="servicio"
                         />
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="flex-1"
-                          formAction={catalogoReserve}
-                          disabled={!disponible}
-                          title={
-                            !disponible
-                              ? "Sin cupos disponibles hoy"
-                              : undefined
-                          }
-                          aria-label={
-                            disponible
-                              ? `Reservar ${servicio.nombre}`
-                              : `${servicio.nombre} sin cupos hoy`
-                          }
-                        >
-                          <input
-                            type="hidden"
-                            name="servicioId"
-                            value={servicio.id}
-                          />
-                          Reservar
-                        </Button>
+                        {canReserve && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                            formAction={catalogoReserve}
+                            disabled={!disponible}
+                            title={
+                              !disponible
+                                ? "Sin cupos disponibles hoy"
+                                : undefined
+                            }
+                            aria-label={
+                              disponible
+                                ? `Reservar ${servicio.nombre}`
+                                : `${servicio.nombre} sin cupos hoy`
+                            }
+                          >
+                            <input
+                              type="hidden"
+                              name="servicioId"
+                              value={servicio.id}
+                            />
+                            Reservar
+                          </Button>
+                        )}
                       </div>
                     </Card>
                   </li>
