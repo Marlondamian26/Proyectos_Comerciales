@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { ReciboPago } from "@/components/pagos/ReciboPago";
 import { ComprobanteForm } from "@/components/pagos/ComprobanteForm";
 import { AccionesPago } from "@/components/pagos/AccionesPago";
@@ -66,7 +66,7 @@ export default function PagoDetalleClient({ pago: pagoInicial, error: errorInici
   if (loading || (!pago && !error)) {
     return (
       <main className="max-w-4xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         {loading ? <LoadingOverlay /> : <EmptyState title="Pago no encontrado" icon={<CreditCard className="h-12 w-12" />} />}
       </main>
     );
@@ -75,7 +75,7 @@ export default function PagoDetalleClient({ pago: pagoInicial, error: errorInici
   if (error || !pago) {
     return (
       <main className="max-w-4xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <EmptyState title={error || "Pago no encontrado"} icon={<CreditCard className="h-12 w-12" />} />
       </main>
     );

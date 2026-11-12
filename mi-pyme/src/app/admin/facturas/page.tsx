@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { Button } from "@/components/ui/Button";
 import { Table, type Column } from "@/components/ui/Table";
 import { LoadingTable } from "@/components/ui/Loading";
@@ -152,7 +152,7 @@ export default function AdminFacturasPage() {
     <main className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center gap-3 mb-4">
-          <DashboardBackLink />
+          <PageBackButton />
         </div>
 
         <div className="flex items-center justify-between mb-8">

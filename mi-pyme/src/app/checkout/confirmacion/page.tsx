@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 import { CheckCircle, Package, QrCode } from "lucide-react";
 
@@ -27,7 +27,7 @@ export default function CheckoutConfirmacionPage() {
     <Suspense
       fallback={
         <main className="max-w-4xl mx-auto py-12 px-6">
-          <DashboardBackLink />
+          <PageBackButton />
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
@@ -65,7 +65,7 @@ function CheckoutConfirmacionInner() {
   if (error) {
     return (
       <main className="max-w-4xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <div className="text-center">
           <h2 className="text-xl font-semibold text-destructive mb-2">
             {error}
@@ -79,7 +79,7 @@ function CheckoutConfirmacionInner() {
   if (!data) {
     return (
       <main className="max-w-4xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -89,7 +89,7 @@ function CheckoutConfirmacionInner() {
 
   return (
     <main className="max-w-4xl mx-auto py-12 px-6">
-      <DashboardBackLink />
+      <PageBackButton />
 
       <div className="text-center mb-10">
         <div className="flex justify-center mb-4">

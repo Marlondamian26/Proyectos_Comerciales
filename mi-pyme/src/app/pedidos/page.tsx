@@ -9,7 +9,7 @@ import { LoadingTable } from "@/components/ui/Loading";
 import { Package, Eye, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 
 type PedidoItem = {
@@ -248,7 +248,7 @@ export default function PedidosPage() {
     <main className="max-w-6xl mx-auto py-12 px-6">
       <header className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <DashboardBackLink />
+          <PageBackButton />
         </div>
         <h1 className="text-3xl font-bold mb-2">Mis Pedidos</h1>
         <p className="text-muted-foreground">Historial y seguimiento de tus pedidos</p>

@@ -47,7 +47,7 @@ export default async function Page() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                 {userRol ?? "LOGISTICA"}
               </span>

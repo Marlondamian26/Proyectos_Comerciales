@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 import { ResumenPagos } from "@/components/pagos/ResumenPagos";
 import { Button } from "@/components/ui/Button";
@@ -212,7 +212,7 @@ export default function AdminPagosPage() {
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Pagos (Admin)</h1>
         <LoadingTable />
       </main>
@@ -222,7 +222,7 @@ export default function AdminPagosPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Pagos (Admin)</h1>
         <p className="text-destructive">{error}</p>
       </main>
@@ -231,7 +231,7 @@ export default function AdminPagosPage() {
 
   return (
     <main className="max-w-6xl mx-auto py-12 px-6">
-      <DashboardBackLink />
+      <PageBackButton />
       <h1 className="text-3xl font-bold mb-6">Pagos (Admin)</h1>
 
       {resumen && <ResumenPagos resumen={resumen} />}

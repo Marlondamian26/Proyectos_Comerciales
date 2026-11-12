@@ -9,7 +9,7 @@ import { LoadingTable } from "@/components/ui/Loading";
 import { X, Calendar, Clock, AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 type Servicio = {
   id: string;
@@ -148,7 +148,7 @@ export default function ReservasPage({
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="flex items-center gap-3 mb-2">
-            <DashboardBackLink />
+            <PageBackButton />
           </div>
           <div className="flex items-center gap-3 mb-2">
             <Calendar className="h-8 w-8 text-primary" />

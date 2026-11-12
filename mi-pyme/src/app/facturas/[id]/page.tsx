@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getFacturaAction, descargarFacturaAction } from "@/lib/actions";
 import { Button } from "@/components/ui/Button";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { FileText, Download, ShoppingBasket, Calendar } from "lucide-react";
 import { RegimenFiscalBadge } from "@/components/fiscal/RegimenFiscalBadge";
 import { TratamientoIVABadge } from "@/components/fiscal/TratamientoIVABadge";
@@ -49,7 +49,7 @@ export default async function FacturaDetailPage({
   return (
     <main className="max-w-5xl mx-auto py-12 px-6">
       <div className="flex items-center gap-3 mb-6">
-        <DashboardBackLink />
+        <PageBackButton />
       </div>
 
       <div className="flex items-center justify-between mb-6">

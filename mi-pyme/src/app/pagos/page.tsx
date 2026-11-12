@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Table, type Column } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingTable } from "@/components/ui/Loading";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 import { Eye, CreditCard } from "lucide-react";
 import type { PagoConRelacionesDTO } from "@/shared/pagos.types";
@@ -110,7 +110,7 @@ export default function PagosPage() {
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Mis pagos</h1>
         <LoadingTable />
       </main>
@@ -120,7 +120,7 @@ export default function PagosPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Mis pagos</h1>
         <p className="text-destructive">{error}</p>
       </main>
@@ -135,7 +135,7 @@ export default function PagosPage() {
   if (pedidoIdParam && !pagoFromPedido) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Pago del pedido #{pedidoIdParam.slice(-8)}</h1>
         <EmptyState
           title="Aún no has realizado el pago"
@@ -149,7 +149,7 @@ export default function PagosPage() {
   if (pagos.length === 0) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Mis pagos</h1>
         <EmptyState
           title="No tienes pagos registrados"
@@ -162,7 +162,7 @@ export default function PagosPage() {
 
   return (
     <main className="max-w-6xl mx-auto py-12 px-6">
-      <DashboardBackLink />
+      <PageBackButton />
       <h1 className="text-3xl font-bold mb-6">Mis pagos</h1>
 
       <div className="overflow-x-auto rounded-lg border border-border">

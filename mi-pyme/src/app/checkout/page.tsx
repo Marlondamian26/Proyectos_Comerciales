@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingOverlay } from "@/components/ui/Loading";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { ResumenTotales } from "@/components/checkout/ResumenTotales";
 import {
   GrupoNegocioCard,
@@ -277,7 +277,7 @@ export default function CheckoutPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <ErrorState
           title="Error en el checkout"
           message={error}
@@ -296,7 +296,7 @@ export default function CheckoutPage() {
   return (
     <main className="max-w-6xl mx-auto py-12 px-6">
       <header className="mb-8">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-2">Checkout</h1>
         <p className="text-muted-foreground">
           {checkout.grupos.length === 1

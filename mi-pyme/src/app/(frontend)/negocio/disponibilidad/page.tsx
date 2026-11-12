@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { Rol } from "@/lib/auth/roles";
 import { obtenerProductosDisponibilidadAction } from "@/lib/actions";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { ProductosDisponibilidadEditor } from "./ProductosDisponibilidadEditor";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function DisponibilidadPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <DashboardBackLink />
+              <PageBackButton />
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
                 <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
                 {userRol ?? "NEGOCIO"}

@@ -9,7 +9,7 @@ import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { LoadingTable } from "@/components/ui/Loading";
 import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 
 type CarritoItem = {
   id: string;
@@ -218,7 +218,7 @@ export default function CarritoPage() {
     return (
       <main className="max-w-5xl mx-auto py-12 px-6">
         <div className="flex items-center gap-2 mb-6">
-          <DashboardBackLink />
+          <PageBackButton />
         </div>
         <LoadingTable rows={5} cols={6} />
       </main>
@@ -230,7 +230,7 @@ export default function CarritoPage() {
       <section className="bg-gradient-to-b from-primary/5 to-background py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-2">
-            <DashboardBackLink />
+            <PageBackButton />
           </div>
           <div className="flex items-center gap-3 mb-2">
             <ShoppingBag className="h-8 w-8 text-primary" />

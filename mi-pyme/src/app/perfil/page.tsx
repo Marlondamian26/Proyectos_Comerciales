@@ -27,7 +27,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { ProfileImageUploader } from "@/components/perfil/ProfileImageUploader";
 
 type ProfileData = {
@@ -321,7 +321,7 @@ export default function PerfilPage() {
     <main className="max-w-3xl mx-auto py-12 px-6">
       <header className="mb-10">
         <div className="flex items-center gap-3 mb-4">
-          <DashboardBackLink />
+          <PageBackButton />
         </div>
         <h1 className="text-3xl font-bold mb-2">Mi Perfil</h1>
         <p className="text-muted-foreground">

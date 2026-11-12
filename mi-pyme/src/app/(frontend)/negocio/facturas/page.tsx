@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { listarFacturas } from "@/lib/actions";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { Card } from "@/components/ui/Card";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { FileText } from "lucide-react";
@@ -23,7 +23,7 @@ export default async function NegocioFacturasPage() {
     return (
       <main className="min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <DashboardBackLink />
+          <PageBackButton />
           <p className="text-muted-foreground">
             Debe iniciar sesión para ver sus facturas.
           </p>
@@ -39,7 +39,7 @@ export default async function NegocioFacturasPage() {
     return (
       <main className="min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <DashboardBackLink />
+          <PageBackButton />
           <p className="text-muted-foreground">
             Su usuario no está asociado a un negocio.
           </p>
@@ -55,7 +55,7 @@ export default async function NegocioFacturasPage() {
     <main className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center gap-3 mb-6">
-          <DashboardBackLink />
+          <PageBackButton />
         </div>
 
         <div className="mb-8">

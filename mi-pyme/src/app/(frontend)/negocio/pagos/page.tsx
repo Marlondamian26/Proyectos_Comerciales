@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import { EstadoPagoBadge } from "@/components/pagos/EstadoPagoBadge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -177,7 +177,7 @@ export default function NegocioPagosPage() {
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Pagos de mi negocio</h1>
         <LoadingTable />
       </main>
@@ -187,7 +187,7 @@ export default function NegocioPagosPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-6">
-        <DashboardBackLink />
+        <PageBackButton />
         <h1 className="text-3xl font-bold mb-6">Pagos de mi negocio</h1>
         <p className="text-destructive">{error}</p>
       </main>
@@ -196,7 +196,7 @@ export default function NegocioPagosPage() {
 
   return (
     <main className="max-w-6xl mx-auto py-12 px-6">
-      <DashboardBackLink />
+      <PageBackButton />
       <h1 className="text-3xl font-bold mb-6">Pagos de mi negocio</h1>
 
       <div className="mb-6 flex flex-wrap gap-2">
