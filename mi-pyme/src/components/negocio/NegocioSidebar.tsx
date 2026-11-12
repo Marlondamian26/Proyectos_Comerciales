@@ -103,7 +103,7 @@ export function NegocioSidebar({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "relative hidden min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/65 backdrop-blur-lg transition-[width] duration-300 ease-out lg:flex",
+          "relative hidden min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/40 dark:bg-sidebar/60 backdrop-blur-lg transition-[width] duration-300 ease-out lg:flex",
           collapsed ? "w-20" : "w-64"
         )}
         role="complementary"
@@ -158,7 +158,7 @@ export function NegocioSidebar({
           />
           <aside id="negocio-sidebar-mobile" className="
             fixed inset-y-0 left-0 z-50 w-72
-            bg-sidebar/85 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
+            bg-sidebar/40 dark:bg-sidebar/60 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
             translate-x-0
           ">

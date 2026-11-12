@@ -201,7 +201,7 @@ export default async function HomePage({
         </div>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-b from-transparent to-[var(--color-background)] sm:h-32"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-32 backdrop-blur-md bg-gradient-to-b from-transparent to-[var(--color-background)] sm:h-40"
         />
       </section>
 
@@ -552,8 +552,8 @@ export default async function HomePage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="
             relative overflow-hidden rounded-2xl sm:rounded-3xl
-            bg-gradient-to-br from-primary/10 via-primary/5 to-interactive-secondary/10
-            border border-primary/20 p-6 text-center
+            bg-gradient-to-br from-primary/6 via-primary/3 to-interactive-secondary/6
+            border border-primary/12 p-6 text-center
             dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)] dark:border-border sm:p-12 lg:p-16
           " data-testid="home-cta">
             {/* Blobs decorativos sutiles */}

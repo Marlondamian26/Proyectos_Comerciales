@@ -227,7 +227,7 @@ export function Sidebar({
       <div className="relative hidden lg:block">
         <aside
           className={cn(
-            "flex min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/65 backdrop-blur-lg transition-[width] duration-300 ease-out",
+            "flex min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/40 dark:bg-sidebar/60 backdrop-blur-lg transition-[width] duration-300 ease-out",
             collapsed ? "w-20" : "w-64"
           )}
           aria-label="Navegación principal"
@@ -276,7 +276,7 @@ export function Sidebar({
           />
           <aside id="dashboard-sidebar-mobile" className="
             fixed inset-y-0 left-0 z-50 w-72
-            bg-sidebar/85 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
+            bg-sidebar/40 dark:bg-sidebar/60 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
             translate-x-0
             pb-[env(safe-area-inset-bottom)]

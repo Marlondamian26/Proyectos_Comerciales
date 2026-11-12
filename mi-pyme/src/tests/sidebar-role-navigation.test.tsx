@@ -94,7 +94,7 @@ describe("role sidebar navigation", () => {
       regularSidebar.getByRole("complementary", {
         name: "Navegación principal",
       }).className
-    ).toContain("bg-sidebar/65");
+    ).toContain("bg-sidebar/40");
     fireEvent.click(
       regularSidebar.getByRole("button", { name: "Abrir menú del panel" })
     );
@@ -102,7 +102,7 @@ describe("role sidebar navigation", () => {
       regularSidebar.getByRole("complementary", {
         name: "Menú móvil del panel",
       }).className
-    ).toContain("bg-sidebar/85");
+    ).toContain("bg-sidebar/60");
     regularSidebar.unmount();
 
     const negocioSidebar = render(<NegocioSidebar mobileOpen />);
@@ -110,9 +110,9 @@ describe("role sidebar navigation", () => {
       negocioSidebar.getByRole("complementary", {
         name: "Navegación del panel de negocio",
       }).className
-    ).toContain("bg-sidebar/65");
+    ).toContain("bg-sidebar/40");
     expect(
       negocioSidebar.container.querySelector("#negocio-sidebar-mobile")?.className
-    ).toContain("bg-sidebar/85");
+    ).toContain("bg-sidebar/60");
   });
 });

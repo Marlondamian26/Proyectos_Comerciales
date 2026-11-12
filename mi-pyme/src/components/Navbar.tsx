@@ -51,8 +51,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-navbar-border bg-navbar/80 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/85"
-          : "border-b border-navbar-border/30 bg-navbar/45 backdrop-blur-lg dark:bg-[var(--color-background)]/65"
+          ? "border-b border-navbar-border bg-navbar/75 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/80"
+          : "border-b border-navbar-border/30 bg-navbar/40 backdrop-blur-lg dark:bg-[var(--color-background)]/60"
       )}
       role="banner"
     >
@@ -229,7 +229,7 @@ function UserMenu({
           src={image}
           name={name}
           size="sm"
-          className="bg-primary text-primary-foreground"
+          className="bg-primary text-white"
         />
         <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
