@@ -1,5 +1,6 @@
 /**
- * Seed reducido de Mi-Pyme (4 negocios representativos con imágenes reales).
+ * Seed de Mi-Pyme (negocios representativos con imágenes reales).
+ * Incluye comida, belleza, ferretería, tecnología y logística/transporte.
  * Idempotente. Mantiene provincias, áreas, admins, clientes y datos mínimos.
  */
 
@@ -41,6 +42,11 @@ const AREAS = [
   { slug: "salud-belleza", nombre: "Salud y Belleza", subareas: [{ slug: "peluqueria", nombre: "Peluquería" }, { slug: "estetica", nombre: "Estética" }] },
   { slug: "aseo-limpieza", nombre: "Aseo y Limpieza", subareas: [{ slug: "detergentes", nombre: "Detergentes" }, { slug: "articulos-limpieza", nombre: "Artículos de limpieza" }] },
   { slug: "tecnologia", nombre: "Tecnología", subareas: [{ slug: "accesorios", nombre: "Accesorios" }, { slug: "telefonia", nombre: "Telefonía" }] },
+  { slug: "logistica-transporte", nombre: "Logística y Transporte", subareas: [
+    { slug: "envio-paquetes", nombre: "Envío de Paquetes" },
+    { slug: "mudanzas", nombre: "Mudanzas" },
+    { slug: "transporte-personas", nombre: "Transporte de Personas" },
+  ] },
 ];
 
 const NEGOCIOS = [
@@ -111,6 +117,46 @@ const NEGOCIOS = [
     ],
     servicios: [],
   },
+  {
+    slug: "carga-rapida-la-habana", nombre: "Carga Rápida La Habana", descripcion: "Envío express de paquetes y mensajería dentro de La Habana y a nivel nacional.",
+    emailPropietario: "negocio.cargarapida@test.com", usernamePropietario: "cargarapida", nombrePropietario: "Ana López",
+    areaSlug: "logistica-transporte", subareaSlug: "envio-paquetes", municipio: "Plaza de la Revolución", provincia: "La Habana",
+    telefono: "559-700700", emailContacto: "contacto@cargarapidahabana.cu", direccionCompleta: "Calle 23 #450, Vedado, La Habana",
+    nit: "CRH-0006-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
+    imagenPortada: "https://images.unsplash.com/photo-1552865440-d6c679331079?w=1200",
+    productos: [],
+    servicios: [
+      { nombre: "Envío Express La Habana", descripcion: "Entrega de paquetes el mismo día en La Habana", duracionMinutos: 120, capacidad: 1, precio: 5, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 5, dimensionesMaximas: "40x30x30 cm", origenBase: "Vedado, La Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","14:00","16:00"], martes:["09:00","11:00","14:00","16:00"], miercoles:["09:00","11:00","14:00","16:00"], jueves:["09:00","11:00","14:00","16:00"], viernes:["09:00","11:00","14:00","16:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600" },
+      { nombre: "Envío Nacional de Paquetes", descripcion: "Envío de paquetes entre provincias de Cuba", duracionMinutos: 4320, capacidad: 1, precio: 15, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 20, dimensionesMaximas: "60x40x40 cm", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1527747439987-03738bc07e67?w=600" },
+    ],
+  },
+  {
+    slug: "mudanzas-centro-habana", nombre: "Mudanzas Centro Habana", descripcion: "Mudanzas de apartamentos, oficinas y traslado de muebles en La Habana.",
+    emailPropietario: "negocio.mudanzas@test.com", usernamePropietario: "mudanzas", nombrePropietario: "Miguel Torres",
+    areaSlug: "logistica-transporte", subareaSlug: "mudanzas", municipio: "Plaza de la Revolución", provincia: "La Habana",
+    telefono: "559-800800", emailContacto: "contacto@mudanzascentro.cu", direccionCompleta: "Calle Galiano #120, Centro Habana",
+    nit: "MCH-0007-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: true,
+    imagenPortada: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200",
+    productos: [],
+    servicios: [
+      { nombre: "Mudanza de Apartamento", descripcion: "Traslado completo de enseres de vivienda", duracionMinutos: 240, capacidad: 1, precio: 60, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 500, dimensionesMaximas: "Camión 3 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1541888946425-d81bb19744c6?w=600" },
+      { nombre: "Mudanza de Oficina", descripcion: "Traslado de equipos y mobiliario de oficina", duracionMinutos: 300, capacidad: 1, precio: 80, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 800, dimensionesMaximas: "Camión 5 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600" },
+      { nombre: "Traslado de Muebles", descripcion: "Transporte de muebles individuales o juegos completos", duracionMinutos: 180, capacidad: 1, precio: 35, tipo: "TRANSPORTE" as const, tipoTransporte: "TRASLADO_MUEBLE" as const, pesoMaximo: 300, dimensionesMaximas: "Furgón 2 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","15:00"], martes:["09:00","11:00","15:00"], miercoles:["09:00","11:00","15:00"], jueves:["09:00","11:00","15:00"], viernes:["09:00","11:00","15:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1556228578-0d85b1c47a59?w=600" },
+    ],
+  },
+  {
+    slug: "transpersona-express", nombre: "TransPersona Express", descripcion: "Transporte de personas: traslados al aeropuerto y viajes interprovinciales.",
+    emailPropietario: "negocio.transpersona@test.com", usernamePropietario: "transpersona", nombrePropietario: "Elena Ramírez",
+    areaSlug: "logistica-transporte", subareaSlug: "transporte-personas", municipio: "Plaza de la Revolución", provincia: "La Habana",
+    telefono: "559-900900", emailContacto: "contacto@transpersona.cu", direccionCompleta: "Avenida de los Presidentes #300, Miramar, La Habana",
+    nit: "TPE-0008-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: false,
+    imagenPortada: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200",
+    productos: [],
+    servicios: [
+      { nombre: "Traslado Aeropuerto", descripcion: "Recogida y traslado desde/hacia el aeropuerto José Martí", duracionMinutos: 60, capacidad: 4, precio: 25, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "Miramar, La Habana", destinoBase: "Aeropuerto José Martí", alcanceNacional: false, horariosDisponibles: { lunes:["06:00","08:00","12:00","16:00","20:00"], martes:["06:00","08:00","12:00","16:00","20:00"], miercoles:["06:00","08:00","12:00","16:00","20:00"], jueves:["06:00","08:00","12:00","16:00","20:00"], viernes:["06:00","08:00","12:00","16:00","20:00"], sabado:["06:00","08:00","12:00","16:00","20:00"], domingo:["06:00","08:00","12:00","16:00","20:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600" },
+      { nombre: "Traslado Interprovincial", descripcion: "Viaje de pasajeros entre provincias de Cuba", duracionMinutos: 480, capacidad: 4, precio: 45, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["07:00","13:00","19:00"], martes:["07:00","13:00","19:00"], miercoles:["07:00","13:00","19:00"], jueves:["07:00","13:00","19:00"], viernes:["07:00","13:00","19:00"], sabado:["07:00","13:00","19:00"], domingo:["07:00","13:00","19:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1533541577387-69819e80cba1?w=600" },
+    ],
+  },
 ];
 
 function horarioServicioGeneral() {
@@ -119,7 +165,7 @@ function horarioServicioGeneral() {
 
 
 async function main() {
-  console.log("🌱 Seed reducido Mi-Pyme (4 negocios)...");
+  console.log("🌱 Seed Mi-Pyme (negocios, servicios, productos y logística)...");
 
   const provinciaMap = new Map<string, string>();
   for (const p of PROVINCIAS) {
@@ -200,8 +246,8 @@ async function main() {
       const sid = `seed-serv-${neg.slug}-${i}`;
       await prisma.servicio.upsert({
         where: { id: sid },
-        update: { nombre: s.nombre, descripcion: s.descripcion, duracionMinutos: s.duracionMinutos, capacidad: s.capacidad, precio: s.precio, imagenUrl: s.imagenUrl, horariosDisponibles: s.horariosDisponibles as Prisma.InputJsonValue, tratamientoIVA: s.tratamientoIVA, activo: true },
-        create: { id: sid, negocioId: negocio.id, subareaId: subarea?.id, nombre: s.nombre, descripcion: s.descripcion, duracionMinutos: s.duracionMinutos, capacidad: s.capacidad, precio: s.precio, imagenUrl: s.imagenUrl, horariosDisponibles: s.horariosDisponibles as Prisma.InputJsonValue, tratamientoIVA: s.tratamientoIVA, activo: true },
+        update: { nombre: s.nombre, descripcion: s.descripcion, duracionMinutos: s.duracionMinutos, capacidad: s.capacidad, precio: s.precio, imagenUrl: s.imagenUrl, horariosDisponibles: s.horariosDisponibles as Prisma.InputJsonValue, tratamientoIVA: s.tratamientoIVA, activo: true, ...(s.tipo ? { tipo: s.tipo as Prisma.TipoServicio } : {}), ...(s.tipoTransporte ? { tipoTransporte: s.tipoTransporte as Prisma.TipoTransporte } : {}), ...(s.pesoMaximo !== undefined ? { pesoMaximo: s.pesoMaximo } : {}), ...(s.dimensionesMaximas !== undefined ? { dimensionesMaximas: s.dimensionesMaximas } : {}), ...(s.origenBase !== undefined ? { origenBase: s.origenBase } : {}), ...(s.destinoBase !== undefined ? { destinoBase: s.destinoBase } : {}), ...(s.alcanceNacional !== undefined ? { alcanceNacional: s.alcanceNacional } : {}) },
+        create: { id: sid, negocioId: negocio.id, subareaId: subarea?.id, nombre: s.nombre, descripcion: s.descripcion, duracionMinutos: s.duracionMinutos, capacidad: s.capacidad, precio: s.precio, imagenUrl: s.imagenUrl, horariosDisponibles: s.horariosDisponibles as Prisma.InputJsonValue, tratamientoIVA: s.tratamientoIVA, activo: true, ...(s.tipo ? { tipo: s.tipo as Prisma.TipoServicio } : {}), ...(s.tipoTransporte ? { tipoTransporte: s.tipoTransporte as Prisma.TipoTransporte } : {}), ...(s.pesoMaximo !== undefined ? { pesoMaximo: s.pesoMaximo } : {}), ...(s.dimensionesMaximas !== undefined ? { dimensionesMaximas: s.dimensionesMaximas } : {}), ...(s.origenBase !== undefined ? { origenBase: s.origenBase } : {}), ...(s.destinoBase !== undefined ? { destinoBase: s.destinoBase } : {}), ...(s.alcanceNacional !== undefined ? { alcanceNacional: s.alcanceNacional } : {}) },
       });
     }
     // horario negocio mínimo (diaSemana: 0=Dom .. 6=Sab, según schema Int)
@@ -211,7 +257,7 @@ async function main() {
     ];
     for (const { diaSemana, activo } of dias) {
       const h = await prisma.horarioNegocio.findFirst({ where: { negocioId: negocio.id, diaSemana } });
-      if (!h) await prisma.horarioNegocio.create({ data: { negocioId: negocio.id, diaSemana, horaInicio: "08:00", horaFin: "18:00", activo } });
+      if (!h) await prisma.horarioNegocio.create({ data: { negocioId: negocio.id, diaSemana, horaApertura: "08:00", horaCierre: "18:00", cerrado: !activo } });
     }
   }
 
@@ -236,8 +282,8 @@ async function main() {
   const counts = await prisma.$transaction([
     prisma.negocio.count(), prisma.producto.count(), prisma.servicio.count(), prisma.user.count(), prisma.pedido.count(),
   ]);
-  console.log(`✅ Seed reducido: ${counts[0]} negocios, ${counts[1]} productos, ${counts[2]} servicios, ${counts[3]} usuarios, ${counts[4]} pedidos`);
-  console.log("Credenciales: admin@mi-pyme.local/12345678, cliente1@test.com/cliente123, negocio.pizzeria@test.com/negocio123");
+  console.log(`✅ Seed Mi-Pyme: ${counts[0]} negocios, ${counts[1]} productos, ${counts[2]} servicios, ${counts[3]} usuarios, ${counts[4]} pedidos`);
+  console.log("Credenciales: admin@mi-pyme.local/12345678, cliente1@test.com/cliente123, negocio.pizzeria@test.com/negocio123, logistica1@test.com/logistica123");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(async () => { await prisma.$disconnect(); });

@@ -117,18 +117,18 @@ describe("Navbar surface", () => {
     const { container } = render(<Navbar />);
     const header = container.querySelector("header");
 
-    expect(header?.className).toMatch(/bg-navbar\/40/);
+    expect(header?.className).toMatch(/bg-navbar\/35/);
     expect(header?.className).toContain("backdrop-blur-lg");
     expect(header?.className).toContain(
-      "dark:bg-[var(--color-background)]/60"
+      "dark:bg-[var(--color-background)]/55"
     );
 
     Object.defineProperty(window, "scrollY", { configurable: true, value: 16 });
     fireEvent.scroll(window);
 
-    expect(header?.className).toContain("bg-navbar/75");
+    expect(header?.className).toContain("bg-navbar/70");
     expect(header?.className).toContain(
-      "dark:bg-[var(--color-background)]/80"
+      "dark:bg-[var(--color-background)]/75"
     );
   });
 
