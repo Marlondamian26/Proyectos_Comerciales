@@ -5,6 +5,20 @@ export async function POST() {
   const cookieStore = await cookies();
 
   const authCookies = [
+    "authjs.session-token",
+    "__Secure-authjs.session-token",
+    "authjs.csrf-token",
+    "__Host-authjs.csrf-token",
+    "authjs.callback-url",
+    "__Secure-authjs.callback-url",
+    "authjs.state",
+    "__Secure-authjs.state",
+    "authjs.pkce.code_verifier",
+    "__Secure-authjs.pkce.code_verifier",
+    "authjs.nonce",
+    "__Secure-authjs.nonce",
+    "authjs.challenge",
+    "__Secure-authjs.challenge",
     "next-auth.session-token",
     "__Secure-next-auth.session-token",
     "next-auth.csrf-token",
@@ -26,8 +40,4 @@ export async function POST() {
   }
 
   return NextResponse.json({ success: true, redirectUrl: "/auth/login" });
-}
-
-export async function GET() {
-  return POST();
 }

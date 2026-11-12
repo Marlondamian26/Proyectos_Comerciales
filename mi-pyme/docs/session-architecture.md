@@ -1,212 +1,128 @@
-# Arquitectura de Sesiones — Mi-Pyme
+# Arquitectura de autenticación y sesiones — Mi-Pyme
 
-Fuente única de verdad para el manejo de sesiones, autenticación e invalidación.
+Este documento describe el comportamiento implementado y comprobable de las
+sesiones. La estrategia sigue siendo JWT; no se usan sesiones persistidas en
+base de datos para autenticar.
 
----
+## Configuración
 
-## 1. Estrategia de sesión
-
-| Aspecto | Decisión | Valor | Archivo |
-|---|---|---|---|
-| Estrategia | JWT | Stateless, serverless-friendly | auth.config.ts:63 |
-| Duración por defecto | 24 horas | `session.maxAge` | auth.config.ts:64 |
-| Duración con "Recordarme" | 30 días | JWT `exp` extendido | auth.config.ts:104-106 |
-| Refresh (updateAge) | 1 hora | `session.updateAge` | auth.config.ts:65 |
-| Cookie `httpOnly` | true | Previene XSS | Default NextAuth |
-| Cookie `secure` | true (producción) | Solo HTTPS | Default NextAuth |
-| Cookie `sameSite` | lax | Balance CSRF/navegación | Default NextAuth |
-| Cookie name | `next-auth.session-token` | Default NextAuth | — |
-| `NEXTAUTH_SECRET` | Obligatorio | Validado en build | validateAuthEnv() |
-
----
-
-## 2. Matriz de estados de sesión
-
-### Estado A — Anónimo (no logueado)
-
-| Contexto | Comportamiento esperado |
+| Aspecto | Comportamiento |
 |---|---|
-| Home `/` | Accesible, navbar con "Iniciar sesión" / "Registrarse" |
-| Catálogo `/catalogo` | Accesible |
-| Servicios `/servicios` | Accesible |
-| Combos `/combos` | Accesible |
-| Transporte `/transporte` | Accesible |
-| Agregar al carrito | Redirige a `/auth/login?callbackUrl=...` |
-| Reservar | Redirige a `/auth/login?callbackUrl=...` |
-| `/cliente` | Redirige a `/auth/login?callbackUrl=/cliente` |
-| `/negocio` | Redirige a `/auth/login?callbackUrl=/negocio` |
-| `/logistica` | Redirige a `/auth/login?callbackUrl=/logistica` |
-| `/admin` | Redirige a `/auth/login?callbackUrl=/admin` |
-| `/perfil` | Redirige a `/auth/login?callbackUrl=/perfil` |
-| `/carrito` | Redirige a `/auth/login?callbackUrl=/carrito` |
-| `/checkout` | Redirige a `/auth/login?callbackUrl=/checkout` |
-| `/notificaciones` | Redirige a `/auth/login?callbackUrl=/notificaciones` |
-| Logout (sin sesión) | Redirige a `/auth/login` |
+| Estrategia | JWT de Auth.js, cifrado por defecto |
+| Duración efectiva sin “Recordarme” | 24 horas desde el inicio de sesión |
+| Duración efectiva con “Recordarme” | 30 días desde el inicio de sesión |
+| Cookie de sesión | Auth.js conserva su cookie segura hasta el máximo configurado de 30 días; el JWT cifrado lleva su propia expiración absoluta (24 horas o 30 días) y no puede renovarla |
+| `session.updateAge` | Configurado a 1 hora; Auth.js solo lo usa para renovar sesiones de base de datos. No extiende ni renueva estos JWT |
+| Cookies | Valores predeterminados de Auth.js: `httpOnly`, `sameSite=lax`, `secure` cuando la URL usa HTTPS |
+| Timeout por inactividad | No implementado. La expiración es absoluta, no deslizante |
+| Secreto | `NEXTAUTH_SECRET` se valida durante la configuración/build de producción |
+| URL de acceso y salida | `/auth/login` |
 
-### Estado B — Logueado (sesión por defecto, 24h)
+`session.maxAge` y `jwt.maxAge` permanecen en 30 días para que Auth.js no
+trunque los JWT con “Recordarme”. `encodeSessionToken` calcula el tiempo
+restante a partir de `sessionExpiresAt`, de modo que Auth.js no reescribe la
+expiración individual a 30 días cuando actualiza la cookie.
 
-| Contexto | Comportamiento esperado |
+## Estados de sesión
+
+| Estado | Acceso y respuesta |
 |---|---|
-| Home `/` | Navbar con avatar, notificaciones, "Cerrar sesión" |
-| Catálogo | Botón "Agregar al carrito" funcional |
-| `/cliente` (rol CLIENTE) | Accesible |
-| `/cliente` (rol NEGOCIO) | Redirige a `/negocio` |
-| `/negocio` (rol NEGOCIO) | Accesible |
-| `/negocio` (rol CLIENTE) | Redirige a `/cliente` |
-| `/logistica` (rol LOGISTICA) | Accesible |
-| `/admin` (rol ADMIN) | Accesible |
-| Logout | Redirige a `/auth/login`, cookies eliminadas |
-| Cambio de password | `sessionVersion` incrementado, redirige a login |
-| Cambio de rol (por admin) | `sessionVersion` incrementado, próximo request falla |
-| Suspensión (por admin) | `isActive: false`, `sessionVersion` incrementado, próximo request falla |
+| **A — Anónimo** | Home, catálogo, servicios, rutas legales y auth son públicas. Cualquier otra ruta de página requiere sesión y redirige a `/auth/login?callbackUrl=...`. |
+| **B — Autenticado** | El home muestra el dashboard correspondiente; el navbar muestra controles de usuario. Las rutas de dashboard aplican sus restricciones de rol y propiedad. |
+| **C — Recordarme** | El JWT expira 30 días después del login. La cookie es persistente; al cerrar el navegador no se pierde la sesión por una cookie de tipo sesión. |
+| **D — Expirado** | Auth.js rechaza el JWT vencido; rutas protegidas redirigen al login y preservan ruta y query en `callbackUrl`. |
+| **E — Invalidado por cambio de cuenta** | `sessionVersion` diferente o usuario inexistente/inactivo invalida la sesión al consultar Auth.js. El callback de sesión falla cerrado si la base de datos no está disponible. |
+| **F — Suspendido o eliminado** | Login rechazado con el mismo resultado externo que credenciales inválidas. Las sesiones existentes dejan de ser válidas al siguiente acceso/consulta de sesión. |
+| **G — Cambio de contraseña obligatorio** | Middleware fuerza `/perfil/cambiar-password`; deja pasar auth, assets y esa página. Tras cambiar la contraseña se incrementa `sessionVersion` y se vuelve a iniciar sesión. |
+| **H — Bloqueo temporal** | Cinco contraseñas incorrectas consecutivas bloquean la cuenta durante 15 minutos. El contador y bloqueo se reinician al vencer el plazo o tras login correcto. |
+| **I — Varias pestañas** | Comparten cookie y Auth.js difunde el evento de salida entre pestañas; una petición posterior a una ruta protegida redirige al login. |
+| **J — Varios dispositivos** | Cada dispositivo conserva su JWT; el incremento de `sessionVersion` invalida los demás en su siguiente consulta autenticada. |
 
-### Estado C — Logueado con "Recordarme" (30 días)
+No existe actualmente una comprobación de sesión cada segundo ni una señal
+push de invalidación. El cierre remoto se hace efectivo en la siguiente
+petición o consulta de sesión, no de forma instantánea mientras un dispositivo
+permanezca inactivo.
 
-| Contexto | Comportamiento esperado |
+## Política de login
+
+`credentialsAuthorize` normaliza el identificador, exige usuario activo y no
+eliminado, y compara la contraseña con bcrypt. Una contraseña incorrecta
+incrementa `failedLoginAttempts` de forma atómica; el quinto fallo establece
+`lockedUntil` a 15 minutos. Los logins bloqueados, usuarios inexistentes,
+cuentas inactivas/eliminadas y contraseñas incorrectas devuelven `null`, que
+el formulario presenta como credenciales inválidas. Los motivos de bloqueo se
+registran internamente; no se exponen al usuario.
+
+El login correcto reinicia los intentos, elimina el bloqueo y actualiza
+`lastLoginAt`. `mustChangePassword` se propaga al JWT para que el middleware
+restrinja navegación.
+
+## Home y redirecciones
+
+El home (`/`) siempre permanece accesible. Para visitantes ofrece “Comenzar
+gratis” y “Explorar catálogo”; para usuarios autenticados ofrece su dashboard
+según rol y el catálogo. El navbar global cambia de enlaces de acceso a avatar,
+notificaciones y logout.
+
+Las rutas no públicas redirigen a `/auth/login` conservando ruta y query en
+`callbackUrl`. Al completar el login, la URL de retorno se limita al mismo
+origen para evitar redirecciones externas.
+
+Roles:
+
+| Ruta | Acceso aplicado |
 |---|---|
-| Todo lo de Estado B | Igual |
-| Cerrar navegador y reabrir | Sesión persiste (cookie JWT con exp 30 días) |
-| Cookie `maxAge` | 30 días |
-| Cookie `exp` | `Date.now() + 30 * 24 * 60 * 60` |
+| `/cliente` | CLIENTE, ADMIN |
+| `/negocio` | NEGOCIO, ADMIN y CLIENTE propietario de negocio |
+| `/logistica` | LOGISTICA, ADMIN |
+| `/admin` | ADMIN |
+| Resto de páginas privadas | Requiere sesión; autorización adicional en layouts, páginas o handlers según el recurso |
+| `/api/*` | El middleware no concede autorización por listar la ruta como pública; cada endpoint conserva su propia comprobación de sesión/rol |
 
-### Estado D — Sesión expirada
+Las denegaciones de rol conservan el destino de dashboard definido para el
+usuario. No se convierte la lista de rutas en sustituto de las comprobaciones
+de autorización de cada acción o API.
 
-| Contexto | Comportamiento esperado |
-|---|---|
-| Acceso a ruta protegida | Redirige a `/auth/login?callbackUrl=...` |
-| Acceso a home | Se ve como anónimo |
-| Acción que requiere sesión | Redirige a login |
+## Invalidación
 
-### Estado E — Sesión invalidada por `sessionVersion`
+`sessionVersion` se incrementa en cambios de contraseña, rol, suspensión y
+eliminación de cuenta. La validación comprueba versión, `isActive` y
+`deletedAt`. El cambio de versión revoca todos los JWT del usuario en la
+siguiente consulta autenticada.
 
-| Contexto | Comportamiento esperado |
-|---|---|
-| Próximo request a ruta protegida | Redirige a `/auth/login` |
-| Próximo request a API | 401 Unauthorized |
-| Sesión en otro dispositivo | También invalidada |
-| Causas | Cambio de password, cambio de rol, suspensión, eliminación |
+El callback de sesión no devuelve una sesión válida si falla la consulta de
+estado en base de datos: registra el error y falla cerrado.
 
-### Estado F — Cuenta suspendida (`isActive: false`)
+## Logout
 
-| Contexto | Comportamiento esperado |
-|---|---|
-| Login | Falla con "Credenciales inválidas" (anti-enumeración) |
-| Sesión existente | Invalidada en próximo request (callbacks.session) |
-| Acceso a home | Accesible como anónimo |
+`LogoutButton` primero usa `signOut` de Auth.js (incluida la difusión a otras
+pestañas) y después llama por POST al endpoint de limpieza, que elimina cookies
+Auth.js actuales y nombres heredados de NextAuth. El endpoint no ofrece GET,
+para que una navegación GET no pueda cerrar la sesión.
 
-### Estado G — Cuenta con `mustChangePassword: true`
+## Pruebas
 
-| Contexto | Comportamiento esperado |
-|---|---|
-| Login | Permite entrar, redirige a `/perfil/cambiar-password` |
-| Navegación | Solo permite `/perfil/cambiar-password`, logout y assets |
-| Tras cambiar password | `mustChangePassword: false`, redirige a login |
-| Acceso a otras rutas | Redirige a `/perfil/cambiar-password` (middleware) |
+- `src/tests/auth-session-lifetime.test.ts`: vencimiento JWT a 24 h y 30 días.
+- `src/tests/auth-login-lockout.test.ts`: bloqueo, reset tras éxito y
+  recuperación tras vencimiento.
+- `src/tests/safe-callback-url.test.ts`: callback same-origin y rechazo de
+  destinos externos.
+- `src/tests/architecture-session.test.ts`: guardas de configuración,
+  redirección y cookies.
+- `e2e/session-route-guard.test.ts`: redirección a login de páginas privadas
+  anónimas, preservación de query string, duración de cookie persistente y
+  limpieza del logout entre pestañas.
+- `tests/session-all-states.e2e.test.mjs`: cobertura E2E preexistente de flujos
+  adicionales; no forma parte del `testDir` `e2e` del Playwright configurado.
 
-### Estado H — Cuenta bloqueada (`lockedUntil > now`)
+## Archivos principales
 
-| Contexto | Comportamiento esperado |
-|---|---|
-| Login | Falla con "Credenciales inválidas" (anti-enumeración) |
-| Bloqueo tras | 5 intentos fallidos consecutivos |
-| Duración del bloqueo | 15 minutos |
-| Desbloqueo | Automático tras `lockedUntil` |
-
-### Estado I — Multi-tab (misma sesión)
-
-| Contexto | Comportamiento esperado |
-|---|---|
-| Login en pestaña A | Pestaña B detecta sesión (comparten cookies) |
-| Logout en pestaña A | Pestaña B detecta y redirige a login en próximo request |
-| Cambio de password en pestaña A | Pestaña B detecta `sessionVersion` mismatch y redirige a login |
-
-### Estado J — Multi-dispositivo
-
-| Contexto | Comportamiento esperado |
-|---|---|
-| Login en dispositivo A | Dispositivo B mantiene sesión independiente (JWT propio) |
-| Cambio de password en A | Dispositivo B pierde sesión (vía `sessionVersion`) |
-| Cambio de rol en admin | Todos los dispositivos del usuario pierden sesión |
-| Suspensión | Todos los dispositivos pierden sesión |
-
----
-
-## 3. Invalidación de sesión
-
-| Evento | Acción | Archivo |
-|---|---|---|
-| Cambio de password | `sessionVersion` incrementado + `mustChangePassword: false` | actions.ts:2300 |
-| Cambio de rol (admin) | `sessionVersion` incrementado | actions.ts:1831, 2541 |
-| Suspensión de cuenta | `isActive: false` + `sessionVersion` incrementado | actions.ts:2438 |
-| Eliminación de cuenta | `deletedAt` + `sessionVersion` incrementado | actions.ts:2438 |
-| Password reset | `sessionVersion` incrementado | api/auth/resetear/route.ts:38 |
-| Logout | Cookies eliminadas + `signOut()` | LogoutButton.tsx, api/auth/logout/route.ts |
-
-Validación en cada refresh del JWT (`trigger === "update"`):
-- `sessionVersion` comparado contra BD
-- `isActive` verificado contra BD
-
----
-
-## 4. Comportamiento del home
-
-El home `/` es **siempre accesible** (logueado o no):
-
-| Estado | Contenido del hero |
-|---|---|
-| Anónimo | "Comenzar gratis" + "Explorar catálogo" |
-| Logueado | Botón "Ir a mi dashboard" (según rol) |
-
-El Navbar se adapta:
-- Sin sesión: "Iniciar sesión" / "Registrarse"
-- Con sesión: Avatar + notificaciones + "Cerrar sesión"
-
----
-
-## 5. Multi-tab y multi-dispositivo
-
-- **Multi-tab**: Comparten cookies del navegador. `useSession` reacciona a cambios en todas las pestañas.
-- **Multi-dispositivo**: Cada dispositivo tiene su propio JWT. La invalidación vía `sessionVersion` afecta a todos al siguiente refresh de token.
-
----
-
-## 6. Redirecciones y `callbackUrl`
-
-| Origen | Destino | `callbackUrl` |
-|---|---|---|
-| Acceso a ruta protegida sin sesión | `/auth/login` | `callbackUrl=<ruta_original>` |
-| Login exitoso | `/cliente` (o `/negocio`, `/admin`, `/logistica`) | Seguir `callbackUrl` si existe |
-| Logout | `/auth/login` | — |
-| `mustChangePassword: true` | `/perfil/cambiar-password` | — |
-| Tras cambiar password | `/auth/login` | — |
-
----
-
-## 7. Reglas de implementación (obligatorias)
-
-1. **`sessionVersion` es la fuente de verdad** para invalidación. Incrementar en: password, rol, suspensión, eliminación.
-2. **Validar `sessionVersion` en `callbacks.jwt`** con `trigger === "update"`.
-3. **Validar `isActive` en `callbacks.jwt`** con `trigger === "update"`.
-4. **`callbackUrl` siempre preservado** en redirecciones a login.
-5. **Anti-enumeración**: mismo mensaje para usuario inexistente, password incorrecta, cuenta inactiva y cuenta bloqueada.
-6. **Tipado estricto**: sin `any`.
-7. **Tests que fallen si el bug vuelve.**
-
----
-
-## 8. Archivos involucrados
-
-| Archivo | Responsabilidad |
-|---|---|
-| `src/lib/auth/auth.config.ts` | Configuración NextAuth: JWT, callbacks, eventos |
-| `src/lib/auth/credentials-authorize.ts` | Lógica de authorize: bcrypt, isActive, bloqueo |
-| `src/lib/auth/requireRole.ts` | Helper de autorización por rol |
-| `src/lib/auth/dashboard-paths.ts` | Redirección por rol post-login |
-| `src/lib/auth/actualizar-last-login.ts` | Actualiza lastLoginAt |
-| `src/middleware.ts` | Protección de rutas por rol y contexto |
-| `src/app/api/auth/logout/route.ts` | Eliminación de cookies en logout |
-| `src/components/LogoutButton.tsx` | Botón de logout cliente |
-| `src/components/Navbar.tsx` | Navbar con `useSession` |
-| `src/app/layout.tsx` | `<SessionProvider>` envuelve todo |
-| `src/app/page.tsx` | Home adaptativo (logueado vs anónimo) |
-| `docs/session-architecture.md` | Este documento |
+- `src/lib/auth/auth.config.ts`: configuración de Auth.js, callbacks y evento
+  de salida.
+- `src/lib/auth/session-token.ts`: límites absolutos y codificación JWT.
+- `src/lib/auth/credentials-authorize.ts`: verificación de credenciales,
+  bloqueo temporal y actualización de último login.
+- `src/middleware.ts`: control de sesión, rutas, rol y cambio obligatorio de
+  contraseña.
+- `src/app/api/auth/logout/route.ts`: limpieza de cookies heredadas.
+- `src/components/LogoutButton.tsx`: salida desde navbar y dashboards.

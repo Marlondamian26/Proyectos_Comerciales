@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signIn, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
+import { getSafeCallbackPath } from "@/lib/auth/safe-callback-url";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { Lock, Eye, EyeOff, AlertCircle, Hash, Check, Home } from "lucide-react";
@@ -54,7 +55,7 @@ export default function LoginPage() {
       const session = await getSession();
       const userRol = session?.user?.rol;
 
-      let redirectUrl = callbackUrl;
+      let redirectUrl = getSafeCallbackPath(callbackUrl, window.location.origin);
       if (callbackUrl === "/" || callbackUrl === "") {
         redirectUrl = userRol ? getDashboardPath(userRol) : "/cliente";
       }
@@ -228,6 +229,7 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
+                    id="rememberMe"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}

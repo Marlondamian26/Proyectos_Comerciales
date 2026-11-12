@@ -69,6 +69,11 @@ accesibilidad deben pasar en light y dark mode para todas las páginas críticas
 > - `/api/admin/*` **siempre** validan rol `ADMIN`.
 > - bcrypt **siempre** 12 rounds (`BCRYPT_ROUNDS`).
 > - `sessionVersion` se incrementa al cambiar password, rol o estado de cuenta.
+> - Los JWT deben llevar `sessionExpiresAt` absoluto: 24 h por defecto y 30 días con `rememberMe`; no depender de `token.exp` modificado antes del encoder de Auth.js.
+> - Los intentos fallidos y `lockedUntil` se actualizan de forma atómica; la respuesta externa de login no distingue cuentas inexistentes, inactivas o bloqueadas.
+> - Las rutas de página privadas redirigen a `/auth/login` conservando ruta y query en `callbackUrl`; el destino posterior al login debe validarse same-origin.
+> - Los callbacks de sesión deben fallar cerrado si no pueden verificar el estado del usuario en la base de datos.
+> - El logout debe usar POST para limpiar cookies Auth.js; no ofrecer mutaciones de sesión por GET.
 > - Normalizar emails/usernames a lowercase.
 >
 > **Tests de arquitectura**: `src/tests/architecture-auth.test.ts` verifica

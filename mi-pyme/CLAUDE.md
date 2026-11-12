@@ -149,6 +149,11 @@ Tests de arquitectura: `src/tests/architecture-search.test.ts`.
 ## Sesiones e invalidación (Prevención de regresiones de sesión)
 
 - **OBLIGATORIO**: incrementar `sessionVersion` al cambiar password, rol o estado de cuenta.
+- **OBLIGATORIO**: emitir JWT con `sessionExpiresAt` absoluto: 24 h por defecto y 30 días con `rememberMe`; no depender de cambiar `token.exp` antes del encoder de Auth.js.
+- **OBLIGATORIO**: aplicar el bloqueo temporal después de intentos fallidos mediante actualización atómica, manteniendo el mismo resultado externo para cuentas inexistentes, inactivas y bloqueadas.
+- **OBLIGATORIO**: preservar ruta y query en `callbackUrl` y validar que el destino post-login sea same-origin.
+- **OBLIGATORIO**: fallar cerrado si la sesión no puede validar el estado de usuario o `sessionVersion` en base de datos.
+- **PROHIBIDO**: cerrar sesión mediante GET; limpiar cookies Auth.js por POST después de `signOut`.
 - **OBLIGATORIO**: validar `sessionVersion` en `callbacks.jwt` con `trigger === "update"`.
 - **OBLIGATORIO**: validar `isActive` en `callbacks.jwt` con `trigger === "update"`.
 - **OBLIGATORIO**: `callbackUrl` preservado en redirecciones a login.

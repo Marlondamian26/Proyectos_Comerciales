@@ -21,31 +21,22 @@ export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
     setLoading(true);
 
     try {
-      // 1. Limpiar cookies del servidor (endpoint propio)
-      await fetch("/api/auth/logout", {
+      // Sign out first so Auth.js can validate CSRF and broadcast the logout.
+      await signOut({ callbackUrl: "/auth/login", redirect: false });
+
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
+      if (!response.ok) {
+        throw new Error(`Cookie cleanup failed with status ${response.status}`);
+      }
 
-      // 2. Cerrar sesión en NextAuth (cliente)
-      await signOut({ callbackUrl: "/auth/login", redirect: false });
-
-      // 3. Navegar al login y forzar refresh de la página
       router.push("/auth/login");
       router.refresh();
-
-      // 4. Fallback: recarga forzada si router.refresh no basta
-      setTimeout(() => {
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
-        }
-      }, 100);
     } catch (error) {
       console.error("[LOGOUT] Error:", error);
-      // Fallback definitivo
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
-      }
+      setLoading(false);
     }
   };
 

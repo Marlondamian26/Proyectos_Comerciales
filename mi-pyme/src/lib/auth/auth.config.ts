@@ -8,6 +8,12 @@ import { Rol } from "@/lib/auth/roles";
 import { logAudit } from "@/services/utils/audit";
 import prisma from "@/lib/db/prisma";
 import type { NextAuthConfig, Session } from "next-auth";
+import {
+  REMEMBERED_SESSION_TTL_SECONDS,
+  decodeSessionToken,
+  encodeSessionToken,
+  getSessionExpiresAt,
+} from "@/lib/auth/session-token";
 
 declare module "next-auth" {
   interface Session {
@@ -29,14 +35,12 @@ declare module "next-auth" {
     mustChangePassword?: boolean;
     sessionVersion?: number;
     rememberMe?: boolean;
+    sessionExpiresAt?: number;
     fotoPerfilUrl?: string | null;
   }
 }
 
 export { credentialsAuthorize } from "@/lib/auth/credentials-authorize";
-
-const THIRTY_DAYS = 30 * 24 * 60 * 60;
-const TWENTY_FOUR_HOURS = 24 * 60 * 60;
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
@@ -52,6 +56,7 @@ export const authOptions: NextAuthConfig = {
       credentials: {
         email: { label: "Email o Usuario", type: "text" },
         password: { label: "Password", type: "password" },
+        rememberMe: { label: "Recordarme", type: "checkbox" },
       },
       async authorize(credentials) {
         return credentialsAuthorize(
@@ -62,17 +67,20 @@ export const authOptions: NextAuthConfig = {
   ],
   session: {
     strategy: "jwt" as const,
-    maxAge: THIRTY_DAYS,
+    maxAge: REMEMBERED_SESSION_TTL_SECONDS,
     updateAge: 60 * 60,
   },
   jwt: {
-    maxAge: THIRTY_DAYS,
+    maxAge: REMEMBERED_SESSION_TTL_SECONDS,
+    encode: encodeSessionToken,
+    decode: decodeSessionToken,
   },
   events: {
     async signOut(message) {
-      const s = message as { session?: { user?: { id?: string } } };
-      const userId = s?.session?.user?.id;
-      if (userId) {
+      const userId = "token" in message
+        ? message.token?.id
+        : message.session?.userId;
+      if (typeof userId === "string" && userId.length > 0) {
         await logAudit("LOGOUT", userId, userId, {});
       }
     },
@@ -98,12 +106,28 @@ export const authOptions: NextAuthConfig = {
           (user as { rememberMe?: boolean }).rememberMe
         );
       }
+      if (user) {
+        token.sessionExpiresAt = getSessionExpiresAt(
+          Boolean((user as { rememberMe?: boolean }).rememberMe)
+        );
+      } else if (typeof token.sessionExpiresAt !== "number") {
+        const issuedAt = typeof token.iat === "number"
+          ? token.iat
+          : Math.floor(Date.now() / 1000);
+        token.sessionExpiresAt = getSessionExpiresAt(
+          Boolean(token.rememberMe),
+          issuedAt
+        );
+      }
       if (user && "fotoPerfilUrl" in user) {
         token.fotoPerfilUrl = (user as { fotoPerfilUrl?: string | null }).fotoPerfilUrl ?? null;
       }
 
-      if (user && !token.rememberMe) {
-        token.exp = Math.floor(Date.now() / 1000) + TWENTY_FOUR_HOURS;
+      if (
+        typeof token.sessionExpiresAt !== "number" ||
+        token.sessionExpiresAt <= Math.floor(Date.now() / 1000)
+      ) {
+        return null;
       }
 
       // En cada refresh del token (trigger === "update"), validar sessionVersion e isActive
@@ -114,13 +138,14 @@ export const authOptions: NextAuthConfig = {
           select: {
             sessionVersion: true,
             isActive: true,
+            deletedAt: true,
             rol: true,
             fotoPerfilUrl: true,
             mustChangePassword: true,
           },
         });
 
-        if (!dbUser || !dbUser.isActive) {
+        if (!dbUser || !dbUser.isActive || dbUser.deletedAt) {
           return null; // Invalidar sesión: usuario inactivo o eliminado
         }
 
@@ -153,11 +178,12 @@ export const authOptions: NextAuthConfig = {
             select: {
               sessionVersion: true,
               isActive: true,
+              deletedAt: true,
               fotoPerfilUrl: true,
             },
           });
 
-          if (!dbUser || !dbUser.isActive) {
+          if (!dbUser || !dbUser.isActive || dbUser.deletedAt) {
             return null as unknown as Session;
           }
 
@@ -173,7 +199,7 @@ export const authOptions: NextAuthConfig = {
           session.user.image = dbUser.fotoPerfilUrl;
         } catch (error) {
           console.error("Error in session callback:", error);
-          return session;
+          return null as unknown as Session;
         }
       }
 

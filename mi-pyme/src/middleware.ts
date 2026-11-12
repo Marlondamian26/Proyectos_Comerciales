@@ -51,16 +51,11 @@ export async function middleware(req: NextRequest) {
     }
 
     if (!session) {
-      const shouldRedirectToLogin = [
-        "/cliente",
-        "/negocio",
-        "/logistica",
-        "/admin",
-      ].some((route) => isPathUnder(pathname, route));
-
-      const targetUrl = shouldRedirectToLogin ? "/auth/login" : "/auth/registro";
-      const authUrl = new URL(targetUrl, req.url);
-      authUrl.searchParams.set("callbackUrl", pathname);
+      const authUrl = new URL("/auth/login", req.url);
+      authUrl.searchParams.set(
+        "callbackUrl",
+        `${pathname}${nextUrl.search}`
+      );
       return NextResponse.redirect(authUrl);
     }
 
@@ -101,16 +96,16 @@ export async function middleware(req: NextRequest) {
   } catch (err) {
     console.error("Proxy error:", err);
     const pathname = req.nextUrl.pathname;
-    if (
-      ["/cliente", "/negocio", "/logistica", "/admin"].some((route) =>
-        isPathUnder(pathname, route)
-      )
-    ) {
-      const loginUrl = new URL("/auth/login", req.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+    if (pathname === "/" || publicPaths.some((path) => isPathUnder(pathname, path))) {
+      return NextResponse.next();
     }
-    return NextResponse.next();
+
+    const loginUrl = new URL("/auth/login", req.url);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${pathname}${req.nextUrl.search}`
+    );
+    return NextResponse.redirect(loginUrl);
   }
 }
 
