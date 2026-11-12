@@ -199,10 +199,6 @@ export default async function HomePage({
             </div>
           </div>
         </div>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-32 backdrop-blur-md bg-gradient-to-b from-transparent to-[var(--color-background)] sm:h-40"
-        />
       </section>
 
       {/* Sort Bar */}
@@ -213,7 +209,6 @@ export default async function HomePage({
           </Suspense>
         </div>
       </section>
-      <div className="section-divider" />
 
       {/* Servicios Populares */}
       <section className="py-16 sm:py-24">
