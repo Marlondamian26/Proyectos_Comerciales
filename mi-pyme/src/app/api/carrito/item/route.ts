@@ -7,7 +7,7 @@ import prisma from "@/lib/db/prisma";
 
 export async function DELETE(request: Request) {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
 
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get("itemId");
@@ -33,7 +33,7 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
 
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get("itemId");

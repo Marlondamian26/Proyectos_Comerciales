@@ -38,23 +38,20 @@ const testPages = [
 
 const themes = ["light", "dark"];
 
+async function setThemeBeforeNavigation(page, theme) {
+  await page.addInitScript((selectedTheme) => {
+    localStorage.setItem("mi-pyme-theme", selectedTheme);
+    document.cookie = `mi-pyme-theme=${selectedTheme}; path=/`;
+  }, theme);
+}
+
 for (const testPage of testPages) {
   for (const theme of themes) {
     test(`${testPage.name} - ${theme} mode accessibility`, async ({ page }) => {
+      await setThemeBeforeNavigation(page, theme);
       await page.goto(testPage.path);
       await page.waitForLoadState("networkidle");
-
-      if (theme === "dark") {
-        await page.evaluate(() => {
-          document.documentElement.setAttribute("data-theme", "dark");
-        });
-      } else {
-        await page.evaluate(() => {
-          document.documentElement.setAttribute("data-theme", "light");
-        });
-      }
-
-      await page.waitForTimeout(100);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
 
       const accessibilityScanResults = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
@@ -262,15 +259,12 @@ test("keyboard navigation", async ({ page }) => {
 });
 
 test("ThemeToggle - dark mode text color contrast", async ({ page }) => {
+  await setThemeBeforeNavigation(page, "dark");
   await page.goto("/");
   await page.waitForLoadState("networkidle");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
-  await page.evaluate(() => {
-    document.documentElement.setAttribute("data-theme", "dark");
-  });
-  await page.waitForTimeout(100);
-
-  const themeToggle = page.locator("[data-testid='theme-toggle']");
+  const themeToggle = page.locator("[data-testid='theme-toggle']").first();
   await expect(themeToggle).toBeVisible();
 
   const accessibilityScanResults = await new AxeBuilder({ page })
@@ -283,13 +277,10 @@ test("ThemeToggle - dark mode text color contrast", async ({ page }) => {
 });
 
 test("ThemeToggle - light mode text color contrast", async ({ page }) => {
+  await setThemeBeforeNavigation(page, "light");
   await page.goto("/");
   await page.waitForLoadState("networkidle");
-
-  await page.evaluate(() => {
-    document.documentElement.setAttribute("data-theme", "light");
-  });
-  await page.waitForTimeout(100);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
   const accessibilityScanResults = await new AxeBuilder({ page })
     .withTags(["cat.color"])
@@ -320,14 +311,11 @@ test("DisponibilidadBadge - all variants color contrast", async ({ page }) => {
 });
 
 test("color contrast - all text dark mode", async ({ page }) => {
+  await setThemeBeforeNavigation(page, "dark");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.waitForLoadState("networkidle");
-
-  await page.evaluate(() => {
-    document.documentElement.setAttribute("data-theme", "dark");
-  });
-  await page.waitForTimeout(100);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
   const accessibilityScanResults = await new AxeBuilder({ page })
     .withTags(["cat.color"])

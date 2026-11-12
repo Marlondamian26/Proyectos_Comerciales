@@ -51,8 +51,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-navbar-border bg-navbar/85 backdrop-blur-xl shadow-sm"
-          : "border-b border-navbar-border/30 bg-navbar/50 backdrop-blur-lg"
+          ? "border-b border-navbar-border bg-navbar/85 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/90"
+          : "border-b border-navbar-border/30 bg-navbar/50 backdrop-blur-lg dark:bg-[var(--color-background)]/70"
       )}
       role="banner"
     >

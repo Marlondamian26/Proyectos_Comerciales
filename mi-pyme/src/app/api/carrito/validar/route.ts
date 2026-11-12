@@ -6,7 +6,7 @@ import { validarCarritoAction } from "@/lib/actions";
 
 export async function GET() {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    await requireRole([Rol.CLIENTE, Rol.ADMIN]);
     const result = await validarCarritoAction();
     return NextResponse.json(result);
   } catch (err: unknown) {

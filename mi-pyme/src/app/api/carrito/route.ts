@@ -21,7 +21,7 @@ function handleError(err: unknown) {
 
 export async function GET() {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
 
     const carrito = await obtenerCarrito(session.id);
     return NextResponse.json(carrito);
@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
 
     const body = await request.json();
     const carrito = await anadirItemCarrito(session.id, body);
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
 
     await vaciarCarrito(session.id);
     return NextResponse.json({ status: "Carrito vaciado" });

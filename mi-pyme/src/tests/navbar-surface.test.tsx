@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Navbar } from "@/components/Navbar";
@@ -105,6 +105,17 @@ describe("Navbar surface", () => {
 
     expect(header?.className).toMatch(/bg-navbar\/50/);
     expect(header?.className).toContain("backdrop-blur-lg");
+    expect(header?.className).toContain(
+      "dark:bg-[var(--color-background)]/70"
+    );
+
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 16 });
+    fireEvent.scroll(window);
+
+    expect(header?.className).toContain("bg-navbar/85");
+    expect(header?.className).toContain(
+      "dark:bg-[var(--color-background)]/90"
+    );
   });
 
   it("does not duplicate the root navbar in the public home page", async () => {

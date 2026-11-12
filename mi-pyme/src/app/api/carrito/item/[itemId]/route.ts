@@ -30,7 +30,7 @@ export async function PATCH(
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
     const { itemId } = await params;
 
     const body = await request.json();
@@ -95,7 +95,7 @@ export async function DELETE(
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const session = await requireRole([Rol.CLIENTE]);
+    const session = await requireRole([Rol.CLIENTE, Rol.ADMIN]);
     const { itemId } = await params;
 
     await eliminarItemCarrito(itemId, session.id);
