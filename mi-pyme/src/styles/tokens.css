@@ -18,22 +18,16 @@
   --color-surface-base: var(--color-surface);
   --color-surface-raised: var(--color-surface-elevated);
   --color-surface-overlay: var(--color-overlay);
-  --color-surface-sunken: var(--color-surface-sunken);
-  --color-surface-inverse: var(--color-surface-inverse, #111827);
+  --color-surface-inverse: #111827;
 
   /* Texto semántico */
-  --color-text-primary: var(--color-text-primary);
-  --color-text-secondary: var(--color-text-secondary);
   --color-text-tertiary: var(--color-text-muted);
   --color-text-disabled: var(--color-border-strong);
-  --color-text-inverse: var(--color-text-inverse);
   --color-text-link: var(--color-primary);
   --color-text-link-hover: var(--color-primary-600, var(--color-primary));
 
   /* Bordes semánticos */
-  --color-border-subtle: var(--color-border-subtle);
   --color-border-default: var(--color-border);
-  --color-border-strong: var(--color-border-strong);
   --color-border-focus: var(--color-ring);
 
   /* Interactivos */
@@ -112,8 +106,6 @@
   --shadow-subtle: var(--shadow-sm);
   --shadow-medium: var(--shadow-md);
   --shadow-strong: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-focus: var(--shadow-focus);
 
   /* ===== MOTIÓN ===== */
   --duration-fast: 100ms;
@@ -153,8 +145,6 @@
   --shadow-subtle: var(--shadow-sm);
   --shadow-medium: var(--shadow-md);
   --shadow-strong: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-focus: var(--shadow-focus);
 }
 
 /* Sistema de preferencias de movimiento reducido */

@@ -556,7 +556,7 @@ export default async function HomePage({
                     w-full sm:w-auto
                     h-12 px-6
                     rounded-lg
-                    bg-white text-primary
+                    bg-[var(--color-text-inverse)] text-primary
                     font-semibold
                     hover:bg-white/95
                     active:scale-[0.98]

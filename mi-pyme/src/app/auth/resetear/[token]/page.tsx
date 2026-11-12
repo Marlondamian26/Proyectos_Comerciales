@@ -4,7 +4,6 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { validarPassword } from "@/lib/auth/password-policy";
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 
@@ -84,9 +83,6 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 animate-gradient" />
         <div className="w-full max-w-md relative z-10">
-          <div className="mb-4 flex justify-end">
-            <ThemeToggle />
-          </div>
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl flex flex-col items-center justify-center">
             <Loading size="lg" />
             <p className="text-sm text-muted-foreground mt-4">Validando token...</p>
@@ -101,9 +97,6 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 via-background to-destructive/5" />
         <div className="w-full max-w-md relative z-10 animate-fade-in-up">
-          <div className="mb-4 flex justify-end">
-            <ThemeToggle />
-          </div>
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
               <AlertCircle className="h-8 w-8 text-destructive" />
@@ -126,9 +119,6 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-success/5 via-background to-success/5" />
         <div className="w-full max-w-md relative z-10 text-center animate-scale-in">
-          <div className="mb-4 flex justify-end">
-            <ThemeToggle />
-          </div>
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
               <CheckCircle className="h-8 w-8 text-success" />
@@ -168,12 +158,11 @@ export default function ResetearPage({ params }: { params: Promise<{ token: stri
 
       <div className="w-full max-w-md relative z-10 animate-fade-in-up">
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl">
-          <div className="mb-8 flex items-start justify-between gap-4">
+          <div className="mb-8">
             <div>
               <h2 className="text-2xl font-bold text-foreground">Nueva contraseña</h2>
               <p className="text-muted-foreground mt-2">Ingresa tu nueva contraseña</p>
             </div>
-            <ThemeToggle />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

@@ -7,6 +7,7 @@
 ```
 src/styles/theme.ts      → Tokens como TypeScript (documentación + tipado)
 src/app/globals.css      → Variables CSS (`@theme inline` para light, `[data-theme="dark"]` y `@media (prefers-color-scheme: dark)` para dark)
+src/styles/tokens.css    → Alias semánticos sobre los tokens base (sin redefinir un token apuntándolo a sí mismo)
 tailwind.config.ts       → Mapea variables CSS a utilidades Tailwind
 src/components/ui/        → Componentes que consumen los tokens
 ```

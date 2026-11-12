@@ -240,6 +240,25 @@ describe("ThemeToggle", () => {
     expect(button).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("uses unique accessible control IDs when multiple toggles are rendered", () => {
+    const { getAllByRole } = render(
+      <ThemeProvider>
+        <>
+          <ThemeToggle />
+          <ThemeToggle compact />
+        </>
+      </ThemeProvider>
+    );
+
+    const themeButtons = getAllByRole("button", { name: /Cambiar a modo oscuro/i });
+    const descriptionIds = themeButtons.map((button) =>
+      button.getAttribute("aria-describedby")
+    );
+
+    expect(new Set(descriptionIds).size).toBe(2);
+    expect(descriptionIds.every((id) => id && document.getElementById(id))).toBe(true);
+  });
+
   it("toggles theme on button click", async () => {
     render(
       <ThemeProvider>

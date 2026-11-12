@@ -58,7 +58,7 @@ const COLOR_POR_CATEGORIA: Record<string, string> = {
 export function NotificacionBadge({ tipo, className, size = "md" }: NotificacionBadgeProps) {
   const Icono = ICONO_POR_TIPO[tipo] ?? Bell;
   const categoria = CATEGORIA_NOTIFICACION[tipo] ?? "sistema";
-  const colorClase = COLOR_POR_CATEGORIA[categoria] ?? "text-gray-500";
+  const colorClase = COLOR_POR_CATEGORIA[categoria] ?? "text-muted-foreground";
   const sizeClase = size === "sm" ? "h-3 w-3" : "h-4 w-4";
 
   return (

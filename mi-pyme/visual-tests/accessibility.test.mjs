@@ -77,6 +77,22 @@ test("theme toggle accessibility", async ({ page }) => {
   expect(accessibilityScanResults.violations).toEqual([]);
 });
 
+test("global navbar and footer render on mobile authentication pages", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/auth/login");
+
+  const mobileActions = page.locator("[data-testid='navbar-mobile-actions']");
+  await expect(page.getByRole("banner")).toBeVisible();
+  await expect(mobileActions).toBeVisible();
+  await expect(mobileActions.locator("[data-testid='theme-toggle']")).toBeVisible();
+
+  const footer = page.locator("footer");
+  await expect(footer).toContainText("Todos los derechos reservados");
+  await expect(footer.locator('a[href="/privacidad"]')).toBeVisible();
+  await expect(footer.locator('a[href="/terminos"]')).toBeVisible();
+  await expect(footer.locator('a[href="/devoluciones"]')).toBeVisible();
+});
+
 test("modal focus trap", async ({ page }) => {
   await page.goto("/perfil");
   await page.waitForLoadState("networkidle");
@@ -304,6 +320,7 @@ test("DisponibilidadBadge - all variants color contrast", async ({ page }) => {
 });
 
 test("color contrast - all text dark mode", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.waitForLoadState("networkidle");
 

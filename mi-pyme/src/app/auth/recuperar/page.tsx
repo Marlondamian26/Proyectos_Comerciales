@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function RecuperarPage() {
@@ -83,9 +82,6 @@ export default function RecuperarPage() {
       <div className="w-full max-w-md relative z-10 animate-fade-in-up">
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border p-8 shadow-xl">
           <div className="mb-8">
-            <div className="mb-4 flex justify-end">
-              <ThemeToggle />
-            </div>
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-xl bg-primary/10 text-primary mb-6">
                 <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

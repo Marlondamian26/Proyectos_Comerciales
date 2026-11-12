@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/components/ThemeProvider";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const buttonId = useId();
   const isDark = resolvedTheme === "dark";
 
   const labels = {
@@ -34,15 +35,20 @@ export function ThemeToggle() {
   return (
     <div className="relative inline-flex" data-testid="theme-toggle">
       <Button
-        id="theme-toggle-button"
+        id={`${buttonId}-button`}
         type="button"
         variant="ghost"
         size="sm"
         onClick={() => setTheme(isDark ? "light" : "dark")}
-        className="gap-2 min-w-[7.5rem] justify-start text-muted-foreground hover:text-foreground transition-colors duration-200"
+        className={cn(
+          "text-muted-foreground hover:text-foreground transition-colors duration-200",
+          compact
+            ? "h-11 w-11 min-w-11 justify-center px-0"
+            : "gap-2 min-w-[7.5rem] justify-start"
+        )}
         aria-label={currentLabel}
         aria-pressed={theme === "dark"}
-        aria-describedby="theme-toggle-description"
+        aria-describedby={`${buttonId}-description`}
         title={currentLabel}
       >
         {theme === "dark" ? (
@@ -52,11 +58,13 @@ export function ThemeToggle() {
         ) : (
           <Monitor className="h-4 w-4 transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
         )}
-        <span className="truncate">{isDark ? "Oscuro" : theme === "light" ? "Claro" : "Sistema"}</span>
+        <span className={cn("truncate", compact && "sr-only")}>
+          {isDark ? "Oscuro" : theme === "light" ? "Claro" : "Sistema"}
+        </span>
       </Button>
 
       <div
-        id="theme-toggle-description"
+        id={`${buttonId}-description`}
         className="sr-only"
         aria-live="polite"
         aria-atomic="true"
@@ -65,10 +73,11 @@ export function ThemeToggle() {
       </div>
 
       <ThemeDropdown
-        buttonId="theme-toggle-button"
+        buttonId={`${buttonId}-button`}
         currentTheme={theme}
         options={options}
         onSelect={setTheme}
+        compact={compact}
       />
     </div>
   );
@@ -79,11 +88,13 @@ function ThemeDropdown({
   currentTheme,
   options,
   onSelect,
+  compact,
 }: {
   buttonId: string;
   currentTheme: "light" | "dark" | "system";
   options: Array<{ value: "light" | "dark" | "system"; label: string; icon: React.ReactNode; description: string }>;
   onSelect: (theme: "light" | "dark" | "system") => void;
+  compact: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -124,7 +135,10 @@ function ThemeDropdown({
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="gap-1 p-1.5 hover:bg-muted rounded-r-lg"
+        className={cn(
+          "gap-1 p-1.5 hover:bg-muted rounded-r-lg",
+          compact && "h-11 w-11 rounded-lg p-0"
+        )}
         aria-label="Opciones de tema"
         aria-expanded={isOpen}
         aria-controls={`${buttonId}-dropdown`}

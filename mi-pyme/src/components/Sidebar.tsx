@@ -185,7 +185,7 @@ export function Sidebar({
       <div className="relative hidden lg:block">
         <aside
           className={cn(
-            "flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
+            "flex flex-col flex-shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out",
             collapsed ? "w-20" : "w-64"
           )}
           aria-label="Navegación principal"
@@ -211,11 +211,11 @@ export function Sidebar({
 
         {/* Botón de toggle - fuera del sidebar, al lado derecho */}
         <button
+          type="button"
           onClick={toggle}
           className={cn(
-            "absolute top-6 z-10 h-10 w-10 rounded-full",
-            collapsed ? "left-[2.5rem]" : "left-[16rem]",
-            "bg-background border border-border shadow-sm",
+            "absolute left-full top-6 z-10 h-10 w-10 -translate-x-1/2 rounded-full transition-transform",
+            "bg-sidebar border border-sidebar-border shadow-sm",
             "flex items-center justify-center",
             "hover:bg-surface-raised",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -291,7 +291,7 @@ function NavItem({
         href={item.href}
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
-          "hover:bg-muted hover:text-foreground dark:hover:bg-white dark:hover:text-secondary-300",
+          "hover:bg-sidebar-item-hover hover:text-foreground",
           isActive
             ? "bg-muted text-foreground"
             : "text-muted-foreground",
@@ -300,7 +300,13 @@ function NavItem({
         aria-current={isActive ? "page" : undefined}
         aria-label={collapsed ? item.label : undefined}
       >
-        <span className="flex-shrink-0" aria-hidden="true">
+        <span
+          className={cn(
+            "flex-shrink-0 text-sidebar-icon group-hover:text-foreground",
+            isActive && "text-sidebar-icon-active"
+          )}
+          aria-hidden="true"
+        >
           {item.icon}
         </span>
         {!collapsed && <span className="truncate">{item.label}</span>}

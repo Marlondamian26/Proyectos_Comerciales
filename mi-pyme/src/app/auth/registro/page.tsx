@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { validarPassword } from "@/lib/auth/password-policy";
 import { registrarUsuario } from "@/lib/actions";
 import {
@@ -211,12 +210,11 @@ export default function RegistroPage() {
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
-            <div className="mb-8 flex items-start justify-between gap-4">
+            <div className="mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Crea tu cuenta</h2>
                 <p className="text-muted-foreground mt-2">Completa el formulario para registrarte</p>
               </div>
-              <ThemeToggle />
             </div>
 
             {/* Volver al inicio button */}

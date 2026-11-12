@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Lock, Eye, EyeOff, AlertCircle, Hash, Check, Home } from "lucide-react";
 
 export default function LoginPage() {
@@ -148,13 +147,10 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
-            <div className="mb-8 flex items-start justify-between gap-4">
+            <div className="mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Bienvenido de nuevo</h2>
                 <p className="text-muted-foreground mt-2">Inicia sesion en tu cuenta</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <ThemeToggle />
               </div>
             </div>
 

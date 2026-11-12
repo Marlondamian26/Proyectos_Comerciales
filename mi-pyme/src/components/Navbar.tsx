@@ -47,8 +47,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-border bg-background/95 backdrop-blur-xl shadow-sm dark:bg-background/95 dark:border-border"
-          : "border-b border-border/30 bg-background/70 backdrop-blur-md dark:bg-background/80 dark:border-border/50"
+          ? "border-b border-navbar-border bg-navbar/95 backdrop-blur-xl shadow-sm"
+          : "border-b border-navbar-border/30 bg-navbar/70 backdrop-blur-md"
       )}
       role="banner"
     >
@@ -79,7 +79,7 @@ export function Navbar({ userRol }: NavbarProps) {
           </div>
         )}
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 md:flex" data-testid="navbar-desktop-actions">
           <ThemeToggle />
           {session ? (
             <>
@@ -105,15 +105,18 @@ export function Navbar({ userRol }: NavbarProps) {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
-          aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={mobileMenuOpen}
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden" data-testid="navbar-mobile-actions">
+          <ThemeToggle compact />
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </nav>
 
       {mobileMenuOpen && (
@@ -137,7 +140,6 @@ export function Navbar({ userRol }: NavbarProps) {
             </nav>
             <div className="flex items-center justify-between gap-2 border-t border-border pt-4">
               <div className="flex items-center gap-2">
-                <ThemeToggle />
                 <NotificacionBell />
               </div>
               {session ? (

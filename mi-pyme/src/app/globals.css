@@ -72,6 +72,13 @@
   --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-text-primary);
   --color-input: var(--color-border);
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-item-hover: var(--color-muted);
+  --color-sidebar-icon: var(--color-text-secondary);
+  --color-sidebar-icon-active: var(--color-primary);
+  --color-navbar: var(--color-background);
+  --color-navbar-border: var(--color-border);
 
   --color-success: #16A34A;
   --color-success-100: #DCFCE7;
