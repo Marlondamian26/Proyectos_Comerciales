@@ -46,7 +46,7 @@ export function Navbar({ userRol }: NavbarProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
+        "sticky top-0 z-[60] w-full transition-all duration-300 ease-out",
         scrolled
           ? "border-b border-navbar-border bg-navbar/70 backdrop-blur-xl shadow-sm dark:bg-[var(--color-background)]/75"
           : "border-b border-navbar-border/30 bg-navbar/35 backdrop-blur-lg dark:bg-[var(--color-background)]/55"
