@@ -37,17 +37,15 @@ describe("DashboardChrome", () => {
 
   it("shows role navigation and dashboard actions on shared protected views", () => {
     routeState.pathname = "/pedidos";
-    const { getByTestId, getByRole } = render(
+    const { getByTestId, queryByTestId } = render(
       <DashboardChrome userRol="CLIENTE">
         <div>Pedidos</div>
       </DashboardChrome>
     );
 
     expect(getByTestId("role-sidebar")).toBeInTheDocument();
-    expect(getByTestId("dashboard-toolbar")).toContainElement(
-      getByTestId("back-to-home")
-    );
-    expect(getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+    expect(queryByTestId("dashboard-toolbar")).not.toBeInTheDocument();
+    expect(queryByTestId("back-to-home")).not.toBeInTheDocument();
   });
 
   it("uses the business navigation on business dashboard routes", () => {
@@ -90,14 +88,14 @@ describe("DashboardChrome", () => {
 
   it("shows role navigation and dashboard actions on the sidebar's catalog view", () => {
     routeState.pathname = "/catalogo";
-    const { getByTestId, getByRole } = render(
+    const { getByTestId, queryByTestId } = render(
       <DashboardChrome userRol="CLIENTE">
         <div>Catálogo</div>
       </DashboardChrome>
     );
 
     expect(getByTestId("role-sidebar")).toBeInTheDocument();
-    expect(getByTestId("back-to-home")).toHaveAttribute("href", "/");
-    expect(getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+    expect(queryByTestId("back-to-home")).not.toBeInTheDocument();
+    expect(queryByTestId("dashboard-toolbar")).not.toBeInTheDocument();
   });
 });

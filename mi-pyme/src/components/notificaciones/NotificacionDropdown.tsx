@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { NotificacionItem } from "./NotificacionItem";
 import { Button } from "@/components/ui/Button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import type { Notificacion } from "@/generated/prisma/client";
 
@@ -29,10 +30,18 @@ export function NotificacionDropdown({
   onClose,
 }: NotificacionDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         onClose();
       }
     };
@@ -44,15 +53,39 @@ export function NotificacionDropdown({
 
   if (!open) return null;
 
-  return (
+  const panel = (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 z-50 w-80 max-w-sm rounded-md border bg-popover text-popover-foreground shadow-lg"
-      role="menu"
-      aria-orientation="vertical"
+      data-notification-panel
+      role="dialog"
+      aria-modal="true"
       aria-label="Notificaciones recientes"
+      className="
+        fixed z-[60]
+        top-auto
+        w-[calc(100vw-2rem)]
+        max-w-sm
+        sm:max-w-md
+        max-h-[calc(100vh-5rem)]
+        overflow-y-auto
+        bg-popover
+        border
+        border-border
+        rounded-lg
+        shadow-xl
+        sm:absolute
+        sm:right-0
+        sm:top-full
+        sm:mt-2
+        sm:inset-x-auto
+      "
+      style={{
+        position: "fixed",
+        top: "auto",
+        ...(mounted ? {} : {}),
+      }}
     >
-      <div className="flex items-center justify-between p-3 border-b">
+      <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-popover z-10">
         <h3 className="font-semibold text-sm">Notificaciones</h3>
         {noLeidas > 0 && (
           <Button
@@ -64,11 +97,18 @@ export function NotificacionDropdown({
             Marcas todas
           </Button>
         )}
+        <button
+          onClick={onClose}
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-muted hover:text-foreground"
+          aria-label="Cerrar notificaciones"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="max-h-80 overflow-y-auto">
+      <div className="p-4">
         {notificaciones.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground text-center">
+          <p className="text-sm text-muted-foreground text-center">
             No tienes notificaciones.
           </p>
         ) : (
@@ -86,7 +126,7 @@ export function NotificacionDropdown({
         )}
       </div>
 
-      <div className="p-2 border-t">
+      <div className="p-2 border-t border-border">
         <Link
           href="/notificaciones"
           onClick={onClose}
@@ -98,6 +138,6 @@ export function NotificacionDropdown({
       </div>
     </div>
   );
-}
 
-NotificacionDropdown.displayName = "NotificacionDropdown";
+  return mounted ? createPortal(panel, document.body) : null;
+}

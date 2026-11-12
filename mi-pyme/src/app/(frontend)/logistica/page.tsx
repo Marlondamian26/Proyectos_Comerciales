@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { RegistroNotification } from "@/components/RegistroNotification";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import {
   Truck,
   Package,
@@ -50,6 +51,7 @@ export default async function Page() {
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                 {userRol ?? "LOGISTICA"}
               </span>
+              <PageBackButton rol="LOGISTICA" />
             </div>
           </div>
         </div>

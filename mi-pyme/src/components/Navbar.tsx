@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { Rol } from "@/lib/auth/roles";
-import { isDashboardNavigationRoute } from "@/lib/navigation/dashboard-routes";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
@@ -34,7 +33,6 @@ export function Navbar({ userRol }: NavbarProps) {
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
   const pathname = usePathname();
-  const isDashboard = isDashboardNavigationRoute(pathname);
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
   const userImage =
     session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
@@ -92,9 +90,8 @@ export function Navbar({ userRol }: NavbarProps) {
                 name={userName}
                 image={userImage}
                 userRol={userRol}
-                showLogout={!isDashboard}
+                showLogout={true}
               />
-              {!isDashboard && <LogoutButton />}
             </>
           ) : (
             <>
@@ -161,9 +158,8 @@ export function Navbar({ userRol }: NavbarProps) {
                     name={userName}
                     image={userImage}
                     userRol={userRol}
-                    showLogout={!isDashboard}
+                    showLogout={true}
                   />
-                  {!isDashboard && <LogoutButton variant="mobile" />}
                 </>
               ) : (
                 <>

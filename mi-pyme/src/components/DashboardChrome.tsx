@@ -6,8 +6,6 @@ import { Rol } from "@/lib/auth/roles";
 import { isDashboardNavigationRoute } from "@/lib/navigation/dashboard-routes";
 import { Sidebar } from "@/components/Sidebar";
 import { NegocioMobileDrawer } from "@/components/negocio/NegocioMobileDrawer";
-import { BackToHome } from "@/components/ui/BackToHome";
-import { LogoutButton } from "@/components/LogoutButton";
 
 interface DashboardChromeProps {
   children: ReactNode;
@@ -42,17 +40,8 @@ export function DashboardChrome({ children, userRol }: DashboardChromeProps) {
       ) : (
         <Sidebar key={pathname} userRol={userRol} />
       )}
-      <div className="min-w-0 flex-1">
-        <div
-          className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 pl-16 sm:px-6 sm:pl-16 lg:px-8 lg:pl-8"
-          data-testid="dashboard-toolbar"
-        >
-          <BackToHome />
-          <LogoutButton />
-        </div>
-        <div className={contentClassName} data-testid="dashboard-content">
-          {children}
-        </div>
+      <div className={contentClassName} data-testid="dashboard-content">
+        {children}
       </div>
     </div>
   );

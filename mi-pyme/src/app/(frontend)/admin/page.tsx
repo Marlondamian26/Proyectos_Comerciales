@@ -8,6 +8,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import {
   Building2,
   Users,
@@ -54,6 +55,7 @@ export default async function Page() {
                 <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 {userRol ?? "ADMIN"}
               </span>
+              <PageBackButton rol="ADMIN" />
             </div>
           </div>
         </div>

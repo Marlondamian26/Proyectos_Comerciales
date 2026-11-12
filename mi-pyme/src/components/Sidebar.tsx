@@ -137,15 +137,22 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Aplicar estado de localStorage SOLO después de montar (evita hydration mismatch)
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (stored !== null) {
+        setCollapsed(stored === "true");
+      }
+    } catch {
+      // localStorage no disponible (modo incógnito, etc.)
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -239,7 +246,7 @@ export function Sidebar({
                   <NavItem
                     key={item.label}
                     item={item}
-                    collapsed={collapsed}
+                    collapsed={mounted ? collapsed : false}
                     isActive={isItemActive(item)}
                   />
                 );

@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { RegistroNotification } from "@/components/RegistroNotification";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import {
   ShoppingBag,
   Calendar,
@@ -62,6 +63,7 @@ export default async function Page() {
                 <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 {userRol ?? "CLIENTE"}
               </span>
+              <PageBackButton rol="CLIENTE" />
             </div>
           </div>
         </div>

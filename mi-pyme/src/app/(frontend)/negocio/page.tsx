@@ -9,6 +9,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
+import { PageBackButton } from "@/components/ui/PageBackButton";
 import {
   FileText,
   TrendingUp,
@@ -77,6 +78,7 @@ export default async function NegocioDashboardPage() {
             <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
             {userRol ?? "NEGOCIO"}
           </span>
+          <PageBackButton rol="NEGOCIO" />
         </div>
       </div>
 

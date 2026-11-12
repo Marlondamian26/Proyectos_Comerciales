@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("next/link", () => ({
