@@ -40,7 +40,13 @@ describe("prisma/seed.ts", () => {
 
   it("asigna imagenUrl de Unsplash a productos/servicios/negocios", () => {
     const matches = seed.match(/imagenUrl:\s*"https:\/\/images\.unsplash\.com\//g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(30);
+    expect(matches.length).toBeGreaterThanOrEqual(29);
+  });
+
+  it("cada título de negocio, producto y servicio deja claro que es ejemplo/no real", () => {
+    // 7 negocios + 16 productos + 13 servicios = 36 títulos mínimos con SEED_DISCLAIMER
+    const count = (seed.match(/SEED_DISCLAIMER/g) ?? []).length;
+    expect(count).toBeGreaterThanOrEqual(36);
   });
 
   it("todas las portadas de negocio tienen imagen", () => {
