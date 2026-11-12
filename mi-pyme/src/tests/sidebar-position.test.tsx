@@ -41,4 +41,17 @@ describe("Sidebar", () => {
       "false"
     );
   });
+
+  it("opens the mobile drawer from its dedicated navigation control", () => {
+    const { getByRole } = render(<Sidebar userRol="ADMIN" />);
+    const openButton = getByRole("button", { name: "Abrir menú del panel" });
+
+    fireEvent.click(openButton);
+
+    expect(getByRole("complementary", { name: "Menú móvil del panel" })).toBeVisible();
+    expect(getByRole("button", { name: "Cerrar menú del panel" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+  });
 });

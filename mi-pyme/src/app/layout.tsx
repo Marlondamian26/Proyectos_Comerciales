@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthAwareNavbar } from "@/components/Navbar/AuthAwareNavbar";
+import { DashboardChrome } from "@/components/DashboardChrome";
 import { Footer } from "@/components/Footer";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { auth } from "@/lib/auth";
@@ -52,7 +53,7 @@ export default async function RootLayout({
             <Suspense fallback={null}>
               <ScrollRestoration />
             </Suspense>
-            {children}
+            <DashboardChrome userRol={userRol}>{children}</DashboardChrome>
             <Footer />
           </ThemeProvider>
         </SessionProvider>

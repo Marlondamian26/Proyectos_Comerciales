@@ -20,6 +20,7 @@ import {
   FileBarChartIcon,
   ChevronLeft,
   ChevronRight,
+  Menu,
   X,
 } from "lucide-react";
 
@@ -181,11 +182,22 @@ export function Sidebar({
 
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setMobileOpen((open) => !open)}
+        className="fixed left-4 top-[4.5rem] z-[60] inline-flex h-11 w-11 items-center justify-center rounded-lg bg-background/80 text-foreground shadow-sm backdrop-blur-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+        aria-label={mobileOpen ? "Cerrar menú del panel" : "Abrir menú del panel"}
+        aria-expanded={mobileOpen}
+        aria-controls="dashboard-sidebar-mobile"
+      >
+        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+
       {/* Desktop sidebar con toggle al lado */}
       <div className="relative hidden lg:block">
         <aside
           className={cn(
-            "flex flex-col flex-shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out",
+            "flex min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/70 backdrop-blur-lg transition-[width] duration-300 ease-out",
             collapsed ? "w-20" : "w-64"
           )}
           aria-label="Navegación principal"
@@ -235,13 +247,13 @@ export function Sidebar({
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <aside className="
+          <aside id="dashboard-sidebar-mobile" className="
             fixed inset-y-0 left-0 z-50 w-72
-            bg-background border-r border-border shadow-xl overflow-y-auto
+            bg-sidebar/90 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
-            translate-x-0 sm:translate-x-full
+            translate-x-0
             pb-[env(safe-area-inset-bottom)]
-          ">
+          " aria-label="Menú móvil del panel">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Menú</h2>
               <button

@@ -9,8 +9,6 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
-import { DashboardBackLink } from "@/components/DashboardBackLink";
-import { LogoutButton } from "@/components/LogoutButton";
 import {
   FileText,
   TrendingUp,
@@ -75,8 +73,6 @@ export default async function NegocioDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DashboardBackLink />
-          <LogoutButton />
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
             <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
             {userRol ?? "NEGOCIO"}

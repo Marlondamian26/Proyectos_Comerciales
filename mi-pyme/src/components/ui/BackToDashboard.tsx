@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { isDashboardNavigationRoute } from "@/lib/navigation/dashboard-routes";
 
 interface BackToDashboardProps {
   href: string;
@@ -9,6 +11,12 @@ interface BackToDashboardProps {
 }
 
 export function BackToDashboard({ href, label = "Volver al dashboard" }: BackToDashboardProps) {
+  const pathname = usePathname();
+
+  if (isDashboardNavigationRoute(pathname)) {
+    return null;
+  }
+
   return (
     <Link
       href={href}

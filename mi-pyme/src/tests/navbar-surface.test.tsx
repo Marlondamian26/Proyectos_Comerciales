@@ -31,6 +31,10 @@ vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: null }),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
 vi.mock("next/dynamic", () => ({
   default: () => () => null,
 }));
@@ -99,8 +103,8 @@ describe("Navbar surface", () => {
     const { container } = render(<Navbar />);
     const header = container.querySelector("header");
 
-    expect(header?.className).toMatch(/bg-navbar\/(70|95)/);
-    expect(header?.className).toMatch(/backdrop-blur-(md|xl)/);
+    expect(header?.className).toMatch(/bg-navbar\/50/);
+    expect(header?.className).toContain("backdrop-blur-lg");
   });
 
   it("does not duplicate the root navbar in the public home page", async () => {

@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Rol } from "@/lib/auth/roles";
+import { isDashboardNavigationRoute } from "@/lib/navigation/dashboard-routes";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
@@ -31,6 +33,8 @@ export function Navbar({ userRol }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const showSearch = userRol === Rol.CLIENTE || userRol === Rol.ADMIN;
   const { data: session } = useSession();
+  const pathname = usePathname();
+  const isDashboard = isDashboardNavigationRoute(pathname);
   const userName = session?.user?.name ?? session?.user?.email ?? "Usuario";
   const userImage =
     session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
@@ -47,8 +51,8 @@ export function Navbar({ userRol }: NavbarProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "border-b border-navbar-border bg-navbar/95 backdrop-blur-xl shadow-sm"
-          : "border-b border-navbar-border/30 bg-navbar/70 backdrop-blur-md"
+          ? "border-b border-navbar-border bg-navbar/85 backdrop-blur-xl shadow-sm"
+          : "border-b border-navbar-border/30 bg-navbar/50 backdrop-blur-lg"
       )}
       role="banner"
     >
@@ -84,8 +88,8 @@ export function Navbar({ userRol }: NavbarProps) {
           {session ? (
             <>
               <NotificacionBell />
-              <UserMenu name={userName} image={userImage} />
-              <LogoutButton />
+              <UserMenu name={userName} image={userImage} showLogout={!isDashboard} />
+              {!isDashboard && <LogoutButton />}
             </>
           ) : (
             <>
@@ -144,8 +148,8 @@ export function Navbar({ userRol }: NavbarProps) {
               </div>
               {session ? (
                 <>
-                  <UserMenu name={userName} image={userImage} />
-                  <LogoutButton variant="mobile" />
+                  <UserMenu name={userName} image={userImage} showLogout={!isDashboard} />
+                  {!isDashboard && <LogoutButton variant="mobile" />}
                 </>
               ) : (
                 <>
@@ -173,7 +177,15 @@ export function Navbar({ userRol }: NavbarProps) {
   );
 }
 
-function UserMenu({ name, image }: { name: string; image: string | null }) {
+function UserMenu({
+  name,
+  image,
+  showLogout,
+}: {
+  name: string;
+  image: string | null;
+  showLogout: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +209,12 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
         aria-expanded={open}
         aria-label="Menú de usuario"
       >
-        <Avatar src={image} name={name} size="sm" />
+        <Avatar
+          src={image}
+          name={name}
+          size="sm"
+          className="bg-primary text-primary-foreground"
+        />
         <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
       {open && (
@@ -223,8 +240,12 @@ function UserMenu({ name, image }: { name: string; image: string | null }) {
             <Settings className="h-4 w-4" />
             Configuración
           </Link>
-          <div role="separator" className="my-1 h-px bg-border" />
-          <LogoutButton />
+          {showLogout && (
+            <>
+              <div role="separator" className="my-1 h-px bg-border" />
+              <LogoutButton />
+            </>
+          )}
         </div>
       )}
     </div>

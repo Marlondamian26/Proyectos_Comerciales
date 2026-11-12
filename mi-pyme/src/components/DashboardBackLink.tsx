@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { isDashboardNavigationRoute } from "@/lib/navigation/dashboard-routes";
 
 type Profile = {
   nombre?: string;
@@ -22,8 +24,11 @@ const ROLE_DASHBOARD: Record<string, string> = {
 export function DashboardBackLink() {
   const [rol, setRol] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const isInDashboard = isDashboardNavigationRoute(pathname);
 
   useEffect(() => {
+    if (isInDashboard) return;
     let cancelled = false;
 
     async function loadProfile() {
@@ -45,7 +50,11 @@ export function DashboardBackLink() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isInDashboard]);
+
+  if (isInDashboard) {
+    return null;
+  }
 
   if (loading) {
     return (

@@ -136,31 +136,49 @@ export default async function HomePage({
           <div className="flex flex-wrap items-center justify-center gap-3">
             {isLoggedIn ? (
               <>
-                <Link href={dashboardUrl}>
-                    <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
-                      Ir a mi dashboard
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                </Link>
-                <Link href="/catalogo">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-2 border-white/60 text-white hover:bg-white/10">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full border-2 border-white/60 bg-primary text-primary-foreground hover:border-white hover:bg-primary/90 sm:w-auto sm:min-w-[200px]"
+                >
+                  <Link href={dashboardUrl}>
+                    Ir a mi dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-2 border-white/60 text-white hover:bg-white/10 sm:w-auto sm:min-w-[200px]"
+                >
+                  <Link href="/catalogo">
                     Explorar catálogo
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </>
             ) : (
               <>
-                <Link href="/auth/registro">
-                  <Button size="lg" className="w-full sm:w-auto sm:min-w-[200px]">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full border-2 border-white/60 bg-primary text-primary-foreground hover:border-white hover:bg-primary/90 sm:w-auto sm:min-w-[200px]"
+                >
+                  <Link href="/auth/registro">
                     Comenzar gratis
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link href="/catalogo">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto sm:min-w-[200px] border-2 border-white/60 text-white hover:bg-white/10">
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-2 border-white/60 text-white hover:bg-white/10 sm:w-auto sm:min-w-[200px]"
+                >
+                  <Link href="/catalogo">
                     Explorar catálogo
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </>
             )}
           </div>
@@ -179,10 +197,11 @@ export default async function HomePage({
             </div>
           </div>
         </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-b from-transparent to-background sm:h-32"
+        />
       </section>
-
-      {/* Divisor borroso entre hero y la siguiente sección */}
-      <div className="section-divider-hero" />
 
       {/* Sort Bar */}
       <section className="bg-muted/20">
@@ -531,20 +550,20 @@ export default async function HomePage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="
             relative overflow-hidden rounded-2xl sm:rounded-3xl
-            bg-gradient-to-br from-primary via-primary to-interactive-secondary
-            p-6 sm:p-12 lg:p-16 text-center
-          ">
+            bg-gradient-to-br from-primary/10 via-primary/5 to-interactive-secondary/10
+            border border-primary/20 p-6 text-center dark:from-background dark:via-surface-alt dark:to-background dark:border-border sm:p-12 lg:p-16
+          " data-testid="home-cta">
             {/* Blobs decorativos sutiles */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true">
-              <div className="absolute top-0 left-1/4 w-64 sm:w-72 h-64 sm:h-72 bg-white/30 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 right-1/4 w-80 sm:w-96 h-80 sm:h-96 bg-white/20 rounded-full blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 opacity-30 dark:opacity-20" aria-hidden="true">
+              <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl dark:bg-white/10 sm:h-72 sm:w-72" />
+              <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-interactive-secondary/10 blur-3xl dark:bg-white/10 sm:h-96 sm:w-96" />
             </div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+              <h2 className="mb-3 text-2xl font-bold tracking-tight text-foreground sm:mb-4 sm:text-3xl lg:text-4xl dark:text-white">
                 ¿Listo para empezar?
               </h2>
-              <p className="text-base sm:text-lg text-white/90 mb-6 sm:mb-8">
+              <p className="mb-6 text-base text-muted-foreground sm:mb-8 sm:text-lg dark:text-white/90">
                 Únete a cientos de negocios que ya confían en Mi-Pyme para gestionar su operación diaria.
               </p>
 
@@ -556,9 +575,9 @@ export default async function HomePage({
                     w-full sm:w-auto
                     h-12 px-6
                     rounded-lg
-                    bg-[var(--color-text-inverse)] text-primary
+                    bg-primary text-primary-foreground
                     font-semibold
-                    hover:bg-white/95
+                    hover:bg-primary/90
                     active:scale-[0.98]
                     transition-all
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary
@@ -575,9 +594,9 @@ export default async function HomePage({
                     w-full sm:w-auto
                     h-12 px-6
                     rounded-lg
-                    border-2 border-white/60 text-white
+                    border-2 border-primary/30 text-primary dark:border-white/60 dark:text-white
                     font-semibold
-                    hover:bg-white/10 hover:border-white
+                    hover:bg-primary/5 hover:border-primary dark:hover:bg-white/10 dark:hover:border-white
                     active:scale-[0.98]
                     transition-all
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary

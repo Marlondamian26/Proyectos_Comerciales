@@ -56,7 +56,6 @@ const negocioSidebarItems: NegocioSidebarItem[] = [
 ];
 
 export interface NegocioSidebarProps {
-  userRol?: string;
   mobileOpen?: boolean;
   onMobileOpenChange?: (open: boolean) => void;
 }
@@ -64,7 +63,6 @@ export interface NegocioSidebarProps {
 const SIDEBAR_COLLAPSED_KEY = "mi-pyme-negocio-sidebar-collapsed";
 
 export function NegocioSidebar({
-  userRol,
   mobileOpen: propMobileOpen,
   onMobileOpenChange: propOnMobileOpenChange,
 }: NegocioSidebarProps) {
@@ -105,7 +103,7 @@ export function NegocioSidebar({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col flex-shrink-0 border-r bg-background transition-[width] duration-300 ease-out",
+          "relative hidden min-h-full flex-col flex-shrink-0 border-r border-sidebar-border/50 bg-sidebar/70 backdrop-blur-lg transition-[width] duration-300 ease-out lg:flex",
           collapsed ? "w-20" : "w-64"
         )}
         role="complementary"
@@ -158,11 +156,11 @@ export function NegocioSidebar({
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <aside className="
+          <aside id="negocio-sidebar-mobile" className="
             fixed inset-y-0 left-0 z-50 w-72
-            bg-background border-r border-border shadow-xl overflow-y-auto
+            bg-sidebar/90 backdrop-blur-lg border-r border-sidebar-border/50 shadow-xl overflow-y-auto
             lg:hidden transform transition-transform duration-300 ease-in-out
-            translate-x-0 sm:translate-x-full
+            translate-x-0
           ">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Negocio</h2>

@@ -6,12 +6,12 @@ test.describe("Home UI refinements", () => {
     const header = page.locator("header, nav").first();
     await expect(header).toBeVisible();
     const before = (await header.getAttribute("class")) ?? "";
-    expect(before).toMatch(/bg-background\/(60|70|80)/);
+    expect(before).toContain("bg-navbar/50");
 
     await page.evaluate(() => window.scrollTo(0, 400));
     await page.waitForTimeout(450);
     const after = (await header.getAttribute("class")) ?? "";
-    expect(after).toContain("bg-background/95");
+    expect(after).toContain("bg-navbar/85");
   });
 
   test("orden de secciones: Servicios antes que Áreas y Áreas antes que Negocios", async ({ page }) => {

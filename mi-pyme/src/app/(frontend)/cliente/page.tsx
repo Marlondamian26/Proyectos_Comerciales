@@ -11,7 +11,6 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyStatePreset } from "@/components/ui/EmptyState";
-import { LogoutButton } from "@/components/LogoutButton";
 import { RegistroNotification } from "@/components/RegistroNotification";
 import {
   ShoppingBag,
@@ -59,7 +58,6 @@ export default async function Page() {
               <p className="text-muted-foreground mt-1">Gestiona tus compras y reservas</p>
             </div>
             <div className="flex items-center gap-2">
-              <LogoutButton />
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                 <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 {userRol ?? "CLIENTE"}
