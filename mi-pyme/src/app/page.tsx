@@ -446,7 +446,7 @@ export default async function HomePage({
           ) : (
             <div
               className="
-                grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3
                 gap-2 sm:gap-4
               "
               data-testid="negocios-destacados-grid"
@@ -531,7 +531,7 @@ export default async function HomePage({
                 Entrega rápida para productos de los mejores negocios
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 lg:grid-cols-3">
               {negociosConEnvio.map((negocio) => (
                 <Card
                   key={negocio.id}
