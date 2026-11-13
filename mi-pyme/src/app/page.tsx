@@ -516,41 +516,41 @@ export default async function HomePage({
       <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=1920&q=80"
+            src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1920&q=80"
             alt=""
             fill
             sizes="100vw"
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/10 to-interactive-secondary/15 dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/25 via-primary/15 to-interactive-secondary/20 dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)]" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-foreground sm:text-4xl">
+          <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-white sm:text-4xl">
             ¿Cómo funciona?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 sm:mb-16">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="h-8 w-8 text-primary" />
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">1. Explora</h3>
-              <p className="text-muted-foreground">Descubre negocios y servicios cerca de ti.</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">1. Explora</h3>
+              <p className="text-white/90">Descubre negocios y servicios cerca de ti.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <ArrowRight className="h-8 w-8 text-primary" />
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+                <ArrowRight className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">2. Compra o reserva</h3>
-              <p className="text-muted-foreground">Agrega al carrito, reserva y paga de forma segura.</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">2. Compra o reserva</h3>
+              <p className="text-white/90">Agrega al carrito, reserva y paga de forma segura.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Truck className="h-8 w-8 text-primary" />
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+                <Truck className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">3. Recibe</h3>
-              <p className="text-muted-foreground">Recibe tu pedido en casa o recógelo.</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">3. Recibe</h3>
+              <p className="text-white/90">Recibe tu pedido en casa o recógelo.</p>
             </div>
           </div>
 

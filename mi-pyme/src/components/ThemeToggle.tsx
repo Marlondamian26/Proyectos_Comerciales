@@ -145,7 +145,7 @@ function ThemeDropdown({
         aria-haspopup="listbox"
       >
         <svg
-          className="h-4 w-4 transition-transform duration-200"
+          className="h-4 w-4 text-foreground transition-transform duration-200"
           style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0)" }}
           aria-hidden="true"
           viewBox="0 0 24 24"
