@@ -110,31 +110,61 @@ export default async function HomePage({
       | undefined) ||
     serviciosSlice
       .filter((s) => s.imagenUrl)
-      .map((s) => ({ url: s.imagenUrl, alt: s.nombre }));
+      .map((s) => ({ url: s.imagenUrl, alt: s.nombre })) ||
+    [
+      {
+        url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=1920&q=80",
+        alt: "Servicios",
+      },
+    ];
   const bgAreas =
     (bgMap.areas?.imagenes as
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
-    heroImages.map((h) => ({ url: h.url, alt: h.alt }));
+    heroImages.map((h) => ({ url: h.url, alt: h.alt })) ||
+    [
+      {
+        url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80",
+        alt: "Áreas",
+      },
+    ];
   const bgNegocios =
     (bgMap.negocios?.imagenes as
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
     negociosSlice
       .filter((n) => (n as any).imagenUrl)
-      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre }));
+      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre })) ||
+    [
+      {
+        url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80",
+        alt: "Negocios",
+      },
+    ];
   const bgEnvio =
     (bgMap.envio?.imagenes as
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
     negociosConEnvio
       .filter((n) => (n as any).imagenUrl)
-      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre }));
+      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre })) ||
+    [
+      {
+        url: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=1920&q=80",
+        alt: "Envío",
+      },
+    ];
   const bgComoFunciona =
     (bgMap["como-funciona-cta"]?.imagenes as
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
-    heroImages.slice(0, 1).map((h) => ({ url: h.url, alt: h.alt }));
+    heroImages.slice(0, 1).map((h) => ({ url: h.url, alt: h.alt })) ||
+    [
+      {
+        url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1920&q=80",
+        alt: "CTA",
+      },
+    ];
 
   return (
     <main className="min-h-screen app-background">
@@ -566,30 +596,30 @@ export default async function HomePage({
       <SectionBackground images={bgComoFunciona} overlay={bgMap["como-funciona-cta"]?.overlay ?? 0.7} blur={bgMap["como-funciona-cta"]?.blur ?? 8}>
         <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-white sm:text-4xl">
+          <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-foreground sm:text-4xl">
             ¿Cómo funciona?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 sm:mb-16">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">1. Explora</h3>
-              <p className="text-white/90">Descubre negocios y servicios cerca de ti.</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">1. Explora</h3>
+              <p className="text-muted-foreground">Descubre negocios y servicios cerca de ti.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
-                <ArrowRight className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ArrowRight className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">2. Compra o reserva</h3>
-              <p className="text-white/90">Agrega al carrito, reserva y paga de forma segura.</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">2. Compra o reserva</h3>
+              <p className="text-muted-foreground">Agrega al carrito, reserva y paga de forma segura.</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
-                <Truck className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Truck className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">3. Recibe</h3>
-              <p className="text-white/90">Recibe tu pedido en casa o recógelo.</p>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">3. Recibe</h3>
+              <p className="text-muted-foreground">Recibe tu pedido en casa o recógelo.</p>
             </div>
           </div>
 
