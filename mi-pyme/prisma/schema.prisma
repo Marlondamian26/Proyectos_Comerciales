@@ -147,6 +147,7 @@ model Negocio {
   direccionFiscal           String?
   telefonoFiscal            String?
   emailFiscal               String?
+  imagenUrl                 String?
   numeroFacturaConsecutivo  Int               @default(0)
   prefijoFactura            String            @default("PR")
   permiteAcumularDescuentos Boolean           @default(false)

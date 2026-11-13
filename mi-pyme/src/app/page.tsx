@@ -133,8 +133,8 @@ export default async function HomePage({
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
     negociosSlice
-      .filter((n) => (n as any).imagenUrl)
-      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre })) ||
+      .filter((n) => n.imagenUrl !== null)
+      .map((n) => ({ url: n.imagenUrl as string, alt: n.nombre })) ||
     [
       {
         url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80",
@@ -146,8 +146,8 @@ export default async function HomePage({
       | Array<{ url: string; alt?: string; publicId?: string | null }>
       | undefined) ||
     negociosConEnvio
-      .filter((n) => (n as any).imagenUrl)
-      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre })) ||
+      .filter((n) => n.imagenUrl !== null)
+      .map((n) => ({ url: n.imagenUrl as string, alt: n.nombre })) ||
     [
       {
         url: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=1920&q=80",
@@ -459,6 +459,10 @@ export default async function HomePage({
                     text: negocio.activo ? "Abierto" : "Cerrado",
                     variant: negocio.activo ? "success" : "warning",
                   }}
+                  image={{
+                    src: negocio.imagenUrl || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
+                    alt: negocio.nombre,
+                  }}
                 >
                 <div className="p-3 sm:p-4">
                   <h3
@@ -535,6 +539,10 @@ export default async function HomePage({
                   badge={{
                     text: "Envío disponible",
                     variant: "success",
+                  }}
+                  image={{
+                    src: negocio.imagenUrl || "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600",
+                    alt: negocio.nombre,
                   }}
                 >
                   <div className="p-3 sm:p-4">

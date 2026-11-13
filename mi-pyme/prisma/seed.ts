@@ -61,7 +61,7 @@ const NEGOCIOS = [
     areaSlug: "comida-restaurantes", subareaSlug: "pizzeria", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-100200", emailContacto: "contacto@pizzeriabellanapoli.com", direccionCompleta: "Av. Martí #301, Pinar del Río",
     nit: "PZN-0001-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: true,
-    imagenPortada: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200",
     productos: [
       { nombre: "Pizza Margarita" + SEED_DISCLAIMER, descripcion: "Mozzarella, tomate y albahaca", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600" },
       { nombre: "Pizza Pepperoni" + SEED_DISCLAIMER, descripcion: "Pepperoni y mozzarella", precio: 10, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600" },
@@ -80,7 +80,7 @@ const NEGOCIOS = [
     areaSlug: "salud-belleza", subareaSlug: "peluqueria", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-300400", emailContacto: "contacto@salonestrella.com", direccionCompleta: "Calle Gerardo Medina #88, Pinar del Río",
     nit: "SBE-0003-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: false,
-    imagenPortada: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200",
     productos: [],
     servicios: [
       { nombre: "Corte de cabello" + SEED_DISCLAIMER, descripcion: "Corte profesional", duracionMinutos: 45, capacidad: 1, precio: 10, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600" },
@@ -96,7 +96,7 @@ const NEGOCIOS = [
     areaSlug: "aseo-limpieza", subareaSlug: "detergentes", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-400500", emailContacto: "contacto@eltornillo.com", direccionCompleta: "Calle 20 #45, Pinar del Río",
     nit: "FET-0004-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenPortada: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200",
     productos: [
       { nombre: "Detergente" + SEED_DISCLAIMER, descripcion: "Detergente multiusos", precio: 5, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600" },
       { nombre: "Jabón" + SEED_DISCLAIMER, descripcion: "Jabón de tocador", precio: 2, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600" },
@@ -112,7 +112,7 @@ const NEGOCIOS = [
     areaSlug: "tecnologia", subareaSlug: "accesorios", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-500600", emailContacto: "contacto@tecnocell.com", direccionCompleta: "Calle Real #12, Pinar del Río",
     nit: "TCC-0005-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenPortada: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=1200",
     productos: [
       { nombre: "Funda de celular" + SEED_DISCLAIMER, descripcion: "Funda protectora", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1601593346740-925612772716?w=600" },
       { nombre: "Audífonos" + SEED_DISCLAIMER, descripcion: "Audífonos con cable", precio: 15, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600" },
@@ -128,7 +128,7 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "envio-paquetes", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-700700", emailContacto: "contacto@cargarapidahabana.cu", direccionCompleta: "Calle 23 #450, Vedado, La Habana",
     nit: "CRH-0006-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenPortada: "https://images.unsplash.com/photo-1552865440-d6c679331079?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1552865440-d6c679331079?w=1200",
     productos: [],
     servicios: [
       { nombre: "Envío Express La Habana" + SEED_DISCLAIMER, descripcion: "Entrega de paquetes el mismo día en La Habana", duracionMinutos: 120, capacidad: 1, precio: 5, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 5, dimensionesMaximas: "40x30x30 cm", origenBase: "Vedado, La Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","14:00","16:00"], martes:["09:00","11:00","14:00","16:00"], miercoles:["09:00","11:00","14:00","16:00"], jueves:["09:00","11:00","14:00","16:00"], viernes:["09:00","11:00","14:00","16:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600" },
@@ -141,7 +141,7 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "mudanzas", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-800800", emailContacto: "contacto@mudanzascentro.cu", direccionCompleta: "Calle Galiano #120, Centro Habana",
     nit: "MCH-0007-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: true,
-    imagenPortada: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200",
     productos: [],
     servicios: [
       { nombre: "Mudanza de Apartamento" + SEED_DISCLAIMER, descripcion: "Traslado completo de enseres de vivienda", duracionMinutos: 240, capacidad: 1, precio: 60, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 500, dimensionesMaximas: "Camión 3 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1541888946425-d81bb19744c6?w=600" },
@@ -155,7 +155,7 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "transporte-personas", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-900900", emailContacto: "contacto@transpersona.cu", direccionCompleta: "Avenida de los Presidentes #300, Miramar, La Habana",
     nit: "TPE-0008-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: false,
-    imagenPortada: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200",
+    imagenUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200",
     productos: [],
     servicios: [
       { nombre: "Traslado Aeropuerto" + SEED_DISCLAIMER, descripcion: "Recogida y traslado desde/hacia el aeropuerto José Martí", duracionMinutos: 60, capacidad: 4, precio: 25, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "Miramar, La Habana", destinoBase: "Aeropuerto José Martí", alcanceNacional: false, horariosDisponibles: { lunes:["06:00","08:00","12:00","16:00","20:00"], martes:["06:00","08:00","12:00","16:00","20:00"], miercoles:["06:00","08:00","12:00","16:00","20:00"], jueves:["06:00","08:00","12:00","16:00","20:00"], viernes:["06:00","08:00","12:00","16:00","20:00"], sabado:["06:00","08:00","12:00","16:00","20:00"], domingo:["06:00","08:00","12:00","16:00","20:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600" },
@@ -230,8 +230,8 @@ async function main() {
     const subarea = await prisma.subarea.findUnique({ where: { slug: neg.subareaSlug } });
     const negocio = await prisma.negocio.upsert({
       where: { slug: neg.slug },
-      update: { nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
-      create: { slug: neg.slug, nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), municipio: neg.municipio, provincia: neg.provincia, telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, modoPrecio: "IVA_INCLUIDO", permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio },
+      update: { nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio, imagenUrl: neg.imagenUrl },
+      create: { slug: neg.slug, nombre: neg.nombre, descripcion: neg.descripcion, activo: true, user: { connect: { id: owner.id } }, ...(area ? { area: { connect: { id: area.id } } } : {}), municipio: neg.municipio, provincia: neg.provincia, telefono: neg.telefono, emailContacto: neg.emailContacto, direccion: neg.direccionCompleta, nit: neg.nit, regimenFiscal: neg.regimenFiscal, tasaIVA: neg.tasaIVA, prefijoFactura: neg.prefijoFactura, modoPrecio: "IVA_INCLUIDO", permiteReservas: neg.permiteReservas, permiteEnvio: neg.permiteEnvio, imagenUrl: neg.imagenUrl },
     });
     if (subarea) {
       await prisma.negocio.update({ where: { id: negocio.id }, data: { subareas: { connect: { id: subarea.id } } } }).catch(() => {});
