@@ -124,7 +124,7 @@ export function NotificacionBell() {
   }, [addToast]);
 
   return (
-    <div className="relative flex-shrink-0 z-10">
+    <div className="relative flex-shrink-0 z-20">
       <Button
         variant="ghost"
         size="icon"

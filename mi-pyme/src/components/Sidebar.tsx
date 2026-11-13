@@ -223,8 +223,7 @@ export function Sidebar({
         type="button"
         onClick={() => setMobileOpen((open) => !open)}
         className={cn(
-          "fixed top-[4.5rem] z-[60] inline-flex h-11 w-11 items-center justify-center rounded-lg bg-background/80 text-foreground shadow-sm backdrop-blur-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden",
-          mobileOpen ? "right-4" : "left-4"
+          "fixed top-4 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-lg bg-background/80 text-foreground shadow-sm backdrop-blur-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
         )}
         aria-label={mobileOpen ? "Cerrar menú del panel" : "Abrir menú del panel"}
         aria-expanded={mobileOpen}

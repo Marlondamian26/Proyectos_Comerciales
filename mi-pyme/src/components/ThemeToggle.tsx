@@ -52,11 +52,11 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         title={currentLabel}
       >
         {theme === "dark" ? (
-          <Sun className="h-4 w-4 transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
+          <Sun className="h-4 w-4 text-foreground transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
         ) : theme === "light" ? (
-          <Moon className="h-4 w-4 transition-transform duration-200 -rotate-90 scale-0" aria-hidden="true" />
+          <Moon className="h-4 w-4 text-foreground transition-transform duration-200 -rotate-90 scale-0" aria-hidden="true" />
         ) : (
-          <Monitor className="h-4 w-4 transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
+          <Monitor className="h-4 w-4 text-foreground transition-transform duration-200 rotate-0 scale-100" aria-hidden="true" />
         )}
         <span className={cn("truncate", compact && "sr-only")}>
           {isDark ? "Oscuro" : theme === "light" ? "Claro" : "Sistema"}

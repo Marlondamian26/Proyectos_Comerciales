@@ -61,7 +61,7 @@ export function NotificacionDropdown({
       aria-modal="true"
       aria-label="Notificaciones recientes"
       className="
-        fixed z-[60]
+        fixed z-[70]
         top-auto
         w-[calc(100vw-2rem)]
         max-w-sm

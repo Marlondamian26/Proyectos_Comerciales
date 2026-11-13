@@ -127,7 +127,7 @@ export default async function HomePage({
               height={288}
               sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 50vw"
               priority
-              className="mx-auto h-32 sm:h-40 md:h-48 w-auto object-contain drop-shadow-lg"
+              className="mx-auto h-40 sm:h-48 md:h-56 lg:h-64 w-auto object-contain drop-shadow-lg"
             />
           </div>
 
@@ -512,11 +512,25 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Cómo funciona */}
-      <section className="py-16 sm:py-24 bg-muted/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-12 sm:text-4xl">¿Cómo funciona?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Hero Section Merged: ¿Cómo funciona? + ¿Listo para empezar? */}
+      <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=1920&q=80"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/10 to-interactive-secondary/15 dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)]" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-foreground sm:text-4xl">
+            ¿Cómo funciona?
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 sm:mb-16">
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="h-8 w-8 text-primary" />
@@ -539,24 +553,12 @@ export default async function HomePage({
               <p className="text-muted-foreground">Recibe tu pedido en casa o recógelo.</p>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="
             relative overflow-hidden rounded-2xl sm:rounded-3xl
-            bg-gradient-to-br from-primary/6 via-primary/3 to-interactive-secondary/6
-            border border-primary/12 p-6 text-center
-            dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)] dark:border-border sm:p-12 lg:p-16
+            bg-gradient-to-br from-primary/10 via-primary/5 to-interactive-secondary/10
+            border border-primary/20 p-6 sm:p-12 lg:p-16 text-center
           " data-testid="home-cta">
-            {/* Blobs decorativos sutiles */}
-            <div className="pointer-events-none absolute inset-0 opacity-30 dark:opacity-20" aria-hidden="true">
-              <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl dark:bg-white/10 sm:h-72 sm:w-72" />
-              <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-interactive-secondary/10 blur-3xl dark:bg-white/10 sm:h-96 sm:w-96" />
-            </div>
-
             <div className="relative z-10 max-w-2xl mx-auto">
               <h2 className="mb-3 text-2xl font-bold tracking-tight text-foreground sm:mb-4 sm:text-3xl lg:text-4xl dark:text-white">
                 ¿Listo para empezar?

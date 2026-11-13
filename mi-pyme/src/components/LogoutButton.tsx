@@ -49,10 +49,10 @@ export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
       variant="ghost"
       size={variant === "mobile" ? "sm" : "sm"}
 className={cn(
-  "gap-2 w-full",
+  "gap-2 w-full justify-start px-4 bg-primary text-primary-foreground hover:bg-primary/90",
   variant === "mobile"
     ? "justify-start"
-    : "justify-between px-4 bg-primary text-primary-foreground hover:bg-primary/90",
+    : "",
   "disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
 )}
       onClick={handleLogout}
