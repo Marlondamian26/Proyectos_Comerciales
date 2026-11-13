@@ -37,6 +37,7 @@ import { CuponService } from "@/services/CuponService";
 import { ComboService } from "@/services/ComboService";
 import { DescuentoService } from "@/services/DescuentoService";
 import { HeroImageService } from "@/services/HeroImageService";
+import { HomeSectionBackgroundService } from "@/services/HomeSectionBackgroundService";
 import { NotificacionService } from "@/services/NotificacionService";
 import {
   AdminUserService,
@@ -4374,4 +4375,34 @@ export async function reordenarHeroImagesAction(ids: string[]) {
   await service.reordenar(ids);
   revalidatePath("/");
   revalidatePath("/admin/hero");
+}
+
+export async function listarFondosSeccionAction() {
+  await requireRole([Rol.ADMIN]);
+  const service = new HomeSectionBackgroundService();
+  return service.listarTodas();
+}
+
+export async function actualizarFondoSeccionAction(sectionKey: string, datos: {
+  tipo?: string;
+  imagenes?: Array<{ url: string; alt?: string; publicId?: string | null }>;
+  overlay?: number;
+  blur?: number;
+  activa?: boolean;
+}) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HomeSectionBackgroundService();
+  return service.actualizar(sectionKey, datos);
+}
+
+export async function agregarImagenFondoSeccionAction(sectionKey: string, imagen: { url: string; alt?: string; publicId?: string | null }) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HomeSectionBackgroundService();
+  return service.agregarImagen(sectionKey, imagen);
+}
+
+export async function removerImagenFondoSeccionAction(sectionKey: string, index: number) {
+  await requireRole([Rol.ADMIN]);
+  const service = new HomeSectionBackgroundService();
+  return service.removerImagen(sectionKey, index);
 }

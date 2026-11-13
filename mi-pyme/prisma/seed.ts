@@ -284,10 +284,27 @@ async function main() {
     }).catch(() => {});
   }
 
+  // Fondos de sección del home (idempotente)
+  const sectionBackgrounds = [
+    { sectionKey: "servicios", tipo: "carrusel-cards", overlay: 0.75, blur: 12 },
+    { sectionKey: "areas", tipo: "carrusel-hero", overlay: 0.8, blur: 16 },
+    { sectionKey: "negocios", tipo: "carrusel-cards", overlay: 0.75, blur: 12 },
+    { sectionKey: "envio", tipo: "carrusel-hero", overlay: 0.8, blur: 16 },
+    { sectionKey: "como-funciona-cta", tipo: "imagen", overlay: 0.7, blur: 8, imagenes: [] },
+  ];
+  for (const bg of sectionBackgrounds) {
+    await prisma.homeSectionBackground.upsert({
+      where: { sectionKey: bg.sectionKey },
+      update: {},
+      create: bg,
+    });
+  }
+
   const counts = await prisma.$transaction([
     prisma.negocio.count(), prisma.producto.count(), prisma.servicio.count(), prisma.user.count(), prisma.pedido.count(),
+    prisma.homeSectionBackground.count(),
   ]);
-  console.log(`✅ Seed Mi-Pyme: ${counts[0]} negocios, ${counts[1]} productos, ${counts[2]} servicios, ${counts[3]} usuarios, ${counts[4]} pedidos`);
+  console.log(`✅ Seed Mi-Pyme: ${counts[0]} negocios, ${counts[1]} productos, ${counts[2]} servicios, ${counts[3]} usuarios, ${counts[4]} pedidos, ${counts[5]} fondos de sección`);
   console.log("Credenciales: admin@mi-pyme.local/12345678, cliente1@test.com/cliente123, negocio.pizzeria@test.com/negocio123, logistica1@test.com/logistica123");
 }
 

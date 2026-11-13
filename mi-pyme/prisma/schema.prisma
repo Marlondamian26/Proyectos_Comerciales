@@ -1017,3 +1017,17 @@ model HeroImage {
 
   @@index([activa, orden])
 }
+
+model HomeSectionBackground {
+  id          String   @id @default(cuid())
+  sectionKey  String   @unique
+  tipo        String   @default("imagen")
+  imagenes    Json     @default("[]")
+  overlay     Float    @default(0.7)
+  blur        Int      @default(8)
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sectionKey])
+}

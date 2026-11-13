@@ -34,6 +34,14 @@ vi.mock("@/components/SortControls", () => ({
   SortControls: () => null,
 }));
 
+vi.mock("@/services/HomeSectionBackgroundService", () => ({
+  HomeSectionBackgroundService: vi.fn(() => ({
+    listar: vi.fn().mockResolvedValue([]),
+    listarTodas: vi.fn().mockResolvedValue([]),
+    getByKey: vi.fn().mockResolvedValue(null),
+  })),
+}));
+
 vi.mock("next-auth/react", () => ({
   useSession: () => ({ data: mockState.session }),
 }));

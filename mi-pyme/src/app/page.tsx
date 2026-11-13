@@ -12,6 +12,8 @@ import { EmptyStatePreset } from "@/components/ui/EmptyState";
 import { SortControls } from "@/components/SortControls";
 import { CARD_TYPOGRAPHY } from "@/components/ui/CardTypography";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { SectionBackground } from "@/components/home/SectionBackground";
+import { HomeSectionBackgroundService } from "@/services/HomeSectionBackgroundService";
 import {
   ShoppingBag,
   ArrowRight,
@@ -89,10 +91,49 @@ export default async function HomePage({
           },
         ];
 
+  // Cargar fondos de sección dinámicos desde BD
+  const bgService = new HomeSectionBackgroundService();
+  const backgroundsDb = await bgService.listar();
+  const bgMap = Object.fromEntries(
+    backgroundsDb.map((b) => [b.sectionKey, b])
+  );
+
   const areasSlice = areas.slice(0, 6);
   const negociosSlice = negocios.slice(0, 6);
   const serviciosSlice = servicios.slice(0, 6);
   const negociosConEnvio = negocios.filter((n) => n.permiteEnvio).slice(0, 6);
+
+  // Imágenes de fondo por sección (usar imágenes de cards si no hay configuradas por admin)
+  const bgServicios =
+    (bgMap.servicios?.imagenes as
+      | Array<{ url: string; alt?: string; publicId?: string | null }>
+      | undefined) ||
+    serviciosSlice
+      .filter((s) => s.imagenUrl)
+      .map((s) => ({ url: s.imagenUrl, alt: s.nombre }));
+  const bgAreas =
+    (bgMap.areas?.imagenes as
+      | Array<{ url: string; alt?: string; publicId?: string | null }>
+      | undefined) ||
+    heroImages.map((h) => ({ url: h.url, alt: h.alt }));
+  const bgNegocios =
+    (bgMap.negocios?.imagenes as
+      | Array<{ url: string; alt?: string; publicId?: string | null }>
+      | undefined) ||
+    negociosSlice
+      .filter((n) => (n as any).imagenUrl)
+      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre }));
+  const bgEnvio =
+    (bgMap.envio?.imagenes as
+      | Array<{ url: string; alt?: string; publicId?: string | null }>
+      | undefined) ||
+    negociosConEnvio
+      .filter((n) => (n as any).imagenUrl)
+      .map((n) => ({ url: (n as any).imagenUrl, alt: n.nombre }));
+  const bgComoFunciona =
+    (bgMap["como-funciona-cta"]?.imagenes as
+      | Array<{ url: string; alt?: string; publicId?: string | null }>
+      | undefined) || [];
 
   return (
     <main className="min-h-screen app-background">
@@ -211,7 +252,8 @@ export default async function HomePage({
       </section>
 
       {/* Servicios Populares */}
-      <section className="py-16 sm:py-24">
+      <SectionBackground images={bgServicios} overlay={bgMap.servicios?.overlay ?? 0.75} blur={bgMap.servicios?.blur ?? 12}>
+        <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -300,9 +342,11 @@ export default async function HomePage({
           )}
         </div>
       </section>
+      </SectionBackground>
 
       {/* Áreas Explorar */}
-      <section className="py-16 sm:py-24">
+      <SectionBackground images={bgAreas} overlay={bgMap.areas?.overlay ?? 0.8} blur={bgMap.areas?.blur ?? 16}>
+        <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -352,9 +396,11 @@ export default async function HomePage({
           )}
         </div>
       </section>
+      </SectionBackground>
 
       {/* Negocios Destacados */}
-      <section className="py-16 sm:py-24 bg-background-alt">
+      <SectionBackground images={bgNegocios} overlay={bgMap.negocios?.overlay ?? 0.75} blur={bgMap.negocios?.blur ?? 12}>
+        <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -435,10 +481,12 @@ export default async function HomePage({
           )}
         </div>
       </section>
+      </SectionBackground>
 
       {/* Envío y Transporte */}
       {negociosConEnvio.length > 0 && (
-        <section className="py-16 sm:py-24 bg-background-alt">
+        <SectionBackground images={bgEnvio} overlay={bgMap.envio?.overlay ?? 0.8} blur={bgMap.envio?.blur ?? 16}>
+          <section className="py-16 sm:py-24 bg-background-alt">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -510,10 +558,12 @@ export default async function HomePage({
             )}
           </div>
         </section>
+      </SectionBackground>
       )}
 
       {/* Hero Section Merged: ¿Cómo funciona? + ¿Listo para empezar? */}
-      <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+      <SectionBackground images={bgComoFunciona} overlay={bgMap["como-funciona-cta"]?.overlay ?? 0.7} blur={bgMap["como-funciona-cta"]?.blur ?? 8}>
+        <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1920&q=80"
@@ -610,6 +660,7 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+      </SectionBackground>
 
     </main>
   );
