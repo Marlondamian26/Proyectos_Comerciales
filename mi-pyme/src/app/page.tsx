@@ -133,7 +133,8 @@ export default async function HomePage({
   const bgComoFunciona =
     (bgMap["como-funciona-cta"]?.imagenes as
       | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) || [];
+      | undefined) ||
+    heroImages.slice(0, 1).map((h) => ({ url: h.url, alt: h.alt }));
 
   return (
     <main className="min-h-screen app-background">
@@ -564,18 +565,6 @@ export default async function HomePage({
       {/* Hero Section Merged: ¿Cómo funciona? + ¿Listo para empezar? */}
       <SectionBackground images={bgComoFunciona} overlay={bgMap["como-funciona-cta"]?.overlay ?? 0.7} blur={bgMap["como-funciona-cta"]?.blur ?? 8}>
         <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1920&q=80"
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/25 via-primary/15 to-interactive-secondary/20 dark:from-[var(--color-background)] dark:via-[var(--color-surface-alt)] dark:to-[var(--color-background)]" />
-        </div>
-
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-white sm:text-4xl">
             ¿Cómo funciona?
