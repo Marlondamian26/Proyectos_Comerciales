@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Rol } from "@/lib/auth/roles";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 import {
   HomeIcon,
   ShoppingCartIcon,
@@ -140,6 +141,9 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Cerrar el drawer móvil al cambiar de ruta
+  useCloseOnRouteChange(() => setMobileOpen(false));
 
   // Aplicar estado de localStorage SOLO después de montar (evita hydration mismatch)
   useEffect(() => {

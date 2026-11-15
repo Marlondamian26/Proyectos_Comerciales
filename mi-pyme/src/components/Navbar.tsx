@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ChevronDown, User, Settings, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 
 const GlobalSearchBar = dynamic(
   () => import("@/components/GlobalSearchBar").then((mod) => mod.GlobalSearchBar),
@@ -196,6 +197,9 @@ function UserMenu({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Cerrar al cambiar de ruta (login, logout, navegación)
+  useCloseOnRouteChange(() => setOpen(false));
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -205,6 +209,10 @@ function UserMenu({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    setOpen(false);
+  };
 
   return (
     <div className="relative" ref={containerRef}>
@@ -252,7 +260,7 @@ function UserMenu({
           {showLogout && (
             <>
               <div role="separator" className="my-1 h-px bg-border" />
-              <LogoutButton />
+              <LogoutButton onClose={handleLogout} />
             </>
           )}
         </div>

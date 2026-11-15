@@ -298,7 +298,7 @@ export default async function HomePage({
             <EmptyStatePreset preset="search" />
           ) : (
             <div
-              className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4"
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6"
               data-testid="servicios-populares-grid"
             >
               {serviciosSlice.map((servicio) => (
@@ -309,6 +309,7 @@ export default async function HomePage({
                     src: servicio.imagenUrl || "/placeholder-service.jpg",
                     alt: servicio.nombre,
                   }}
+                  imageTipo="servicio"
                   badge={{
                     text: servicio.activo ? "Disponible" : "Inactivo",
                     variant: servicio.activo ? "success" : "warning",
@@ -446,8 +447,8 @@ export default async function HomePage({
           ) : (
             <div
               className="
-                grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3
-                gap-2 sm:gap-4
+                grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4
+                gap-3 sm:gap-4 lg:gap-6
               "
               data-testid="negocios-destacados-grid"
             >
@@ -463,6 +464,7 @@ export default async function HomePage({
                     src: negocio.imagenUrl || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
                     alt: negocio.nombre,
                   }}
+                  imageTipo="negocio"
                 >
                 <div className="p-3 sm:p-4">
                   <h3
@@ -531,7 +533,7 @@ export default async function HomePage({
                 Entrega rápida para productos de los mejores negocios
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 lg:grid-cols-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {negociosConEnvio.map((negocio) => (
                 <Card
                   key={negocio.id}
@@ -544,6 +546,7 @@ export default async function HomePage({
                     src: negocio.imagenUrl || "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600",
                     alt: negocio.nombre,
                   }}
+                  imageTipo="envio"
                 >
                   <div className="p-3 sm:p-4">
                     <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent/10 text-accent mb-4">

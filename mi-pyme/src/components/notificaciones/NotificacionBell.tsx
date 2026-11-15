@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { NotificacionDropdown } from "./NotificacionDropdown";
 import { useToast } from "@/components/ui/Toast";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 import type { Notificacion } from "@/generated/prisma/client";
 
 interface ConteoResponse {
@@ -25,6 +26,9 @@ export function NotificacionBell() {
   const [noLeidas, setNoLeidas] = useState(0);
   const [recientes, setRecientes] = useState<Notificacion[]>([]);
   const { addToast } = useToast();
+
+  // Cerrar al cambiar de ruta (login, logout, navegación)
+  useCloseOnRouteChange(() => setAbierto(false));
 
   useEffect(() => {
     const controller = new AbortController();

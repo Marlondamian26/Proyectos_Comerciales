@@ -1,11 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 import { Badge } from "./Badge";
 import { CARD_TYPOGRAPHY } from "./CardTypography";
+import { ImageWithFallback } from "./ImageWithFallback";
 
 export interface CardProps {
   title?: string;
@@ -16,6 +16,7 @@ export interface CardProps {
   onClick?: () => void;
   className?: string;
   image?: { src: string; alt: string };
+  imageTipo?: "producto" | "servicio" | "negocio" | "envio" | "combo" | "default";
   badge?: { text: string; variant?: "default" | "success" | "warning" | "error" | "info" | "verified" | "promo" };
   hoverLift?: boolean;
   gradientBorder?: boolean;
@@ -51,6 +52,7 @@ export function Card({
   onClick,
   className,
   image,
+  imageTipo = "default",
   badge,
   hoverLift = true,
   gradientBorder = false,
@@ -89,15 +91,13 @@ export function Card({
           "relative w-full overflow-hidden rounded-t-xl",
           imageAspectRatio ? aspectRatioMap[imageAspectRatio] : "aspect-square sm:aspect-[4/3]"
         )}>
-          <Image
+          <ImageWithFallback
             src={image.src}
             alt={image.alt}
             fill
-            className={cn(
-              "object-cover transition-transform duration-300 group-hover:scale-105",
-            )}
-            loading="lazy"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            tipo={imageTipo}
           />
           {imageOverlay && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />

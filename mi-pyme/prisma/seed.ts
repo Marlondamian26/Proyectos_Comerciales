@@ -11,6 +11,7 @@ import "dotenv/config";
 import { PrismaClient, Prisma } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { IMAGENES } from "./seed-images";
 
 const SEED_DISCLAIMER = " (Ejemplo visual - no real)";
 
@@ -61,17 +62,17 @@ const NEGOCIOS = [
     areaSlug: "comida-restaurantes", subareaSlug: "pizzeria", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-100200", emailContacto: "contacto@pizzeriabellanapoli.com", direccionCompleta: "Av. Martí #301, Pinar del Río",
     nit: "PZN-0001-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: true,
-    imagenUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200",
+    imagenUrl: IMAGENES.portadas.pizzeria[0],
     productos: [
-      { nombre: "Pizza Margarita" + SEED_DISCLAIMER, descripcion: "Mozzarella, tomate y albahaca", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600" },
-      { nombre: "Pizza Pepperoni" + SEED_DISCLAIMER, descripcion: "Pepperoni y mozzarella", precio: 10, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600" },
-      { nombre: "Pizza Napolitana" + SEED_DISCLAIMER, descripcion: "Tomate, aceitunas y orégano", precio: 9, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600" },
-      { nombre: "Pizza Hawaiana" + SEED_DISCLAIMER, descripcion: "Jamón y piña", precio: 11, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600" },
-      { nombre: "Pan de ajo" + SEED_DISCLAIMER, descripcion: "Recién horneado", precio: 3, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=600" },
-      { nombre: "Refresco" + SEED_DISCLAIMER, descripcion: "Lata 330ml", precio: 2, unidadMedida: "lata", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=600" },
+      { nombre: "Pizza Margarita" + SEED_DISCLAIMER, descripcion: "Mozzarella, tomate y albahaca", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.comida.pizza[0] },
+      { nombre: "Pizza Pepperoni" + SEED_DISCLAIMER, descripcion: "Pepperoni y mozzarella", precio: 10, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.comida.pizza[1] },
+      { nombre: "Pizza Napolitana" + SEED_DISCLAIMER, descripcion: "Tomate, aceitunas y orégano", precio: 9, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.comida.pizza[2] },
+      { nombre: "Pizza Hawaiana" + SEED_DISCLAIMER, descripcion: "Jamón y piña", precio: 11, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.comida.pizza[0] },
+      { nombre: "Pan de ajo" + SEED_DISCLAIMER, descripcion: "Recién horneado", precio: 3, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.alimentos.panaderia[0] },
+      { nombre: "Refresco" + SEED_DISCLAIMER, descripcion: "Lata 330ml", precio: 2, unidadMedida: "lata", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.alimentos.bebidas[0] },
     ],
     servicios: [
-      { nombre: "Reserva de mesa" + SEED_DISCLAIMER, descripcion: "Mesa para grupos", duracionMinutos: 30, capacidad: 6, precio: 0, horariosDisponibles: { lunes:["18:00","19:00"], martes:["18:00","19:00"] }, tratamientoIVA: "NO_SUJETO" as const, imagenUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600" },
+      { nombre: "Reserva de mesa" + SEED_DISCLAIMER, descripcion: "Mesa para grupos", duracionMinutos: 30, capacidad: 6, precio: 0, horariosDisponibles: { lunes:["18:00","19:00"], martes:["18:00","19:00"] }, tratamientoIVA: "NO_SUJETO" as const, imagenUrl: IMAGENES.portadas.restaurante[0] },
     ],
   },
   {
@@ -80,14 +81,14 @@ const NEGOCIOS = [
     areaSlug: "salud-belleza", subareaSlug: "peluqueria", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-300400", emailContacto: "contacto@salonestrella.com", direccionCompleta: "Calle Gerardo Medina #88, Pinar del Río",
     nit: "SBE-0003-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: false,
-    imagenUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200",
+    imagenUrl: IMAGENES.portadas.salon[0],
     productos: [],
     servicios: [
-      { nombre: "Corte de cabello" + SEED_DISCLAIMER, descripcion: "Corte profesional", duracionMinutos: 45, capacidad: 1, precio: 10, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600" },
-      { nombre: "Peinado" + SEED_DISCLAIMER, descripcion: "Peinado para eventos", duracionMinutos: 60, capacidad: 1, precio: 15, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600" },
-      { nombre: "Tinte" + SEED_DISCLAIMER, descripcion: "Aplicación de tinte", duracionMinutos: 90, capacidad: 1, precio: 20, horariosDisponibles: { lunes:["09:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=600" },
-      { nombre: "Manicure" + SEED_DISCLAIMER, descripcion: "Cuidado de uñas", duracionMinutos: 40, capacidad: 1, precio: 8, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600" },
-      { nombre: "Pedicure" + SEED_DISCLAIMER, descripcion: "Cuidado de pies", duracionMinutos: 50, capacidad: 1, precio: 10, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=600" },
+      { nombre: "Corte de cabello" + SEED_DISCLAIMER, descripcion: "Corte profesional", duracionMinutos: 45, capacidad: 1, precio: 10, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.saludBelleza.peluqueria[0] },
+      { nombre: "Peinado" + SEED_DISCLAIMER, descripcion: "Peinado para eventos", duracionMinutos: 60, capacidad: 1, precio: 15, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.saludBelleza.peluqueria[1] },
+      { nombre: "Tinte" + SEED_DISCLAIMER, descripcion: "Aplicación de tinte", duracionMinutos: 90, capacidad: 1, precio: 20, horariosDisponibles: { lunes:["09:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.saludBelleza.cosmeticos[0] },
+      { nombre: "Manicure" + SEED_DISCLAIMER, descripcion: "Cuidado de uñas", duracionMinutos: 40, capacidad: 1, precio: 8, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.saludBelleza.manicure[0] },
+      { nombre: "Pedicure" + SEED_DISCLAIMER, descripcion: "Cuidado de pies", duracionMinutos: 50, capacidad: 1, precio: 10, horariosDisponibles: { lunes:["09:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.saludBelleza.manicure[1] },
     ],
   },
   {
@@ -96,13 +97,13 @@ const NEGOCIOS = [
     areaSlug: "aseo-limpieza", subareaSlug: "detergentes", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-400500", emailContacto: "contacto@eltornillo.com", direccionCompleta: "Calle 20 #45, Pinar del Río",
     nit: "FET-0004-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200",
+    imagenUrl: IMAGENES.portadas.ferreteria[0],
     productos: [
-      { nombre: "Detergente" + SEED_DISCLAIMER, descripcion: "Detergente multiusos", precio: 5, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600" },
-      { nombre: "Jabón" + SEED_DISCLAIMER, descripcion: "Jabón de tocador", precio: 2, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600" },
-      { nombre: "Cloro" + SEED_DISCLAIMER, descripcion: "Desinfectante", precio: 3, unidadMedida: "botella", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600" },
-      { nombre: "Escoba" + SEED_DISCLAIMER, descripcion: "Escoba de fibras", precio: 6, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600" },
-      { nombre: "Trapeador" + SEED_DISCLAIMER, descripcion: "Trapeador con palo", precio: 7, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600" },
+      { nombre: "Detergente" + SEED_DISCLAIMER, descripcion: "Detergente multiusos", precio: 5, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.aseo.detergentes[0] },
+      { nombre: "Jabón" + SEED_DISCLAIMER, descripcion: "Jabón de tocador", precio: 2, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.aseo.jabones[0] },
+      { nombre: "Cloro" + SEED_DISCLAIMER, descripcion: "Desinfectante", precio: 3, unidadMedida: "botella", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.aseo.limpieza[0] },
+      { nombre: "Escoba" + SEED_DISCLAIMER, descripcion: "Escoba de fibras", precio: 6, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.aseo.limpieza[1] },
+      { nombre: "Trapeador" + SEED_DISCLAIMER, descripcion: "Trapeador con palo", precio: 7, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.aseo.limpieza[0] },
     ],
     servicios: [],
   },
@@ -112,13 +113,13 @@ const NEGOCIOS = [
     areaSlug: "tecnologia", subareaSlug: "accesorios", municipio: "Pinar del Río", provincia: "Pinar del Río",
     telefono: "559-500600", emailContacto: "contacto@tecnocell.com", direccionCompleta: "Calle Real #12, Pinar del Río",
     nit: "TCC-0005-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenUrl: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=1200",
+    imagenUrl: IMAGENES.portadas.tecnologia[0],
     productos: [
-      { nombre: "Funda de celular" + SEED_DISCLAIMER, descripcion: "Funda protectora", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1601593346740-925612772716?w=600" },
-      { nombre: "Audífonos" + SEED_DISCLAIMER, descripcion: "Audífonos con cable", precio: 15, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600" },
-      { nombre: "Cable USB" + SEED_DISCLAIMER, descripcion: "Cable de carga", precio: 5, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600" },
-      { nombre: "Cargador" + SEED_DISCLAIMER, descripcion: "Cargador rápido", precio: 12, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600" },
-      { nombre: "Power bank" + SEED_DISCLAIMER, descripcion: "Batería portátil", precio: 25, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=600" },
+      { nombre: "Funda de celular" + SEED_DISCLAIMER, descripcion: "Funda protectora", precio: 8, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.tecnologia.accesorios[0] },
+      { nombre: "Audífonos" + SEED_DISCLAIMER, descripcion: "Audífonos con cable", precio: 15, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.tecnologia.audifonos[0] },
+      { nombre: "Cable USB" + SEED_DISCLAIMER, descripcion: "Cable de carga", precio: 5, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.tecnologia.accesorios[1] },
+      { nombre: "Cargador" + SEED_DISCLAIMER, descripcion: "Cargador rápido", precio: 12, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.tecnologia.accesorios[1] },
+      { nombre: "Power bank" + SEED_DISCLAIMER, descripcion: "Batería portátil", precio: 25, unidadMedida: "unidad", tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.tecnologia.accesorios[1] },
     ],
     servicios: [],
   },
@@ -128,11 +129,11 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "envio-paquetes", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-700700", emailContacto: "contacto@cargarapidahabana.cu", direccionCompleta: "Calle 23 #450, Vedado, La Habana",
     nit: "CRH-0006-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: false, permiteEnvio: true,
-    imagenUrl: "https://images.unsplash.com/photo-1552865440-d6c679331079?w=1200",
+    imagenUrl: IMAGENES.transporte.envioPaquete[0],
     productos: [],
     servicios: [
-      { nombre: "Envío Express La Habana" + SEED_DISCLAIMER, descripcion: "Entrega de paquetes el mismo día en La Habana", duracionMinutos: 120, capacidad: 1, precio: 5, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 5, dimensionesMaximas: "40x30x30 cm", origenBase: "Vedado, La Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","14:00","16:00"], martes:["09:00","11:00","14:00","16:00"], miercoles:["09:00","11:00","14:00","16:00"], jueves:["09:00","11:00","14:00","16:00"], viernes:["09:00","11:00","14:00","16:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600" },
-      { nombre: "Envío Nacional de Paquetes" + SEED_DISCLAIMER, descripcion: "Envío de paquetes entre provincias de Cuba", duracionMinutos: 4320, capacidad: 1, precio: 15, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 20, dimensionesMaximas: "60x40x40 cm", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1527747439987-03738bc07e67?w=600" },
+      { nombre: "Envío Express La Habana" + SEED_DISCLAIMER, descripcion: "Entrega de paquetes el mismo día en La Habana", duracionMinutos: 120, capacidad: 1, precio: 5, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 5, dimensionesMaximas: "40x30x30 cm", origenBase: "Vedado, La Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","14:00","16:00"], martes:["09:00","11:00","14:00","16:00"], miercoles:["09:00","11:00","14:00","16:00"], jueves:["09:00","11:00","14:00","16:00"], viernes:["09:00","11:00","14:00","16:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.envioPaquete[0] },
+      { nombre: "Envío Nacional de Paquetes" + SEED_DISCLAIMER, descripcion: "Envío de paquetes entre provincias de Cuba", duracionMinutos: 4320, capacidad: 1, precio: 15, tipo: "TRANSPORTE" as const, tipoTransporte: "ENVIO_PAQUETE" as const, pesoMaximo: 20, dimensionesMaximas: "60x40x40 cm", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.envioPaquete[1] },
     ],
   },
   {
@@ -141,12 +142,12 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "mudanzas", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-800800", emailContacto: "contacto@mudanzascentro.cu", direccionCompleta: "Calle Galiano #120, Centro Habana",
     nit: "MCH-0007-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: true,
-    imagenUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200",
+    imagenUrl: IMAGENES.transporte.mudanza[0],
     productos: [],
     servicios: [
-      { nombre: "Mudanza de Apartamento" + SEED_DISCLAIMER, descripcion: "Traslado completo de enseres de vivienda", duracionMinutos: 240, capacidad: 1, precio: 60, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 500, dimensionesMaximas: "Camión 3 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00","10:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1541888946425-d81bb19744c6?w=600" },
-      { nombre: "Mudanza de Oficina" + SEED_DISCLAIMER, descripcion: "Traslado de equipos y mobiliario de oficina", duracionMinutos: 300, capacidad: 1, precio: 80, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 800, dimensionesMaximas: "Camión 5 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600" },
-      { nombre: "Traslado de Muebles" + SEED_DISCLAIMER, descripcion: "Transporte de muebles individuales o juegos completos", duracionMinutos: 180, capacidad: 1, precio: 35, tipo: "TRANSPORTE" as const, tipoTransporte: "TRASLADO_MUEBLE" as const, pesoMaximo: 300, dimensionesMaximas: "Furgón 2 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","15:00"], martes:["09:00","11:00","15:00"], miercoles:["09:00","11:00","15:00"], jueves:["09:00","11:00","15:00"], viernes:["09:00","11:00","15:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1556228578-0d85b1c47a59?w=600" },
+      { nombre: "Mudanza de Apartamento" + SEED_DISCLAIMER, descripcion: "Traslado completo de enseres de vivienda", duracionMinutos: 240, capacidad: 1, precio: 60, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 500, dimensionesMaximas: "Camión 3 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.mudanza[0] },
+      { nombre: "Mudanza de Oficina" + SEED_DISCLAIMER, descripcion: "Traslado de equipos y mobiliario de oficina", duracionMinutos: 300, capacidad: 1, precio: 80, tipo: "TRANSPORTE" as const, tipoTransporte: "MUDANZA" as const, pesoMaximo: 800, dimensionesMaximas: "Camión 5 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["08:00","10:00","14:00"], martes:["08:00","10:00","14:00"], miercoles:["08:00","10:00","14:00"], jueves:["08:00","10:00","14:00"], viernes:["08:00","10:00","14:00"], sabado:["08:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.mudanza[1] },
+      { nombre: "Traslado de Muebles" + SEED_DISCLAIMER, descripcion: "Transporte de muebles individuales o juegos completos", duracionMinutos: 180, capacidad: 1, precio: 35, tipo: "TRANSPORTE" as const, tipoTransporte: "TRASLADO_MUEBLE" as const, pesoMaximo: 300, dimensionesMaximas: "Furgón 2 toneladas", origenBase: "Centro Habana", destinoBase: "La Habana", alcanceNacional: false, horariosDisponibles: { lunes:["09:00","11:00","15:00"], martes:["09:00","11:00","15:00"], miercoles:["09:00","11:00","15:00"], jueves:["09:00","11:00","15:00"], viernes:["09:00","11:00","15:00"], sabado:["09:00","11:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.mudanza[0] },
     ],
   },
   {
@@ -155,11 +156,11 @@ const NEGOCIOS = [
     areaSlug: "logistica-transporte", subareaSlug: "transporte-personas", municipio: "Plaza de la Revolución", provincia: "La Habana",
     telefono: "559-900900", emailContacto: "contacto@transpersona.cu", direccionCompleta: "Avenida de los Presidentes #300, Miramar, La Habana",
     nit: "TPE-0008-001", regimenFiscal: "GENERAL" as const, tasaIVA: 10, prefijoFactura: "PR", permiteReservas: true, permiteEnvio: false,
-    imagenUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200",
+    imagenUrl: IMAGENES.transporte.personas[0],
     productos: [],
     servicios: [
-      { nombre: "Traslado Aeropuerto" + SEED_DISCLAIMER, descripcion: "Recogida y traslado desde/hacia el aeropuerto José Martí", duracionMinutos: 60, capacidad: 4, precio: 25, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "Miramar, La Habana", destinoBase: "Aeropuerto José Martí", alcanceNacional: false, horariosDisponibles: { lunes:["06:00","08:00","12:00","16:00","20:00"], martes:["06:00","08:00","12:00","16:00","20:00"], miercoles:["06:00","08:00","12:00","16:00","20:00"], jueves:["06:00","08:00","12:00","16:00","20:00"], viernes:["06:00","08:00","12:00","16:00","20:00"], sabado:["06:00","08:00","12:00","16:00","20:00"], domingo:["06:00","08:00","12:00","16:00","20:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600" },
-      { nombre: "Traslado Interprovincial" + SEED_DISCLAIMER, descripcion: "Viaje de pasajeros entre provincias de Cuba", duracionMinutos: 480, capacidad: 4, precio: 45, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["07:00","13:00","19:00"], martes:["07:00","13:00","19:00"], miercoles:["07:00","13:00","19:00"], jueves:["07:00","13:00","19:00"], viernes:["07:00","13:00","19:00"], sabado:["07:00","13:00","19:00"], domingo:["07:00","13:00","19:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: "https://images.unsplash.com/photo-1533541577387-69819e80cba1?w=600" },
+      { nombre: "Traslado Aeropuerto" + SEED_DISCLAIMER, descripcion: "Recogida y traslado desde/hacia el aeropuerto José Martí", duracionMinutos: 60, capacidad: 4, precio: 25, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "Miramar, La Habana", destinoBase: "Aeropuerto José Martí", alcanceNacional: false, horariosDisponibles: { lunes:["06:00","08:00","12:00","16:00","20:00"], martes:["06:00","08:00","12:00","16:00","20:00"], miercoles:["06:00","08:00","12:00","16:00","20:00"], jueves:["06:00","08:00","12:00","16:00","20:00"], viernes:["06:00","08:00","12:00","16:00","20:00"], sabado:["06:00","08:00","12:00","16:00","20:00"], domingo:["06:00","08:00","12:00","16:00","20:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.personas[0] },
+      { nombre: "Traslado Interprovincial" + SEED_DISCLAIMER, descripcion: "Viaje de pasajeros entre provincias de Cuba", duracionMinutos: 480, capacidad: 4, precio: 45, tipo: "TRANSPORTE" as const, tipoTransporte: "TRANSPORTE_PERSONAS" as const, pesoMaximo: 0, dimensionesMaximas: "Vehículo particular", origenBase: "La Habana", destinoBase: "Todas las provincias", alcanceNacional: true, horariosDisponibles: { lunes:["07:00","13:00","19:00"], martes:["07:00","13:00","19:00"], miercoles:["07:00","13:00","19:00"], jueves:["07:00","13:00","19:00"], viernes:["07:00","13:00","19:00"], sabado:["07:00","13:00","19:00"], domingo:["07:00","13:00","19:00"] }, tratamientoIVA: "GRAVADO" as const, imagenUrl: IMAGENES.transporte.personas[0] },
     ],
   },
 ];

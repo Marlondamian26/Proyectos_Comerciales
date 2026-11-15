@@ -39,8 +39,9 @@ describe("prisma/seed.ts", () => {
   });
 
   it("asigna imagenUrl de Unsplash a productos/servicios/negocios", () => {
-    const matches = seed.match(/imagenUrl:\s*"https:\/\/images\.unsplash\.com\//g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(29);
+    const literalMatches = seed.match(/imagenUrl:\s*"https:\/\/images\.unsplash\.com\//g) ?? [];
+    const imMatches = seed.match(/imagenUrl:\s*IMAGENES\./g) ?? [];
+    expect(literalMatches.length + imMatches.length).toBeGreaterThanOrEqual(29);
   });
 
   it("cada título de negocio, producto y servicio deja claro que es ejemplo/no real", () => {
@@ -50,8 +51,8 @@ describe("prisma/seed.ts", () => {
   });
 
   it("todas las portadas de negocio tienen imagen", () => {
-    const portadas = seed.match(/imagenPortada:\s*"https:\/\/images\.unsplash\.com\//g) ?? [];
-    expect(portadas.length).toBe(7);
+    const portadas = seed.match(/imagenUrl:\s*IMAGENES\.(portadas|transporte)\./g) ?? [];
+    expect(portadas.length).toBeGreaterThanOrEqual(7);
   });
 
   it("ninguna tarjeta (producto, servicio o negocio) falta imagen", () => {

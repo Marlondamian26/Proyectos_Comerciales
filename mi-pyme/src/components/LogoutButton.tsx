@@ -9,9 +9,10 @@ import { LogOut } from "lucide-react";
 
 interface LogoutButtonProps {
   variant?: "mobile" | "desktop";
+  onClose?: () => void;
 }
 
-export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
+export function LogoutButton({ variant = "desktop", onClose }: LogoutButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
@@ -19,6 +20,9 @@ export function LogoutButton({ variant = "desktop" }: LogoutButtonProps) {
   const handleLogout = async () => {
     if (loading) return;
     setLoading(true);
+
+    // Cerrar el dropdown ANTES de hacer logout
+    onClose?.();
 
     try {
       // Sign out first so Auth.js can validate CSRF and broadcast the logout.
