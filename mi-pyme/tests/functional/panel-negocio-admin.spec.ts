@@ -4,7 +4,7 @@ import { BASE, seedUsers, smokeTest } from "./_helper";
 test.describe("1.14 Panel NEGOCIO y 1.15 Panel ADMIN", () => {
   test("dashboard negocio carga", async ({ page }) => {
     await smokeTest(page, "/negocio", { user: seedUsers.negocio });
-    await expect(page.locator('text=/Negocio|Dashboard|Pedidos|Ventas/i')).toBeVisible();
+    await expect(page.locator('h1, h2, h3').filter({ hasText: /Negocio|Dashboard/i })).toBeVisible();
   });
 
   test("CRUD productos", async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe("1.14 Panel NEGOCIO y 1.15 Panel ADMIN", () => {
 
   test("admin dashboard carga", async ({ page }) => {
     await smokeTest(page, "/admin", { user: seedUsers.admin });
-    await expect(page.locator('text=/Admin|Usuario|Usuarios/i')).toBeVisible();
+    await expect(page.locator('h1, h2, h3').filter({ hasText: /Admin|Usuario/i })).toBeVisible();
   });
 
   test("listar usuarios", async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe("1.14 Panel NEGOCIO y 1.15 Panel ADMIN", () => {
 
   test("aprobar solicitud negocio", async ({ page }) => {
     await smokeTest(page, "/admin/solicitudes", { user: seedUsers.admin });
-    await expect(page.locator('text=/Solicitud|Negocio|Aprobar/i')).toBeVisible({ timeout: 5000 }).catch(() => {});
+    await expect(page.locator('h1, h2, h3, button').filter({ hasText: /Solicitud|Negocio|Aprobar/i })).toBeVisible({ timeout: 5000 }).catch(() => {});
   });
 
   test("gestionar areas/subareas", async ({ page }) => {

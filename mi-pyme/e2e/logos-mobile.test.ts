@@ -1,9 +1,8 @@
-import { test, expect, devices } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 test.describe("Logos visibles en móvil (iPhone 12)", () => {
-  test.use({ ...devices["iPhone 12"] });
-
   test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
   });
 
@@ -43,9 +42,8 @@ test.describe("Logos visibles en móvil (iPhone 12)", () => {
 });
 
 test.describe("Logos visibles en tablet (iPad)", () => {
-  test.use({ ...devices["iPad"] });
-
   test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto("/");
   });
 
@@ -70,6 +68,7 @@ test.describe("Logos visibles en tablet (iPad)", () => {
 
 test.describe("Logos visibles en desktop", () => {
   test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/");
   });
 

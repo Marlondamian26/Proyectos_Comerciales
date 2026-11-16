@@ -4,7 +4,7 @@ import { BASE, smokeTest } from "./_helper";
 test.describe("1.21 Home y fondos dinamicos", () => {
   test("home carga sin errores", async ({ page }) => {
     await smokeTest(page, "/");
-    await expect(page.locator('text=/Mi-Pyme|negocio|gestionar/i')).toBeVisible();
+    await expect(page.locator('h1, h2, h3').filter({ hasText: /Mi-Pyme/i })).toBeVisible();
   });
 
   test("hero carousel", async ({ page }) => {

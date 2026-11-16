@@ -78,16 +78,16 @@ export default function LoginPage() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-20px); }
         }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         .animate-gradient {
           background-size: 200% 200%;
           animation: gradientShift 8s ease infinite;
         }
         .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-fade-in-up { animation: fadeIn 0.6s ease-out forwards; }
       `}</style>
 
       {/* Left panel - Brand/Illustration */}

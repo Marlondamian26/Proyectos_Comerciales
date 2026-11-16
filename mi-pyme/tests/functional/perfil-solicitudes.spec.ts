@@ -4,7 +4,7 @@ import { BASE, seedUsers, smokeTest } from "./_helper";
 test.describe("1.16 Perfil y foto y 1.17 Solicitudes de rol", () => {
   test("ver perfil", async ({ page }) => {
     await smokeTest(page, "/perfil", { user: seedUsers.cliente });
-    await expect(page.locator('text=/Perfil|Cliente/i')).toBeVisible();
+    await expect(page.locator('h1, h2, h3').filter({ hasText: /Perfil/i })).toBeVisible();
   });
 
   test("actualizar nombre email username", async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe("1.16 Perfil y foto y 1.17 Solicitudes de rol", () => {
 
   test("cambiar contraseña", async ({ page }) => {
     await smokeTest(page, "/perfil/cambiar-password", { user: seedUsers.cliente });
-    await expect(page.locator('input[id="password"], input[id="currentPassword"], text=/Contraseña/i')).toBeVisible();
+    await expect(page.locator('input[id="password"], input[id="currentPassword"], h1, h2, h3, label').filter({ hasText: /Contraseña/i })).toBeVisible();
   });
 
   test("subir foto de perfil", async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe("1.16 Perfil y foto y 1.17 Solicitudes de rol", () => {
 
   test("solicitar rol NEGOCIO", async ({ page }) => {
     await smokeTest(page, "/solicitar-rol", { user: seedUsers.cliente });
-    await expect(page.locator('text=/Solicitud|Negocio|Rol/i')).toBeVisible();
+    await expect(page.locator('h1, h2, h3, h4').filter({ hasText: /Solicitud|Rol/i })).toBeVisible();
   });
 
   test("solicitar rol LOGISTICA", async ({ page }) => {

@@ -21,7 +21,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  globalSetup: "./e2e/global-setup.mjs",
+  globalSetup: "./e2e/global-setup.cjs",
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
