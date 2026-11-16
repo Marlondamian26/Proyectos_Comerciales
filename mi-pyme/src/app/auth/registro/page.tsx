@@ -213,7 +213,7 @@ export default function RegistroPage() {
             <div className="mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Crea tu cuenta</h2>
-                <p className="text-muted-foreground mt-2">Completa el formulario para registrarte</p>
+                <p className="text-secondary mt-2">Completa el formulario para registrarte</p>
               </div>
             </div>
 
@@ -424,9 +424,9 @@ export default function RegistroPage() {
                     className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
                   />
                 </div>
-                <label htmlFor="quiero-vender" className="text-sm text-muted-foreground">
+                <label htmlFor="quiero-vender" className="text-sm text-secondary">
                   <span className="font-medium text-foreground">¿Tienes un negocio?</span>
-                  <span className="block mt-0.5">
+                  <span className="block mt-0.5 text-secondary">
                     Marca esta opción y, tras registrarte, podrás solicitar unirte a Mi-Pyme como negocio o logística.
                   </span>
                 </label>
@@ -482,7 +482,7 @@ export default function RegistroPage() {
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Ya tienes cuenta?{" "}
-              <Link href="/auth/login" className="text-primary hover:text-primary-hover font-medium transition-colors">
+              <Link href="/auth/login" className="text-primary hover:text-primary-hover font-medium transition-colors underline decoration-primary">
                 Inicia sesion
               </Link>
             </p>
