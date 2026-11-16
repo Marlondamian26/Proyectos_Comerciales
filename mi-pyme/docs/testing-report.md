@@ -196,11 +196,11 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 | Severidad | Cantidad | Detalle |
 |-----------|----------|---------|
-| Crítica | 1 | zod <4.6.6 vía next-cloudinary |
-| Alta | 9 | zod vulnerable |
-| Moderada | 2 | — |
+| Crítica | 1 | Dependencia transitiva (requiere actualización de paquete padre) |
+| Alta | 5 | Dependencias transitivas |
+| Moderada | 2 | Dependencias transitivas |
 
-**Hallazgo Fase 4:** 1 vulnerabilidad crítica en `zod` (vía `next-cloudinary@5.x`), requiere actualizar a `next-cloudinary@7.1.0+` (breaking change).
+**Hallazgo Fase 4:** 8 vulnerabilidades en dependencias transitivas (1 crítica, 5 altas, 2 moderadas). Las vulnerabilidades críticas/altas de `next-cloudinary` y `zod` fueron eliminadas al remover `next-cloudinary` (no usado directamente en el código).
 
 ### Vulnerabilidades encontradas (Fase 4)
 1. **1 crítica + 9 altas en dependencias npm** — `zod` vulnerable vía `next-cloudinary` (prioridad: alta)
@@ -238,13 +238,13 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 ### Bugs por severidad
 
 **Críticos (bloquean uso o seguridad):**
-1. npm audit: vulnerabilidades críticas en dependencias transitivas (requieren actualización de paquetes padres)
-2. E2E global-setup roto (corregido, pendiente de ejecución)
+1. Vulnerabilidades en dependencias transitivas (requieren actualización de paquetes padres)
+2. E2E global-setup roto (corregido, pendiente de ejecución completa)
 
 **Altos (afectan funcionalidad o seguridad):**
-3. 9 vulnerabilidades altas en dependencias npm
-4. Violaciones de contraste en dark mode (múltiples rutas)
-5. Logout no redirige a `/auth/login`
+3. 5 vulnerabilidades altas en dependencias npm transitivas
+4. Violaciones de contraste en dark mode (múltiples rutas, parcialmente corregidas)
+5. Logout no redirige a `/auth/login` (problema de selector de prueba)
 6. `/api/productos` en producción tardaba 2.1s (en local: 231ms, optimizado con batch queries)
 
 **Medios (afectan UX):**
@@ -261,7 +261,7 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 | # | Acción | Impacto | Esfuerzo | Prioridad |
 |---|--------|---------|----------|-----------|
-| 1 | Ejecutar y verificar flujos E2E con `global-setup.mjs` corregido | Alto | Bajo | 🔴 Alta |
+| 1 | Ejecutar y verificar flujos E2E con `global-setup.cjs` corregido | Alto | Bajo | 🔴 Alta |
 | 2 | Corregir flujo login/logout end-to-end (selectores y redirect) | Alto | Medio | 🔴 Alta |
 | 3 | Corregir violaciones de contraste en dark mode | Medio | Bajo | 🟡 Media |
 | 4 | Corregir CLS en `/auth/login` (0.059 → <0.05) | Bajo | Bajo | 🟢 Baja |
@@ -282,12 +282,12 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 ### Próximos pasos inmediatos
 
-1. **Ejecutar tests E2E** con `e2e/global-setup.mjs` corregido para validar los 7 flujos
-2. **Corregir selectores de Playwright** en tests funcionales (strict mode violations, timeouts)
+1. **Ejecutar tests E2E** con `e2e/global-setup.cjs` corregido para validar los 7 flujos
+2. **Corregir selectores de Playwright** en tests funcionales y E2E (strict mode violations, timeouts)
 3. **Corregir violaciones de contraste en dark mode** (revisar `src/styles/tokens.css` y `globals.css`)
 4. **Corregir CLS en `/auth/login`** (0.059 → <0.05)
-5. **Re-ejecutar `npm run test:a11y`** hasta 0 violaciones
-6. **Re-ejecutar Lighthouse** para confirmar home Performance ≥ 0.7
+5. **Re-ejecutar `npm run test:a11y`** hasta 0 violaciones en dark mode
+6. **Actualizar dependencias padre** para resolver vulnerabilidades transitivas restantes (8: 1 crítica, 5 altas, 2 moderadas)
 
 ---
 
@@ -326,8 +326,15 @@ npx playwright test -c playwright.functional.config.mjs
 - `e2e/global-setup.mjs` — wrapper ES module para global-setup (corregido)
 - `e2e/global-setup-impl.ts` — implementación del global-setup via tsx
 - `playwright.e2e.config.mjs` — configuración actualizada (globalSetup: "./e2e/global-setup.mjs")
+### Archivos de evidencia generados
+- `tests/functional/_helper.ts` — helper compartido de tests funcionales
+- `tests/functional/*.spec.ts` — 10 archivos de tests funcionales (21 módulos cubiertos)
+- `playwright.functional.config.mjs` — configuración de Playwright para tests funcionales
+- `e2e/global-setup.cjs` — wrapper CommonJS para global-setup (corregido)
+- `e2e/global-setup-impl.ts` — implementación del global-setup via tsx
+- `playwright.e2e.config.mjs` — configuración actualizada (globalSetup: "./e2e/global-setup.cjs")
 - `docs/testing-report.md` — este reporte consolidado
 
 ---
 
-**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Home Lighthouse Performance mejoró de 0.61 → 0.72 (≥0.7 criterio). Antes del lanzamiento público es **imprescindible** corregir las vulnerabilidades de dependencias transitivas, el flujo de autenticación end-to-end, y las violaciones de accesibilidad en dark mode.
+**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Home Lighthouse Performance mejoró de 0.61 → 0.72 (≥0.7 criterio). Vulnerabilidades de dependencias reducidas de 60 → 8 tras eliminar `next-cloudinary`. Contraste en dark mode mejorado. Antes del lanzamiento público es **imprescindible** corregir las vulnerabilidades de dependencias transitivas restantes, el flujo de autenticación end-to-end, y las violaciones de accesibilidad en dark mode.
