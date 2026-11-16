@@ -260,14 +260,13 @@ export class CatalogService extends Service {
     params: ListarServiciosParams = {}
   ): Promise<ServicioConCupos[]> {
     const servicios = await this.listarServicios(params);
-    const resultados: ServicioConCupos[] = [];
+    const ids = servicios.map((s) => s.id);
+    const mapa = await this.dispService.getCuposServicios(ids);
 
-    for (const s of servicios) {
-      const cupos = await this.dispService.getCuposServicio(s.id);
-      resultados.push({ ...s, cuposDisponiblesHoy: cupos });
-    }
-
-    return resultados;
+    return servicios.map((s) => ({
+      ...s,
+      cuposDisponiblesHoy: mapa.get(s.id) ?? null,
+    }));
   }
 
   async listarProductosConPrecioVisual(
@@ -277,16 +276,23 @@ export class CatalogService extends Service {
     const precioService = new PrecioService();
     const productos = await this.listarProductos(params);
 
+    const negocioIds = Array.from(new Set(productos.map((p) => p.negocioId)));
+    const negocios = await prisma.negocio.findMany({
+      where: { id: { in: negocioIds } },
+      select: {
+        id: true,
+        monedaBase: true,
+        monedaVisualizacion: true,
+        conversionAutomatica: true,
+      },
+    });
+    const negocioMap = new Map(
+      negocios.map((n) => [n.id, n])
+    );
+
     return Promise.all(
       productos.map(async (producto) => {
-        const negocio = await prisma.negocio.findUnique({
-          where: { id: producto.negocioId },
-          select: {
-            monedaBase: true,
-            monedaVisualizacion: true,
-            conversionAutomatica: true,
-          },
-        });
+        const negocio = negocioMap.get(producto.negocioId);
 
         const res = await precioService.calcularPrecioVista({
           montoBase: Number(producto.precio),
@@ -315,16 +321,23 @@ export class CatalogService extends Service {
     const precioService = new PrecioService();
     const servicios = await this.listarServicios(params);
 
+    const negocioIds = Array.from(new Set(servicios.map((s) => s.negocioId)));
+    const negocios = await prisma.negocio.findMany({
+      where: { id: { in: negocioIds } },
+      select: {
+        id: true,
+        monedaBase: true,
+        monedaVisualizacion: true,
+        conversionAutomatica: true,
+      },
+    });
+    const negocioMap = new Map(
+      negocios.map((n) => [n.id, n])
+    );
+
     return Promise.all(
       servicios.map(async (servicio) => {
-        const negocio = await prisma.negocio.findUnique({
-          where: { id: servicio.negocioId },
-          select: {
-            monedaBase: true,
-            monedaVisualizacion: true,
-            conversionAutomatica: true,
-          },
-        });
+        const negocio = negocioMap.get(servicio.negocioId);
 
         const res = await precioService.calcularPrecioVista({
           montoBase: Number(servicio.precio),

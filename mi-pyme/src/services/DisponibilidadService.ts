@@ -334,6 +334,61 @@ export class DisponibilidadService extends Service {
     return dto;
   }
 
+  /**
+   * Versión batch para listados: devuelve cupos de varios servicios en una
+   * sola pasada, evitando N+1 consultas.
+   */
+  async getCuposServicios(
+    servicioIds: string[],
+    fecha?: Date | string | number
+  ): Promise<Map<string, CuposServicioDTO>> {
+    const fechaNorm = normalizarFecha(fecha);
+    const fechaISO = formatFechaISO(fechaNorm);
+    const mapa = new Map<string, CuposServicioDTO>();
+
+    const inicioDia = fechaNorm;
+    const finDia = new Date(fechaNorm);
+    finDia.setUTCDate(finDia.getUTCDate() + 1);
+
+    const [servicios, reservas] = await Promise.all([
+      prisma.servicio.findMany({
+        where: { id: { in: servicioIds } },
+        select: { id: true, capacidad: true, activo: true },
+      }),
+      prisma.reserva.groupBy({
+        by: ["servicioId"],
+        where: {
+          servicioId: { in: servicioIds },
+          estado: { in: RESERVA_ESTADOS_ACTIVOS },
+          fechaHoraInicio: { gte: inicioDia, lt: finDia },
+        },
+        _count: true,
+      }),
+    ]);
+
+    const reservasMap = new Map<string, number>();
+    for (const r of reservas) {
+      reservasMap.set(r.servicioId, r._count ?? 0);
+    }
+
+    for (const s of servicios) {
+      const dto: CuposServicioDTO = {
+        capacidad: s.capacidad,
+        reservadas: reservasMap.get(s.id) ?? 0,
+        cuposDisponibles: Math.max(0, s.capacidad - (reservasMap.get(s.id) ?? 0)),
+        disponible: s.activo && s.capacidad - (reservasMap.get(s.id) ?? 0) > 0,
+      };
+      mapa.set(s.id, dto);
+      await this.cache.set(
+        cacheKeys.disponibilidad.servicio(s.id, fechaISO),
+        dto,
+        cacheTTL.disponibilidad
+      );
+    }
+
+    return mapa;
+  }
+
   async puedeComprarProducto(
     productoId: string,
     cantidad: number,

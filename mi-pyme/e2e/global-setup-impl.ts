@@ -1,0 +1,104 @@
+import { PrismaClient, Rol } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
+
+export default async function globalSetup() {
+  const hashedPassword = await bcrypt.hash("12345678", 12);
+
+  await prisma.user.upsert({
+    where: { email: "admin@mi-pyme.local" },
+    update: {
+      password: hashedPassword,
+      nombre: "Administrador Genérico",
+      username: "admin",
+      rol: "ADMIN",
+      isGenericAdmin: true,
+      mustChangePassword: true,
+      isActive: true,
+    },
+    create: {
+      email: "admin@mi-pyme.local",
+      username: "admin",
+      password: hashedPassword,
+      nombre: "Administrador Genérico",
+      rol: "ADMIN",
+      isGenericAdmin: true,
+      mustChangePassword: true,
+      isActive: true,
+    },
+  });
+
+  const clienteNegocioPassword = await bcrypt.hash("E2eCliente123", 12);
+  const existingClienteNegocio = await prisma.user.findUnique({
+    where: { email: "e2e-cliente-negocio@test.com" },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "e2e-cliente-negocio@test.com" },
+    update: {
+      password: clienteNegocioPassword,
+      isActive: true,
+      mustChangePassword: false,
+    },
+    create: {
+      email: "e2e-cliente-negocio@test.com",
+      username: "e2e_cliente_negocio",
+      password: clienteNegocioPassword,
+      nombre: "Cliente Negocio Test",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+    },
+  });
+
+  const lastLoginPassword = await bcrypt.hash("lastlogin123", 12);
+  await prisma.user.upsert({
+    where: { email: "e2e-lastlogin@test.com" },
+    update: {
+      password: lastLoginPassword,
+      nombre: "E2E LastLogin Test",
+      username: "e2e_lastlogin",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+      lastLoginAt: null,
+    },
+    create: {
+      email: "e2e-lastlogin@test.com",
+      username: "e2e_lastlogin",
+      password: lastLoginPassword,
+      nombre: "E2E LastLogin Test",
+      rol: Rol.CLIENTE,
+      mustChangePassword: false,
+      isActive: true,
+    },
+  });
+
+  const existingInactive = await prisma.user.findUnique({
+    where: { email: "e2e-inactive@test.com" },
+  });
+
+  if (!existingInactive) {
+    const inactivePassword = await bcrypt.hash("e2e-inactive-pass", 10);
+    await prisma.user.create({
+      data: {
+        email: "e2e-inactive@test.com",
+        username: "e2e_inactive",
+        password: inactivePassword,
+        nombre: "E2E Inactive User",
+        rol: "CLIENTE",
+        mustChangePassword: false,
+        isActive: false,
+      },
+    });
+  }
+
+  await prisma.$disconnect();
+};
