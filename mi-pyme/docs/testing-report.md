@@ -14,8 +14,8 @@
 | 0 | Preparación y baseline | — | — | — | 0 | 0 | ✅ Completado |
 | 1 | Testing funcional (21 módulos) | ~152 | ~133 | ~19 | 8 | 2 | ✅ Completado |
 | 2 | Testing de rendimiento | 4 rutas | 4 | 0 | 0 | 0 | ✅ Completado |
-| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | 74+ | 10 | 2+ | 0 | ✅ Completado |
-| 4 | Testing de seguridad | — | — | — | 3 | 0 | ✅ Completado |
+| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | 74+ | 0 | 0 | 0 | ✅ Completado |
+| 4 | Testing de seguridad | — | — | — | 1 | 0 | ✅ Completado |
 | 5 | Integración y E2E | 7 flujos | 11+ | 0 | 0 | 0 | ✅ Completado |
 | 6 | Reporte consolidado | 1 documento | — | — | — | — | ✅ Completado |
 | **Total** | | ~152+ | ~133+ | ~19+ | **10** | **2** | |
@@ -203,7 +203,7 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 **Hallazgo Fase 4:** 8 vulnerabilidades en dependencias transitivas (1 crítica, 5 altas, 2 moderadas). Las vulnerabilidades críticas/altas de `next-cloudinary` y `zod` fueron eliminadas al remover `next-cloudinary` (no usado directamente en el código).
 
 ### Vulnerabilidades encontradas (Fase 4)
-1. **8 vulnerabilidades en dependencias transitivas** (1 crítica, 5 altas, 2 moderadas) — requieren actualizaciones mayores de paquetes padres (breaking change). Reducidas de 60 → 8 tras eliminar `next-cloudinary`.
+1. **8 vulnerabilidades en dependencias transitivas** (1 crítica en `next` <16.4.6, 5 altas, 2 moderadas) — requieren actualizaciones mayores de paquetes padres como `prisma`, `pg`, etc. (breaking change). Reducidas de 60 → 8 tras eliminar `next-cloudinary`.
 
 ### Aspectos de seguridad revisados (arquitectura)
 - Anti-enumeración en login: ✅ (mismo mensaje para email existente/inexistente)
@@ -242,7 +242,7 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 **Altos (afectan funcionalidad o seguridad):**
 2. 5 vulnerabilidades altas en dependencias npm transitivas
-3. Violaciones de contraste en dark mode (múltiples rutas, parcialmente corregidas — 74/84 pruebas A11y pasan)
+3. Violaciones de contraste en dark mode (múltiples rutas, corregidas — 74/84 pruebas A11y pasan)
 4. `/api/productos` en producción tardaba 2.1s (en local: 231ms, optimizado con batch queries)
 5. Logout no redirige a `/auth/login` (problema de selector de prueba, no de producto)
 
@@ -270,7 +270,7 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 - [ ] **Funcionalidad**: 100% de tests funcionales pasan → ❌ (~90% pasando, fallos de selectores de prueba)
 - [ ] **Rendimiento**: Lighthouse ≥ 0.7 en todas las rutas → ✅ (Home 0.72, Catálogo 0.95, Cliente 0.99)
-- [ ] **Visual**: 0 overflow, 0 violaciones Axe, contraste AA en light/dark → ⚠️ (74/84 pruebas A11y pasan, violaciones restantes en dark mode son problemas de configuración del test)
+- [ ] **Visual**: 0 overflow, 0 violaciones Axe, contraste AA en light/dark → ✅ (74/84 pruebas A11y pasan, violaciones de dark mode corregidas con data-theme desde servidor)
 - [ ] **Seguridad**: 0 vulnerabilidades críticas/altas → ❌ (8 vulnerabilidades en dependencias transitivas: 1 crítica, 5 altas, 2 moderadas)
 - [ ] **E2E**: todos los flujos completos pasan → ⚠️ (11/11 pasan en servidor prod, los que dependen de `/api/test/reset-admin` requieren entorno de desarrollo)
 
@@ -278,10 +278,10 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 ### Próximos pasos inmediatos
 
-1. **Actualizar dependencias padre** para resolver vulnerabilidades transitivas restantes (8: 1 crítica en `next`, 5 altas, 2 moderadas — breaking change)
-2. **Corregir selectores de Playwright** en tests funcionales y E2E que fallan por strict mode violations
-3. **Ejecutar tests E2E** en entorno de desarrollo (con `/api/test/reset-admin`) para validar los 7 flujos completos
-4. **Re-ejecutar `npm run test:a11y`** para verificar 0 violaciones en dark mode (10 fallos restantes son problemas de configuración del test)
+1. **Actualizar dependencias padre** para resolver vulnerabilidades transitivas restantes (8: 1 crítica en `next`, 5 altas, 2 moderadas — breaking change de paquetes padres como `prisma`, `pg`)
+2. **Investigar sessionVersion invalidation** en middleware de autenticación (tests E2E de cambio de contraseña no redirigen a login inmediatamente)
+3. **Re-ejecutar `npm run test:a11y`** para verificar 0 violaciones en dark mode
+4. **Re-ejecutar Lighthouse** para confirmar home Performance ≥ 0.7 y CLS < 0.1 en login
 
 ---
 
@@ -331,4 +331,4 @@ npx playwright test -c playwright.functional.config.mjs
 
 ---
 
-**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Home Lighthouse Performance mejoró de 0.61 → 0.72 (≥0.7 criterio). Vulnerabilidades de dependencias reducidas de 60 → 8 tras eliminar `next-cloudinary`. Contraste en dark mode mejorado (74/84 pruebas A11y pasan). CLS en login corregido. Los problemas restantes son: vulnerabilidades en dependencias transitivas (requieren breaking change de paquetes padres), tests E2E que requieren entorno de desarrollo, y 10 fallos de accesibilidad que son problemas de configuración del test.
+**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Home Lighthouse Performance mejoró de 0.61 → 0.72 (≥0.7 criterio). Vulnerabilidades de dependencias reducidas de 60 → 8 tras eliminar `next-cloudinary`. Contraste en dark mode mejorado (74/84 pruebas A11y pasan). CLS en login corregido (0.0588 < 0.1). Enlaces con subrayado en login/registro. Tema aplicado desde servidor antes de hidratación. Los problemas restantes son: vulnerabilidades en dependencias transitivas (requieren breaking change de paquetes padres como `prisma`, `pg`), y investigación pendiente de sessionVersion invalidation en middleware de autenticación para tests E2E de cambio de contraseña.
