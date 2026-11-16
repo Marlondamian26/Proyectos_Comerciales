@@ -13,8 +13,8 @@ test.describe("S1: Flujo admin genérico forzado a cambiar contraseña", () => {
   }) => {
     await page.goto("/auth/login");
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
 
     await page.click('button[type="submit"]');
 
@@ -36,8 +36,8 @@ test.describe("S1: Flujo admin genérico forzado a cambiar contraseña", () => {
       page.locator("text=Contraseña cambiada correctamente")
     ).toBeVisible();
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "newpassword123");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("newpassword123");
 
     await page.click('button[type="submit"]');
 
@@ -51,8 +51,8 @@ test.describe("S1: Flujo admin genérico forzado a cambiar contraseña", () => {
   }) => {
     await page.goto("/auth/login");
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
 
     await page.click('button[type="submit"]');
 
@@ -68,8 +68,8 @@ test.describe("S1: Flujo admin genérico forzado a cambiar contraseña", () => {
   }) => {
     await page.goto("/auth/login");
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
 
     await page.click('button[type="submit"]');
 
@@ -87,8 +87,8 @@ test.describe("S2: Usuario inactivo no puede loguearse", () => {
   }) => {
     await page.goto("/auth/login");
 
-    await page.fill('#identifier', "e2e-inactive@test.com");
-    await page.fill('#password', "e2e-inactive-pass");
+    await page.locator('#identifier').first().fill("e2e-inactive@test.com");
+    await page.locator('#password').first().fill("e2e-inactive-pass");
 
     await page.click('button[type="submit"]');
 
@@ -104,8 +104,8 @@ test.describe("S2: Usuario inactivo no puede loguearse", () => {
   }) => {
     await page.goto("/auth/login");
 
-    await page.fill('#identifier', "e2e-inactive@test.com");
-    await page.fill('#password', "wrongpassword");
+    await page.locator('#identifier').first().fill("e2e-inactive@test.com");
+    await page.locator('#password').first().fill("wrongpassword");
 
     await page.click('button[type="submit"]');
 

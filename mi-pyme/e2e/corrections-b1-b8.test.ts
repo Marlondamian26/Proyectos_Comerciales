@@ -39,8 +39,8 @@ test.describe("B3: Reset password flow (POST-only endpoints)", () => {
 
     await page.waitForURL("/auth/login");
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "NewSecurePass123");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("NewSecurePass123");
     await page.click('button[type="submit"]');
 
     await page.waitForURL("/perfil/cambiar-password");
@@ -133,8 +133,8 @@ test.describe("B4: sessionVersion invalidation on password change", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
     await page.click('button[type="submit"]');
     await page.waitForURL("/admin");
 
@@ -157,8 +157,8 @@ test.describe("B4: sessionVersion invalidation on password change", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
     await page.click('button[type="submit"]');
     await page.waitForURL("/admin");
 
@@ -169,8 +169,8 @@ test.describe("B4: sessionVersion invalidation on password change", () => {
     await page.click('button[type="submit"]');
     await page.waitForURL("/auth/login");
 
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
     await page.click('button[type="submit"]');
 
     await expect(page.locator("text=Credenciales invalidas")).toBeVisible();
@@ -180,8 +180,8 @@ test.describe("B4: sessionVersion invalidation on password change", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
     await page.click('button[type="submit"]');
     await page.waitForURL("/admin");
 
@@ -201,8 +201,8 @@ test.describe("B7: CLIENTE negocio owner can access /negocio routes", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "e2e-cliente-negocio@test.com");
-    await page.fill('#password', "E2eCliente123");
+    await page.locator('#identifier').first().fill("e2e-cliente-negocio@test.com");
+    await page.locator('#password').first().fill("E2eCliente123");
     await page.click('button[type="submit"]');
 
     await page.waitForURL("/cliente");
@@ -217,8 +217,8 @@ test.describe("B7: CLIENTE negocio owner can access /negocio routes", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "admin@mi-pyme.local");
-    await page.fill('#password', "12345678");
+    await page.locator('#identifier').first().fill("admin@mi-pyme.local");
+    await page.locator('#password').first().fill("12345678");
     await page.click('button[type="submit"]');
     await page.waitForURL("/admin");
 

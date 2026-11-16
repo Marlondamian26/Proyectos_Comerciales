@@ -33,10 +33,10 @@ test.describe("Protected route redirects", () => {
 
   test("rememberMe persists a 30-day session cookie", async ({ page, context }) => {
     await page.goto("/auth/login");
-    await page.locator("#identifier").fill("e2e-cliente-negocio@test.com");
-    await page.locator("#password").fill("E2eCliente123");
+    await page.locator("#identifier").first().fill("e2e-cliente-negocio@test.com");
+    await page.locator("#password").first().fill("E2eCliente123");
     await page.locator("#rememberMe").check();
-    await page.locator('form button[type="submit"]').click();
+    await page.locator('form button[type="submit"]').first().click();
     await expect(page).toHaveURL(/\/cliente$/);
 
     const cookie = (await context.cookies()).find((entry) =>
@@ -57,9 +57,9 @@ test.describe("Protected route redirects", () => {
     const secondTab = await context.newPage();
 
     await page.goto("/auth/login");
-    await page.locator("#identifier").fill("e2e-cliente-negocio@test.com");
-    await page.locator("#password").fill("E2eCliente123");
-    await page.locator('form button[type="submit"]').click();
+    await page.locator("#identifier").first().fill("e2e-cliente-negocio@test.com");
+    await page.locator("#password").first().fill("E2eCliente123");
+    await page.locator('form button[type="submit"]').first().click();
     await expect(page).toHaveURL(/\/cliente$/);
 
     await secondTab.goto("/cliente");

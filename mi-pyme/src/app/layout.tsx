@@ -46,6 +46,12 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className={inter.className} suppressHydrationWarning data-scroll-behavior="smooth">
+      <script
+        id="theme-init"
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var t=localStorage.getItem('mi-pyme-theme');if(!t){var m=document.cookie.match('(?:^|; )mi-pyme-theme=([^;]*)');t=m?m[1]:null}if(t==='light'||t==='dark'||t==='system'){var s=window.matchMedia('(prefers-color-scheme: dark)').matches?t==='system'?'dark':t:t;document.documentElement.setAttribute('data-theme',s);document.documentElement.style.colorScheme=s;}}catch(e){}})()`,
+        }}
+      />
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
           <ThemeProvider>

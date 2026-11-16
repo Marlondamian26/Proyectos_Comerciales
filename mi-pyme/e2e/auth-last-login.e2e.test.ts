@@ -29,8 +29,8 @@ test.describe("A5: lastLoginAt actualizado en login exitoso (E2E)", () => {
     expect(before!.lastLoginAt).toBeNull();
 
     await page.goto("/auth/login");
-    await page.fill('#identifier', "e2e-lastlogin@test.com");
-    await page.fill('#password', "lastlogin123");
+    await page.locator('#identifier').first().fill("e2e-lastlogin@test.com");
+    await page.locator('#password').first().fill("lastlogin123");
     await page.click('button[type="submit"]');
 
     await page.waitForURL("/cliente");
@@ -51,8 +51,8 @@ test.describe("A5: lastLoginAt actualizado en login exitoso (E2E)", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "e2e-inactive@test.com");
-    await page.fill('#password', "e2e-inactive-pass");
+    await page.locator('#identifier').first().fill("e2e-inactive@test.com");
+    await page.locator('#password').first().fill("e2e-inactive-pass");
     await page.click('button[type="submit"]');
 
     await expect(page.locator("text=Credenciales invalidas")).toBeVisible();
@@ -68,8 +68,8 @@ test.describe("A5: lastLoginAt actualizado en login exitoso (E2E)", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.fill('#identifier', "e2e-lastlogin@test.com");
-    await page.fill('#password', "wrongpassword");
+    await page.locator('#identifier').first().fill("e2e-lastlogin@test.com");
+    await page.locator('#password').first().fill("wrongpassword");
     await page.click('button[type="submit"]');
 
     await expect(page.locator("text=Credenciales invalidas")).toBeVisible();
