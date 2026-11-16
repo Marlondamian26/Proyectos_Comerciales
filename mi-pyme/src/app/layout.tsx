@@ -8,6 +8,7 @@ import { DashboardChrome } from "@/components/DashboardChrome";
 import { Footer } from "@/components/Footer";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { auth } from "@/lib/auth";
+import { cookies } from "next/headers";
 import "./globals.css";
 import "@/styles/tokens.css";
 import "@/styles/gradients.css";
@@ -44,8 +45,22 @@ export default async function RootLayout({
   const session = await auth();
   const userRol = session?.user?.rol;
 
+  // Leer tema desde cookie del servidor para aplicar data-theme antes de la hidratación
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get("mi-pyme-theme")?.value;
+  const serverTheme =
+    themeCookie === "light" || themeCookie === "dark"
+      ? themeCookie
+      : "light"; // Fallback para 'system' en servidor (no conocemos preferencia del SO)
+
   return (
-    <html lang="es" className={inter.className} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang="es"
+      className={inter.className}
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      data-theme={serverTheme}
+    >
       <script
         id="theme-init"
         dangerouslySetInnerHTML={{

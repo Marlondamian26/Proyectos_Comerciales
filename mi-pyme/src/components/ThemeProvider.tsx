@@ -175,7 +175,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const handleChange = () => updateSystemTheme();
 
     mediaQuery.addEventListener("change", handleChange);
-    applyTheme(resolvedTheme);
+
+    // Respetar el data-theme ya establecido por el servidor (SSR)
+    // para evitar flash de tema incorrecto tras la hidratación
+    const serverTheme = document.documentElement.getAttribute("data-theme");
+    const themeToApply = (serverTheme === "light" || serverTheme === "dark")
+      ? serverTheme
+      : resolvedTheme;
+
+    applyTheme(themeToApply);
+    // Sincronizar el store con el tema del servidor si es diferente
+    if (themeToApply !== resolvedTheme && (themeToApply === "light" || themeToApply === "dark")) {
+      setTheme(themeToApply === "light" ? "light" : "dark");
+    }
 
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [ready, resolvedTheme]);
