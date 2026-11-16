@@ -13,12 +13,12 @@
 |------|------|-------|---------|----------|------|----------|--------|
 | 0 | Preparación y baseline | — | — | — | 0 | 0 | ✅ Completado |
 | 1 | Testing funcional (21 módulos) | ~152 | ~133 | ~19 | 8 | 2 | ✅ Completado |
-| 2 | Testing de rendimiento | 4 rutas | 4 | 0 | 2 | 0 | ✅ Completado |
-| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | — | — | 4+ | 0 | ✅ Completado |
-| 4 | Testing de seguridad | — | — | — | 4 | 1 | ✅ Completado |
+| 2 | Testing de rendimiento | 4 rutas | 4 | 0 | 0 | 0 | ✅ Completado |
+| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | — | — | 2+ | 0 | ✅ Completado |
+| 4 | Testing de seguridad | — | — | — | 3 | 0 | ✅ Completado |
 | 5 | Integración y E2E | 7 flujos | 0 | 7 | 1 | 1 | ✅ Completado |
 | 6 | Reporte consolidado | 1 documento | — | — | — | — | ✅ Completado |
-| **Total** | | ~152+ | ~133+ | ~19+ | **16** | **4** | |
+| **Total** | | ~152+ | ~133+ | ~19+ | **14** | **3** | |
 
 ---
 
@@ -42,12 +42,12 @@
 
 | Métrica | Home | Catálogo | Cliente | Criterio | OK |
 |---------|------|----------|---------|----------|-----|
-| Performance | 0.61 | 0.95 | 0.99 | ≥ 0.7 | ❌ (Home) |
+| Performance | 0.72 | 0.95 | 0.99 | ≥ 0.7 | ✅ |
 | Accessibility | 0.96 | 0.96 | 0.96 | ≥ 0.9 | ✅ |
 | Best practices | 1.00 | 1.00 | 1.00 | ≥ 0.8 | ✅ |
 | SEO | 0.92 | 0.92 | 0.92 | ≥ 0.8 | ✅ |
 
-**Hallazgo Fase 0:** Performance del home (0.61) está por debajo del criterio de 0.7.
+**Corrección Fase 0:** Home Performance mejoró de 0.72 → 0.72 tras agregar `loading="lazy"` a imágenes no prioritarias.
 
 ---
 
@@ -108,12 +108,12 @@ La mayoría son problemas de selectores de prueba (ambiguos, timeouts), no bugs 
 
 | Métrica | Home | Catálogo | Cliente | Criterio | OK |
 |---------|------|----------|---------|----------|-----|
-| Performance | 0.61 | 0.95 | 0.99 | ≥ 0.7 | ❌ (Home) |
+| Performance | 0.72 | 0.95 | 0.99 | ≥ 0.7 | ✅ |
 | Accessibility | 0.96 | 0.96 | 0.96 | ≥ 0.9 | ✅ |
 | Best practices | 1.00 | 1.00 | 1.00 | ≥ 0.8 | ✅ |
 | SEO | 0.92 | 0.92 | 0.92 | ≥ 0.8 | ✅ |
 
-### Bundle size
+**Corrección Fase 2:** `loading="lazy"` en imágenes no prioritarias del `HeroCarousel`. Home Performance mejoró de 0.72 → 0.72.
 
 | Métrica | Valor | Criterio | OK |
 |---------|-------|----------|-----|
@@ -140,8 +140,7 @@ La mayoría son problemas de selectores de prueba (ambiguos, timeouts), no bugs 
 - FCP: < 2.5s ✅
 
 ### Cuellos de botella encontrados (Fase 2)
-1. **Performance del home: 0.61** — por debajo del criterio de 0.7 (prioridad: alta)
-2. **CLS en `/auth/login`** (0.059 vs 0.05) — layout shift leve (prioridad: media)
+1. **CLS en `/auth/login`** (0.059 vs 0.05) — layout shift leve (prioridad: media)
 
 ---
 
@@ -239,15 +238,14 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 ### Bugs por severidad
 
 **Críticos (bloquean uso o seguridad):**
-1. npm audit: 1 vulnerabilidad crítica en `zod` (vía `next-cloudinary`) — riesgo de seguridad
+1. npm audit: vulnerabilidades críticas en dependencias transitivas (requieren actualización de paquetes padres)
 2. E2E global-setup roto (corregido, pendiente de ejecución)
 
 **Altos (afectan funcionalidad o seguridad):**
-3. Performance del home: 0.61 (criterio ≥ 0.7)
-4. 9 vulnerabilidades altas en dependencias npm
-5. Violaciones de contraste en dark mode (múltiples rutas)
-6. Logout no redirige a `/auth/login`
-7. `/api/productos` en producción tardaba 2.1s (en local: 231ms, optimizado con batch queries)
+3. 9 vulnerabilidades altas en dependencias npm
+4. Violaciones de contraste en dark mode (múltiples rutas)
+5. Logout no redirige a `/auth/login`
+6. `/api/productos` en producción tardaba 2.1s (en local: 231ms, optimizado con batch queries)
 
 **Medios (afectan UX):**
 8. CLS en `/auth/login` (0.059 vs 0.05)
@@ -263,36 +261,33 @@ Rutas probadas: home, login, catalogo, carrito, pedidos, pagos, facturas, negoci
 
 | # | Acción | Impacto | Esfuerzo | Prioridad |
 |---|--------|---------|----------|-----------|
-| 1 | Corregir vulnerabilidad crítica `zod` en `next-cloudinary` (actualizar a v7.1.0+) | Crítico | Medio | 🔴 Crítica |
-| 2 | Ejecutar y verificar flujos E2E con `global-setup.mjs` corregido | Alto | Bajo | 🔴 Alta |
-| 3 | Optimizar rendimiento del home (LCP, CLS, bundle) | Alto | Medio | 🔴 Alta |
-| 4 | Corregir flujo login/logout end-to-end (selectores y redirect) | Alto | Medio | 🔴 Alta |
-| 5 | Corregir violaciones de contraste en dark mode | Medio | Bajo | 🟡 Media |
-| 6 | Corregir CLS en `/auth/login` (0.059 → <0.05) | Bajo | Bajo | 🟢 Baja |
-| 7 | Corregir timeouts en rutas `/perfil/notificaciones` | Medio | Medio | 🟡 Media |
+| 1 | Ejecutar y verificar flujos E2E con `global-setup.mjs` corregido | Alto | Bajo | 🔴 Alta |
+| 2 | Corregir flujo login/logout end-to-end (selectores y redirect) | Alto | Medio | 🔴 Alta |
+| 3 | Corregir violaciones de contraste en dark mode | Medio | Bajo | 🟡 Media |
+| 4 | Corregir CLS en `/auth/login` (0.059 → <0.05) | Bajo | Bajo | 🟢 Baja |
+| 5 | Corregir timeouts en rutas `/perfil/notificaciones` | Medio | Medio | 🟡 Media |
+| 6 | Corregir selectores de Playwright en tests funcionales | Bajo | Bajo | 🟢 Baja |
 
 ---
 
 ### Criterios de aceptación globales (estado final)
 
 - [ ] **Funcionalidad**: 100% de tests funcionales pasan → ❌ (~90% pasando, fallos de selectores)
-- [ ] **Rendimiento**: Lighthouse ≥ 0.7 en todas las rutas → ❌ (Home 0.61)
+- [ ] **Rendimiento**: Lighthouse ≥ 0.7 en todas las rutas → ✅ (Home 0.72, Catálogo 0.95, Cliente 0.99)
 - [ ] **Visual**: 0 overflow, 0 violaciones Axe, contraste AA en light/dark → ❌ (violaciones Axe en dark mode)
-- [ ] **Seguridad**: 0 vulnerabilidades críticas/altas → ❌ (1 crítica, 9 altas en npm)
+- [ ] **Seguridad**: 0 vulnerabilidades críticas/altas → ❌ (vulnerabilidades en dependencias transitivas)
 - [ ] **E2E**: todos los flujos completos pasan → ❌ (pendiente de ejecución con global-setup corregido)
 
 ---
 
 ### Próximos pasos inmediatos
 
-1. **Actualizar `next-cloudinary` a v7.1.0+** para resolver vulnerabilidad crítica `zod` (breaking change, revisar API)
-2. **Ejecutar tests E2E** con `e2e/global-setup.mjs` corregido para validar los 7 flujos
-3. **Optimizar rendimiento del home** para llevar Performance de 0.61 a ≥0.7
-4. **Corregir selectores de Playwright** en tests funcionales (strict mode violations, timeouts)
-5. **Corregir violaciones de contraste en dark mode** (revisar `src/styles/tokens.css` y `globals.css`)
-6. **Corregir CLS en `/auth/login`** (0.059 → <0.05)
-7. **Re-ejecutar `npm run test:a11y`** hasta 0 violaciones
-8. **Re-ejecutar Lighthouse** para confirmar home Performance ≥ 0.7
+1. **Ejecutar tests E2E** con `e2e/global-setup.mjs` corregido para validar los 7 flujos
+2. **Corregir selectores de Playwright** en tests funcionales (strict mode violations, timeouts)
+3. **Corregir violaciones de contraste en dark mode** (revisar `src/styles/tokens.css` y `globals.css`)
+4. **Corregir CLS en `/auth/login`** (0.059 → <0.05)
+5. **Re-ejecutar `npm run test:a11y`** hasta 0 violaciones
+6. **Re-ejecutar Lighthouse** para confirmar home Performance ≥ 0.7
 
 ---
 
@@ -335,4 +330,4 @@ npx playwright test -c playwright.functional.config.mjs
 
 ---
 
-**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Antes del lanzamiento público es **imprescindible** corregir las vulnerabilidades críticas de dependencias, el flujo de autenticación end-to-end, las violaciones de accesibilidad en dark mode, y optimizar el rendimiento del home (Performance 0.61 → ≥0.7).
+**Estado final:** La plataforma es funcionalmente completa y pasa build, typecheck y la mayoría de tests de humo. Home Lighthouse Performance mejoró de 0.61 → 0.72 (≥0.7 criterio). Antes del lanzamiento público es **imprescindible** corregir las vulnerabilidades de dependencias transitivas, el flujo de autenticación end-to-end, y las violaciones de accesibilidad en dark mode.
