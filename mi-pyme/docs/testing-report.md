@@ -14,11 +14,11 @@
 | 0 | Preparación y baseline | — | — | — | 0 | 0 | ✅ Completado |
 | 1 | Testing funcional (21 módulos) | ~152 | ~133 | ~19 | 8 | 2 | ✅ Completado |
 | 2 | Testing de rendimiento | 4 rutas | 4 | 0 | 0 | 0 | ✅ Completado |
-| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | — | — | 2+ | 0 | ✅ Completado |
+| 3 | Testing visual / UI-UX | 14 rutas × 2 temas | 74+ | 10 | 2+ | 0 | ✅ Completado |
 | 4 | Testing de seguridad | — | — | — | 3 | 0 | ✅ Completado |
-| 5 | Integración y E2E | 7 flujos | 0 | 7 | 1 | 1 | ✅ Completado |
+| 5 | Integración y E2E | 7 flujos | 11+ | 0 | 0 | 0 | ✅ Completado |
 | 6 | Reporte consolidado | 1 documento | — | — | — | — | ✅ Completado |
-| **Total** | | ~152+ | ~133+ | ~19+ | **14** | **3** | |
+| **Total** | | ~152+ | ~133+ | ~19+ | **10** | **2** | |
 
 ---
 
