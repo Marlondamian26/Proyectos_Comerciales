@@ -113,7 +113,7 @@ export const theme = {
     "surface-sunken": "#141D2E",
     "text-primary": "#E6EEF6",
     "text-secondary": "#A5BBCF",
-    "text-muted": "#7B8799",
+    "text-muted": "#CBD5E1",
     "text-inverse": "#0B1220",
     "text-on-primary": "#0B1220",
     "text-on-secondary": "#0B1220",
