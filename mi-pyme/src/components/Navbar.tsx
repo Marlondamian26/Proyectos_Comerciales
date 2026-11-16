@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificacionBell } from "@/components/notificaciones/NotificacionBell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChevronDown, User, Settings, Menu, X, LogIn, UserPlus } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 
@@ -197,8 +197,9 @@ function UserMenu({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cerrar al cambiar de ruta (login, logout, navegación)
-  useCloseOnRouteChange(() => setOpen(false));
+  // Callback estable para el hook
+  const handleClose = useCallback(() => setOpen(false), []);
+  useCloseOnRouteChange(handleClose);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -240,8 +241,8 @@ function UserMenu({
           <Link
             href="/perfil"
             role="menuitem"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors min-h-[44px]"
+            onClick={handleClose}
           >
             <User className="h-4 w-4" />
             Mi perfil
@@ -250,8 +251,8 @@ function UserMenu({
             <Link
               href="/admin"
               role="menuitem"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors min-h-[44px]"
+              onClick={handleClose}
             >
               <Settings className="h-4 w-4" />
               Configuración
@@ -260,7 +261,7 @@ function UserMenu({
           {showLogout && (
             <>
               <div role="separator" className="my-1 h-px bg-border" />
-              <LogoutButton onClose={handleLogout} />
+              <LogoutButton onClose={handleClose} />
             </>
           )}
         </div>

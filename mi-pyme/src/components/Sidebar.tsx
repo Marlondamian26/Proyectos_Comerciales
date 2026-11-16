@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Rol } from "@/lib/auth/roles";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
@@ -142,8 +142,9 @@ export function Sidebar({
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Cerrar el drawer móvil al cambiar de ruta
-  useCloseOnRouteChange(() => setMobileOpen(false));
+  // Callback estable para el hook
+  const handleClose = useCallback(() => setMobileOpen(false), []);
+  useCloseOnRouteChange(handleClose);
 
   // Aplicar estado de localStorage SOLO después de montar (evita hydration mismatch)
   useEffect(() => {

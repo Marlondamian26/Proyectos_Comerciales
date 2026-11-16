@@ -48,6 +48,7 @@ vi.mock("next-auth/react", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockState.pathname,
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("next/dynamic", () => ({

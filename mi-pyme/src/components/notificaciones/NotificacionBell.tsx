@@ -27,8 +27,9 @@ export function NotificacionBell() {
   const [recientes, setRecientes] = useState<Notificacion[]>([]);
   const { addToast } = useToast();
 
-  // Cerrar al cambiar de ruta (login, logout, navegación)
-  useCloseOnRouteChange(() => setAbierto(false));
+  // Callback estable para el hook
+  const handleClose = useCallback(() => setAbierto(false), []);
+  useCloseOnRouteChange(handleClose);
 
   useEffect(() => {
     const controller = new AbortController();
