@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import type { MouseEvent } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { NotificacionDropdown } from "./NotificacionDropdown";
@@ -25,11 +26,18 @@ export function NotificacionBell() {
   const [abierto, setAbierto] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
   const [recientes, setRecientes] = useState<Notificacion[]>([]);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const { addToast } = useToast();
 
   // Callback estable para el hook
   const handleClose = useCallback(() => setAbierto(false), []);
   useCloseOnRouteChange(handleClose);
+
+  const handleToggle = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setAbierto((current) => !current);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -131,6 +139,8 @@ export function NotificacionBell() {
   return (
     <div className="relative flex-shrink-0 z-20">
       <Button
+        ref={triggerRef}
+        id="notification-bell-trigger"
         variant="ghost"
         size="icon"
         aria-label={`Notificaciones (${noLeidas} sin leer)`}
@@ -138,7 +148,7 @@ export function NotificacionBell() {
         aria-haspopup="menu"
         aria-controls={abierto ? "notificacion-dropdown" : undefined}
         className="relative"
-        onClick={() => setAbierto(!abierto)}
+        onClick={handleToggle}
         type="button"
       >
         <Bell className="h-5 w-5" />

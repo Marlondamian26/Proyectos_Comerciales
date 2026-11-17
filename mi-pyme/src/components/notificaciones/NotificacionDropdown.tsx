@@ -38,6 +38,13 @@ export function NotificacionDropdown({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest("#notification-bell-trigger")
+      ) {
+        return;
+      }
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node)
@@ -51,18 +58,33 @@ export function NotificacionDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const panel = (
     <div
+      id="notificacion-dropdown"
       ref={dropdownRef}
       data-notification-panel
+      data-testid="notification-panel"
       role="dialog"
       aria-modal="true"
       aria-label="Notificaciones recientes"
       className="
         fixed z-[70]
-        top-auto
+        top-[4.5rem]
+        right-4
+        left-auto
         w-[calc(100vw-2rem)]
         max-w-sm
         sm:max-w-md
@@ -73,16 +95,13 @@ export function NotificacionDropdown({
         border-border
         rounded-lg
         shadow-xl
-        sm:absolute
-        sm:right-0
-        sm:top-full
-        sm:mt-2
-        sm:inset-x-auto
+        sm:right-4
+        sm:mt-0
       "
       style={{
         position: "fixed",
-        top: "auto",
-        ...(mounted ? {} : {}),
+        top: "4.5rem",
+        right: "1rem",
       }}
     >
       <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-popover z-10">
