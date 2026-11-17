@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/components/ThemeProvider";
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect, useId, useCallback } from "react";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -99,6 +100,9 @@ function ThemeDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleClose = useCallback(() => setIsOpen(false), []);
+  useCloseOnRouteChange(handleClose);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

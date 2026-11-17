@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Rol } from "@/lib/auth/roles";
 import { useId } from "react";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 
 interface SearchResult {
   id: string;
@@ -58,6 +59,9 @@ export function GlobalSearchBar({ userRol, compact }: GlobalSearchBarProps) {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const listboxId = useMemo(() => `search-listbox-${uniqueId}`, []);
+
+  const handleClose = useCallback(() => setIsOpen(false), []);
+  useCloseOnRouteChange(handleClose);
 
   const groups: Group[] = useMemo(() => {
     if (!results) return [];

@@ -20,12 +20,12 @@ const ICONS: Record<CardType, React.ComponentType<{ className?: string }>> = {
 };
 
 const GRADIENTS: Record<CardType, string> = {
-  producto: "from-blue-500/20 via-blue-400/10 to-cyan-500/20",
-  servicio: "from-purple-500/20 via-purple-400/10 to-pink-500/20",
-  negocio: "from-emerald-500/20 via-emerald-400/10 to-teal-500/20",
-  envio: "from-orange-500/20 via-orange-400/10 to-amber-500/20",
-  combo: "from-rose-500/20 via-rose-400/10 to-red-500/20",
-  default: "from-gray-500/20 via-gray-400/10 to-slate-500/20",
+  producto: "from-blue-500/20 via-blue-400/10 to-cyan-500/20 dark:from-blue-500/30 dark:via-blue-400/20 dark:to-cyan-500/30",
+  servicio: "from-purple-500/20 via-purple-400/10 to-pink-500/20 dark:from-purple-500/30 dark:via-purple-400/20 dark:to-pink-500/30",
+  negocio: "from-emerald-500/20 via-emerald-400/10 to-teal-500/20 dark:from-emerald-500/30 dark:via-emerald-400/20 dark:to-teal-500/30",
+  envio: "from-orange-500/20 via-orange-400/10 to-amber-500/20 dark:from-orange-500/30 dark:via-orange-400/20 dark:to-amber-500/30",
+  combo: "from-rose-500/20 via-rose-400/10 to-red-500/20 dark:from-rose-500/30 dark:via-rose-400/20 dark:to-red-500/30",
+  default: "from-gray-500/20 via-gray-400/10 to-slate-500/20 dark:from-gray-500/30 dark:via-gray-400/20 dark:to-slate-500/30",
 };
 
 const LABELS: Record<CardType, string> = {

@@ -306,7 +306,7 @@ export default async function HomePage({
                   key={servicio.id}
                   className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                   image={{
-                    src: servicio.imagenUrl || "/placeholder-service.jpg",
+                    src: servicio.imagenUrl,
                     alt: servicio.nombre,
                   }}
                   imageTipo="servicio"
@@ -461,7 +461,7 @@ export default async function HomePage({
                     variant: negocio.activo ? "success" : "warning",
                   }}
                   image={{
-                    src: negocio.imagenUrl || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
+                    src: negocio.imagenUrl,
                     alt: negocio.nombre,
                   }}
                   imageTipo="negocio"
@@ -543,7 +543,7 @@ export default async function HomePage({
                     variant: "success",
                   }}
                   image={{
-                    src: negocio.imagenUrl || "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=600",
+                    src: negocio.imagenUrl,
                     alt: negocio.nombre,
                   }}
                   imageTipo="envio"

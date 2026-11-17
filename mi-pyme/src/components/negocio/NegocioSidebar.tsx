@@ -3,7 +3,8 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 import {
   LayoutDashboard,
   Building2,
@@ -81,6 +82,9 @@ export function NegocioSidebar({
     setInternalMobileOpen(open);
     propOnMobileOpenChange?.(open);
   };
+
+  const handleClose = useCallback(() => setMobileOpen(false), [propOnMobileOpenChange]);
+  useCloseOnRouteChange(handleClose);
 
   useEffect(() => {
     try {

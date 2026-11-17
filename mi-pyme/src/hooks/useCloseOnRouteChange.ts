@@ -58,4 +58,22 @@ export function useCloseOnRouteChange(onClose: () => void) {
     window.addEventListener("popstate", handlePopstate);
     return () => window.removeEventListener("popstate", handlePopstate);
   }, []);
+
+  useEffect(() => {
+    const handleHashchange = () => onCloseRef.current();
+    window.addEventListener("hashchange", handleHashchange);
+    return () => window.removeEventListener("hashchange", handleHashchange);
+  }, []);
+
+  useEffect(() => {
+    const handleCustomClose = () => onCloseRef.current();
+    window.addEventListener("mp:close-dropdowns", handleCustomClose);
+    return () => window.removeEventListener("mp:close-dropdowns", handleCustomClose);
+  }, []);
+}
+
+export function closeAllDropdowns() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("mp:close-dropdowns"));
+  }
 }

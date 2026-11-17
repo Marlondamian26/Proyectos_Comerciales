@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useCloseOnRouteChange } from "@/hooks/useCloseOnRouteChange";
 import { Menu, X } from "lucide-react";
 import { NegocioSidebar } from "./NegocioSidebar";
 
 export function NegocioMobileDrawer() {
   const [open, setOpen] = useState(false);
+  const handleClose = useCallback(() => setOpen(false), []);
+  useCloseOnRouteChange(handleClose);
 
   return (
     <>

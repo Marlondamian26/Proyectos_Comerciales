@@ -6,6 +6,7 @@ import Link from "next/link";
 import * as React from "react";
 import { Badge } from "./Badge";
 import { Rating } from "./Rating";
+import { ImageWithFallback } from "./ImageWithFallback";
 
 export interface SellerCardProps {
   id: string;
@@ -56,12 +57,14 @@ export function SellerCard({
     >
       <div className="relative aspect-[2/1] w-full overflow-hidden">
         {bannerUrl ? (
-          <Image
+          <ImageWithFallback
             src={bannerUrl}
             alt={`Banner de ${name}`}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            tipo="negocio"
+            nombre={name}
+            containerClassName="h-full w-full"
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-r from-primary/10 to-secondary/10" />

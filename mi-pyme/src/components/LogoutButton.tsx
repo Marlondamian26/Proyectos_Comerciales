@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
+import { closeAllDropdowns } from "@/hooks/useCloseOnRouteChange";
 
 interface LogoutButtonProps {
   variant?: "mobile" | "desktop";
@@ -14,7 +14,6 @@ interface LogoutButtonProps {
 
 export function LogoutButton({ variant = "desktop", onClose }: LogoutButtonProps) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { data: session } = useSession();
 
   const handleLogout = async () => {
@@ -23,10 +22,11 @@ export function LogoutButton({ variant = "desktop", onClose }: LogoutButtonProps
 
     // Cerrar el dropdown ANTES de hacer logout
     onClose?.();
+    closeAllDropdowns();
 
     try {
       // Sign out first so Auth.js can validate CSRF and broadcast the logout.
-      await signOut({ callbackUrl: "/auth/login", redirect: false });
+      await signOut({ redirect: false });
 
       const response = await fetch("/api/auth/logout", {
         method: "POST",
@@ -36,11 +36,11 @@ export function LogoutButton({ variant = "desktop", onClose }: LogoutButtonProps
         throw new Error(`Cookie cleanup failed with status ${response.status}`);
       }
 
-      router.push("/auth/login");
-      router.refresh();
+      window.location.href = "/auth/login";
     } catch (error) {
       console.error("[LOGOUT] Error:", error);
       setLoading(false);
+      window.location.href = "/auth/login";
     }
   };
 

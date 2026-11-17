@@ -30,9 +30,10 @@ describe("Arquitectura - Sesiones", () => {
     expect(logoutRoute).not.toContain("new Response().headers");
   });
 
-  test("LogoutButton usa router.push (no solo window.location.href)", () => {
-    expect(logoutButton).toContain("router.push");
-    expect(logoutButton).toContain("router.refresh");
+  test("LogoutButton cierra dropdowns y fuerza la salida completa", () => {
+    expect(logoutButton).toContain("onClose?.()");
+    expect(logoutButton).toContain("closeAllDropdowns()");
+    expect(logoutButton).toContain('window.location.href = "/auth/login"');
   });
 
   test("LogoutButton llama a /api/auth/logout", () => {
