@@ -11,7 +11,11 @@ import "dotenv/config";
 import { PrismaClient, Prisma } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
-import { IMAGENES } from "./seed-images";
+import {
+  getSeedProductImage,
+  getSeedServiceImage,
+  IMAGENES,
+} from "./seed-images";
 
 const SEED_DISCLAIMER = " (Ejemplo visual - no real)";
 
@@ -32,6 +36,10 @@ const CLIENTE_PASSWORD = process.env.CLIENTE_PASSWORD || "cliente123";
 const LOGISTICA_PASSWORD = process.env.LOGISTICA_PASSWORD || "logistica123";
 const TEST_PASSWORD = process.env.TEST_PASSWORD || "test1234";
 const SEED_DATE = new Date("2025-01-01T00:00:00Z");
+const OBSOLETE_SEED_IMAGE_IDS = [
+  "photo-1632823471565-1ecdf5c6d7e3",
+  "photo-1585478259715-876acc5be8eb",
+];
 
 const PROVINCIAS = [
   { slug: "pinar-del-rio", nombre: "Pinar del Río" },
@@ -266,6 +274,70 @@ async function main() {
       if (!h) await prisma.horarioNegocio.create({ data: { negocioId: negocio.id, diaSemana, horaApertura: "08:00", horaCierre: "18:00", cerrado: !activo } });
     }
   }
+
+  const productosSeedSinImagenReal = await prisma.producto.findMany({
+    where: {
+      id: { startsWith: "seed-prod-" },
+      OR: [
+        { imagenUrl: "" },
+        { imagenUrl: { contains: "placehold.co" } },
+        ...OBSOLETE_SEED_IMAGE_IDS.map((id) => ({
+          imagenUrl: { contains: id },
+        })),
+      ],
+    },
+    select: {
+      id: true,
+      nombre: true,
+      negocio: { select: { slug: true } },
+    },
+  });
+  for (const producto of productosSeedSinImagenReal) {
+    await prisma.producto.update({
+      where: { id: producto.id },
+      data: {
+        imagenUrl: getSeedProductImage(
+          producto.negocio.slug,
+          producto.nombre,
+          producto.id
+        ),
+      },
+    });
+  }
+
+  const serviciosSeedSinImagenReal = await prisma.servicio.findMany({
+    where: {
+      id: { startsWith: "seed-serv-" },
+      OR: [
+        { imagenUrl: "" },
+        { imagenUrl: { contains: "placehold.co" } },
+        ...OBSOLETE_SEED_IMAGE_IDS.map((id) => ({
+          imagenUrl: { contains: id },
+        })),
+      ],
+    },
+    select: {
+      id: true,
+      nombre: true,
+      negocio: { select: { slug: true } },
+    },
+  });
+  for (const servicio of serviciosSeedSinImagenReal) {
+    await prisma.servicio.update({
+      where: { id: servicio.id },
+      data: {
+        imagenUrl: getSeedServiceImage(
+          servicio.negocio.slug,
+          servicio.nombre,
+          servicio.id
+        ),
+      },
+    });
+  }
+
+  console.log(
+    `🖼️ Imágenes de prueba corregidas: ${productosSeedSinImagenReal.length} productos, ${serviciosSeedSinImagenReal.length} servicios`
+  );
 
   // datos transaccionales mínimos
   const cliente1 = await prisma.user.findUnique({ where: { email: "cliente1@test.com" } });

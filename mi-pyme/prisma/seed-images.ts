@@ -48,7 +48,7 @@ export const IMAGENES = {
     panaderia: [
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80",
       "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=600&q=80",
-      "https://images.unsplash.com/photo-1585478259715-876acc5be8eb?w=600&q=80",
+      "https://images.unsplash.com/photo-1568254183919-78a4f43a2877?w=600&q=80",
     ],
     dulces: [
       "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600&q=80",
@@ -141,7 +141,7 @@ export const IMAGENES = {
       "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80",
     ],
     mecanica: [
-      "https://images.unsplash.com/photo-1632823471565-1ecdf5c6d7e3?w=600&q=80",
+      "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&q=80",
       "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&q=80",
     ],
   },
@@ -207,6 +207,13 @@ export const IMAGENES = {
     ],
   },
 
+  // ===== MUEBLES =====
+  muebles: [
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600&q=80",
+    "https://images.unsplash.com/photo-1598300056393-4aac492f4344?w=600&q=80",
+  ],
+
   // ===== PORTADAS DE NEGOCIOS =====
   portadas: {
     pizzeria: [
@@ -260,6 +267,121 @@ export const IMAGENES = {
   ],
 } as const;
 
+function pickSeedImage(images: readonly string[], key: string): string {
+  let hash = 0;
+  for (const character of key) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return images[hash % images.length];
+}
+
+function normalized(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+export function getSeedProductImage(
+  businessSlug: string,
+  productName: string,
+  seedId: string
+): string {
+  const slug = normalized(businessSlug);
+  const name = normalized(productName);
+  let images: readonly string[];
+
+  if (slug.includes("bodega")) {
+    images = name.includes("cafe")
+      ? IMAGENES.comida.cafeteria
+      : name.includes("pan") || name.includes("galleta")
+        ? IMAGENES.alimentos.panaderia
+        : name.includes("bebida") || name.includes("agua") || name.includes("cerveza")
+          ? IMAGENES.alimentos.bebidas
+          : IMAGENES.alimentos.granos;
+  } else if (slug.includes("boutique")) {
+    images = name.includes("bolso") || name.includes("collar")
+      ? IMAGENES.textil.accesorios
+      : name.includes("zapato")
+        ? IMAGENES.textil.zapatos
+        : name.includes("pantalon") || name.includes("bufanda")
+          ? IMAGENES.textil.hombre
+          : IMAGENES.textil.mujer;
+  } else if (slug.includes("cafeteria")) {
+    images = name.includes("cafe") || name.includes("latte") || name.includes("capuchino")
+      ? IMAGENES.comida.cafeteria
+      : name.includes("croissant") || name.includes("tostada")
+        ? IMAGENES.alimentos.panaderia
+        : IMAGENES.comida.criolla;
+  } else if (slug.includes("electrodomesticos")) {
+    images = name.includes("bombillo") || name.includes("extension")
+      ? IMAGENES.electrodomesticos.lineaBlanca
+      : IMAGENES.electrodomesticos.pequenos;
+  } else if (slug.includes("farmacia")) {
+    images = IMAGENES.saludBelleza.medicamentos;
+  } else if (slug.includes("muebleria")) {
+    images = IMAGENES.muebles;
+  } else if (slug.includes("panaderia")) {
+    images = name.includes("cafe") ? IMAGENES.comida.cafeteria : IMAGENES.alimentos.panaderia;
+  } else if (slug.includes("taller")) {
+    images = IMAGENES.servicios.mecanica;
+  } else if (slug.includes("pizzeria")) {
+    images = name.includes("agua") || name.includes("cerveza")
+      ? IMAGENES.alimentos.bebidas
+      : IMAGENES.comida.pizza;
+  } else if (slug.includes("salon")) {
+    images = name.includes("esmalte")
+      ? IMAGENES.saludBelleza.manicure
+      : IMAGENES.saludBelleza.cosmeticos;
+  } else if (slug.includes("ferreteria")) {
+    images = IMAGENES.aseo.limpieza;
+  } else if (slug.includes("tecnocell")) {
+    images = IMAGENES.tecnologia.accesorios;
+  } else {
+    images = IMAGENES.alimentos.vegetales;
+  }
+
+  return pickSeedImage(images, seedId);
+}
+
+export function getSeedServiceImage(
+  businessSlug: string,
+  serviceName: string,
+  seedId: string
+): string {
+  const slug = normalized(businessSlug);
+  const name = normalized(serviceName);
+  let images: readonly string[];
+
+  if (name.includes("envio") || name.includes("transporte") || name.includes("traslado")) {
+    images = name.includes("persona")
+      ? IMAGENES.transporte.personas
+      : name.includes("mudanza") || name.includes("mueble")
+        ? IMAGENES.transporte.mudanza
+        : IMAGENES.transporte.envioPaquete;
+  } else if (name.includes("reserva") || name.includes("domicilio")) {
+    images = slug.includes("cafeteria") || slug.includes("pizzeria")
+      ? IMAGENES.portadas.restaurante
+      : IMAGENES.transporte.envioPaquete;
+  } else if (slug.includes("salon")) {
+    images = name.includes("maquillaje") || name.includes("facial")
+      ? IMAGENES.saludBelleza.cosmeticos
+      : IMAGENES.saludBelleza.peluqueria;
+  } else if (slug.includes("panaderia")) {
+    images = IMAGENES.comida.reposteria;
+  } else if (slug.includes("muebleria")) {
+    images = name.includes("fabricacion")
+      ? IMAGENES.muebles
+      : IMAGENES.servicios.carpinteria;
+  } else if (slug.includes("tecnocell")) {
+    images = IMAGENES.servicios.reparaciones;
+  } else {
+    images = IMAGENES.servicios.mecanica;
+  }
+
+  return pickSeedImage(images, seedId);
+}
+
 /**
  * Devuelve una imagen aleatoria de una categoría.
  */
@@ -277,9 +399,9 @@ export function getImagen(categoria: keyof typeof IMAGENES): string {
 /**
  * Devuelve una imagen específica de una subcategoría.
  */
-export function getImagenDe(subcategoria: any): string {
-  if (Array.isArray(subcategoria)) {
-    return subcategoria[Math.floor(Math.random() * subcategoria.length)];
+export function getImagenDe(subcategoria: readonly string[] | string): string {
+  if (typeof subcategoria === "string") {
+    return subcategoria;
   }
-  return subcategoria;
+  return subcategoria[Math.floor(Math.random() * subcategoria.length)];
 }
