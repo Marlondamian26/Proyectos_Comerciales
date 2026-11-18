@@ -37,12 +37,16 @@ export function Navbar({ userRol }: NavbarProps) {
   const userImage =
     session?.user?.fotoPerfilUrl ?? session?.user?.image ?? null;
 
+  const handleCloseMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useCloseOnRouteChange(handleCloseMobileMenu);
 
   return (
     <header
@@ -127,7 +131,7 @@ export function Navbar({ userRol }: NavbarProps) {
         <div className="border-t border-border bg-background md:hidden">
           <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
           <div className="w-full">
-            <GlobalSearchBar userRol={userRol} />
+            <GlobalSearchBar userRol={userRol} iconOnly />
           </div>
             <nav className="flex flex-col gap-1">
               <Link href="/catalogo" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">

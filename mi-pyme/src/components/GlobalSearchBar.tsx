@@ -32,6 +32,7 @@ interface SearchResponse {
 interface GlobalSearchBarProps {
   userRol?: Rol;
   compact?: boolean;
+  iconOnly?: boolean;
 }
 
 interface Group {
@@ -44,7 +45,7 @@ interface Group {
 const DEBOUNCE_MS = 300;
 const MIN_CHARS = 2;
 
-export function GlobalSearchBar({ userRol, compact }: GlobalSearchBarProps) {
+export function GlobalSearchBar({ userRol, compact, iconOnly }: GlobalSearchBarProps) {
   const router = useRouter();
   const uniqueId = useId();
   const [query, setQuery] = useState("");
@@ -234,6 +235,18 @@ export function GlobalSearchBar({ userRol, compact }: GlobalSearchBarProps) {
   };
 
   const totalResults = results ? results.results.products.length + results.results.services.length + results.results.logistics.length + results.results.users.length : 0;
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        className="flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="Buscar"
+      >
+        <Search className="h-5 w-5" />
+      </button>
+    );
+  }
 
   return (
     <div className="relative flex items-center" ref={containerRef}>
