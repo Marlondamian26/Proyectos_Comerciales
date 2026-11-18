@@ -13,7 +13,7 @@ import { SortControls } from "@/components/SortControls";
 import { CARD_TYPOGRAPHY } from "@/components/ui/CardTypography";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { SectionBackground } from "@/components/home/SectionBackground";
-import { HomeSectionBackgroundService } from "@/services/HomeSectionBackgroundService";
+import { HomeSectionBackgroundService, type HomeSectionBackgroundData } from "@/services/HomeSectionBackgroundService";
 import {
   ShoppingBag,
   ArrowRight,
@@ -54,6 +54,42 @@ export default async function HomePage({
     : sortParam === "alpha-desc"
     ? { sort: { campo: "nombre" as const, orden: "desc" as const } }
     : undefined;
+
+/**
+ * Devuelve las imágenes de fondo para una sección respetando su configuración:
+ * 1. Si el admin configuró imágenes manualmente → usarlas
+ * 2. Si el tipo es "carrusel-cards" → imágenes de cards con imagen válida
+ * 3. Si el tipo es "carrusel-hero" → imágenes del hero
+ * 4. Fallback final → imágenes del hero
+ */
+function getBgImages(
+  sectionKey: string,
+  cardsImages: Array<{ url: string; alt?: string }>,
+  heroImages: Array<{ url: string; alt?: string }>,
+  bgMap: Record<string, HomeSectionBackgroundData>
+): Array<{ url: string; alt?: string }> {
+  const config = bgMap[sectionKey];
+  const adminImages = config?.imagenes || [];
+
+  // 1. Admin configuró imágenes manualmente
+  if (adminImages.length > 0) {
+    return adminImages.filter((img) => img?.url);
+  }
+
+  // 2. Según el tipo configurado
+  const tipo = config?.tipo || "carrusel-hero";
+
+  if (tipo === "carrusel-cards") {
+    const cardsWithImage = cardsImages.filter(
+      (img) => img?.url && img.url.trim() !== ""
+    );
+    if (cardsWithImage.length > 0) return cardsWithImage;
+  }
+
+  // 3. Fallback: imágenes del hero
+  const heroWithImage = heroImages.filter((img) => img?.url);
+  return heroWithImage.length > 0 ? heroWithImage : [];
+}
 
   const [areas, negocios, servicios] = await Promise.all([
     listarAreas(),
@@ -103,68 +139,24 @@ export default async function HomePage({
   const serviciosSlice = servicios.slice(0, 6);
   const negociosConEnvio = negocios.filter((n) => n.permiteEnvio).slice(0, 6);
 
-  // Imágenes de fondo por sección (usar imágenes de cards si no hay configuradas por admin)
-  const bgServicios =
-    (bgMap.servicios?.imagenes as
-      | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) ||
-    serviciosSlice
-      .filter((s) => s.imagenUrl)
-      .map((s) => ({ url: s.imagenUrl, alt: s.nombre })) ||
-    [
-      {
-        url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=1920&q=80",
-        alt: "Servicios",
-      },
-    ];
-  const bgAreas =
-    (bgMap.areas?.imagenes as
-      | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) ||
-    heroImages.map((h) => ({ url: h.url, alt: h.alt })) ||
-    [
-      {
-        url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80",
-        alt: "Áreas",
-      },
-    ];
-  const bgNegocios =
-    (bgMap.negocios?.imagenes as
-      | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) ||
-    negociosSlice
-      .filter((n) => n.imagenUrl !== null)
-      .map((n) => ({ url: n.imagenUrl as string, alt: n.nombre })) ||
-    [
-      {
-        url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&q=80",
-        alt: "Negocios",
-      },
-    ];
-  const bgEnvio =
-    (bgMap.envio?.imagenes as
-      | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) ||
-    negociosConEnvio
-      .filter((n) => n.imagenUrl !== null)
-      .map((n) => ({ url: n.imagenUrl as string, alt: n.nombre })) ||
-    [
-      {
-        url: "https://images.unsplash.com/photo-1587204403117-a40c8d8e82e8?w=1920&q=80",
-        alt: "Envío",
-      },
-    ];
-  const bgComoFunciona =
-    (bgMap["como-funciona-cta"]?.imagenes as
-      | Array<{ url: string; alt?: string; publicId?: string | null }>
-      | undefined) ||
-    heroImages.slice(0, 1).map((h) => ({ url: h.url, alt: h.alt })) ||
-    [
-      {
-        url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1920&q=80",
-        alt: "CTA",
-      },
-    ];
+  // Imágenes de fondo por sección (respeta el tipo de cada sección)
+  const heroImgs = heroImages.map((h) => ({ url: h.url, alt: h.alt }));
+
+  // Servicios: solo los que tienen imagen
+  const servicioCards = serviciosSlice
+    .filter((s) => s.imagenUrl && s.imagenUrl.trim() !== "")
+    .map((s) => ({ url: s.imagenUrl!, alt: s.nombre }));
+
+  // Negocios: solo los que tienen imagen
+  const negocioCards = negociosSlice
+    .filter((n) => n.imagenUrl && n.imagenUrl.trim() !== "")
+    .map((n) => ({ url: n.imagenUrl!, alt: n.nombre }));
+
+  const bgServicios = getBgImages("servicios", servicioCards, heroImgs, bgMap);
+  const bgAreas = getBgImages("areas", [], heroImgs, bgMap);
+  const bgNegocios = getBgImages("negocios", negocioCards, heroImgs, bgMap);
+  const bgEnvio = getBgImages("envio", [], heroImgs, bgMap);
+  const bgComoFuncionaCTA = getBgImages("como-funciona-cta", [], heroImgs, bgMap);
 
   return (
     <main className="min-h-screen app-background">
@@ -604,7 +596,7 @@ export default async function HomePage({
       )}
 
       {/* Hero Section Merged: ¿Cómo funciona? + ¿Listo para empezar? */}
-      <SectionBackground images={bgComoFunciona} overlay={bgMap["como-funciona-cta"]?.overlay ?? 0.7} blur={bgMap["como-funciona-cta"]?.blur ?? 8}>
+      <SectionBackground images={bgComoFuncionaCTA} overlay={bgMap["como-funciona-cta"]?.overlay ?? 0.7} blur={bgMap["como-funciona-cta"]?.blur ?? 8}>
         <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-6 text-3xl font-bold tracking-tight text-center text-foreground sm:text-4xl">

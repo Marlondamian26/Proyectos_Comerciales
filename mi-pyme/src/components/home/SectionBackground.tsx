@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SectionBackgroundProps {
   images: Array<{ url: string; alt?: string; publicId?: string | null }>;
@@ -16,42 +16,37 @@ export function SectionBackground({
   images,
   overlay = 0.7,
   blur = 8,
-  intervalMs = 5000,
+  intervalMs = 6000,
   children,
   className = "",
 }: SectionBackgroundProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const mountedRef = useRef(false);
 
-  const validImages = (images || []).filter((img) => img?.url);
+  const validImages = (images || []).filter((img) => img?.url && img.url.trim() !== "");
 
-  const next = useCallback(() => {
-    setActiveImageIndex((prev) => (prev + 1) % validImages.length);
-  }, [validImages.length]);
-
-  const prev = useCallback(() => {
-    setActiveImageIndex((prev) => (prev - 1 + validImages.length) % validImages.length);
-  }, [validImages.length]);
-
-  const currentImage = validImages?.[activeImageIndex];
-
-  // Respetar prefers-reduced-motion
-  const prefersReducedMotion =
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false;
-
-  // Solo montar la rotación después de hidratar (evita flashback en SSR)
   useEffect(() => {
-    setMounted(true);
+    mountedRef.current = true;
   }, []);
 
   useEffect(() => {
-    if (!mounted || validImages.length <= 1 || isPaused || prefersReducedMotion) return;
-    const interval = setInterval(next, intervalMs);
+    if (!mountedRef.current || validImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setPrevIndex(currentIndex);
+      setIsTransitioning(true);
+      setCurrentIndex((prev) => (prev + 1) % validImages.length);
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setPrevIndex(null);
+      }, 500);
+    }, intervalMs);
+
     return () => clearInterval(interval);
-  }, [mounted, validImages.length, intervalMs, next, isPaused, prefersReducedMotion]);
+  }, [currentIndex, validImages.length, intervalMs]);
 
   if (validImages.length === 0) {
     return (
@@ -61,88 +56,59 @@ export function SectionBackground({
     );
   }
 
-  const transitionStyle = mounted
-    ? { transition: "opacity 800ms ease-in-out", willChange: "opacity" as const }
-    : { transition: "none" as const, willChange: "auto" as const };
+  const currentImage = validImages[currentIndex];
+  const prevImage = prevIndex !== null ? validImages[prevIndex] : null;
 
-  const imageStyle = {
+  const baseImageStyle = {
     filter: `blur(${blur}px)`,
-    transform: "scale(1.1)",
+    transform: "scale(1.1) translateZ(0)",
     backfaceVisibility: "hidden" as const,
   };
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      {/* Fondo de imágenes con carrusel optimizado para mobile */}
       <div className="absolute inset-0 z-0">
-        {validImages.length > 1 ? (
+        {prevImage && isTransitioning && (
           <div
-            className="absolute inset-0"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+            className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+            style={{ opacity: 0 }}
           >
-            {validImages.map((img, index) => (
-              <div
-                key={`${img.url}-${index}`}
-                className="absolute inset-0"
-                style={{
-                  opacity: index === activeImageIndex ? 1 : 0,
-                  ...transitionStyle,
-                }}
-                aria-hidden={index !== activeImageIndex}
-              >
-                <Image
-                  src={img.url}
-                  alt={img.alt || "Fondo de sección"}
-                  fill
-                  sizes="100vw"
-                  priority={index === 0}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  className="object-cover"
-                  style={imageStyle}
-                />
-              </div>
-            ))}
+            <Image
+              src={prevImage.url}
+              alt={prevImage.alt || "Fondo anterior"}
+              fill
+              className="object-cover"
+              style={baseImageStyle}
+              sizes="100vw"
+              priority={false}
+              loading="lazy"
+            />
           </div>
-        ) : (
-          <Image
-            src={currentImage!.url}
-            alt={currentImage!.alt || "Fondo de sección"}
-            fill
-            sizes="100vw"
-            priority
-            loading="eager"
-            className="object-cover"
-            style={imageStyle}
-          />
         )}
-        {/* Overlay para contraste del contenido */}
+
+        <div className="absolute inset-0">
+          <Image
+            key={currentImage.url}
+            src={currentImage.url}
+            alt={currentImage.alt || "Fondo de sección"}
+            fill
+            className="object-cover"
+            style={{
+              ...baseImageStyle,
+              opacity: 1,
+            }}
+            sizes="100vw"
+            priority={currentIndex === 0}
+            loading={currentIndex === 0 ? "eager" : "lazy"}
+          />
+        </div>
+
         <div
           className="absolute inset-0 bg-background"
           style={{ opacity: overlay }}
         />
       </div>
 
-      {/* Indicadores de paginación (solo si hay más de una imagen) */}
-      {validImages.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-          {validImages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveImageIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === activeImageIndex
-                  ? "w-8 bg-white"
-                  : "w-2 bg-white/50 hover:bg-white/75"
-              }`}
-              aria-label={`Ir a imagen ${index + 1}`}
-              aria-current={index === activeImageIndex}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Contenido */}
       <div className="relative z-10">
         {children}
       </div>

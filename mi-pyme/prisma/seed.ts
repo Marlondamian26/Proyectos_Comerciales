@@ -359,16 +359,16 @@ async function main() {
 
   // Fondos de sección del home (idempotente)
   const sectionBackgrounds = [
-    { sectionKey: "servicios", tipo: "carrusel-cards", overlay: 0.75, blur: 12 },
-    { sectionKey: "areas", tipo: "carrusel-hero", overlay: 0.8, blur: 16 },
-    { sectionKey: "negocios", tipo: "carrusel-cards", overlay: 0.75, blur: 12 },
-    { sectionKey: "envio", tipo: "carrusel-hero", overlay: 0.8, blur: 16 },
-    { sectionKey: "como-funciona-cta", tipo: "imagen", overlay: 0.7, blur: 8, imagenes: [] },
+    { sectionKey: "servicios", tipo: "carrusel-cards", overlay: 0.75, blur: 12, activa: true },
+    { sectionKey: "areas", tipo: "carrusel-hero", overlay: 0.8, blur: 16, activa: true },
+    { sectionKey: "negocios", tipo: "carrusel-cards", overlay: 0.75, blur: 12, activa: true },
+    { sectionKey: "envio", tipo: "carrusel-hero", overlay: 0.8, blur: 16, activa: true },
+    { sectionKey: "como-funciona-cta", tipo: "carrusel-hero", overlay: 0.7, blur: 8, activa: true },
   ];
   for (const bg of sectionBackgrounds) {
     await prisma.homeSectionBackground.upsert({
       where: { sectionKey: bg.sectionKey },
-      update: {},
+      update: { tipo: bg.tipo, overlay: bg.overlay, blur: bg.blur, activa: bg.activa },
       create: bg,
     });
   }
