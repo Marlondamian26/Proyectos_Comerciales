@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
 import { closeAllDropdowns } from "@/hooks/useCloseOnRouteChange";
+import { markNextNavigationAsTop } from "@/hooks/useScrollRestoration";
 
 interface LogoutButtonProps {
   variant?: "mobile" | "desktop";
@@ -19,6 +20,9 @@ export function LogoutButton({ variant = "desktop", onClose }: LogoutButtonProps
   const handleLogout = async () => {
     if (loading) return;
     setLoading(true);
+
+    // Marcar que la próxima navegación (hacia /auth/login) debe ir al top
+    markNextNavigationAsTop();
 
     // Cerrar el dropdown ANTES de hacer logout
     onClose?.();

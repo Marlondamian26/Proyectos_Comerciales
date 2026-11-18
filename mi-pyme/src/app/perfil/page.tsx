@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { markNextNavigationAsTop } from "@/hooks/useScrollRestoration";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -287,6 +288,7 @@ export default function PerfilPage() {
 
       // Redirect to home after a short delay
       setTimeout(() => {
+        markNextNavigationAsTop();
         router.push("/");
       }, 2000);
     } catch (err: unknown) {

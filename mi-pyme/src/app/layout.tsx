@@ -7,6 +7,7 @@ import { AuthAwareNavbar } from "@/components/Navbar/AuthAwareNavbar";
 import { DashboardChrome } from "@/components/DashboardChrome";
 import { Footer } from "@/components/Footer";
 import { ScrollRestoration } from "@/components/ScrollRestoration";
+import { ScrollRestorationSetup } from "@/components/ScrollRestorationSetup";
 import { auth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -42,7 +43,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await auth();
+  let session;
+  try {
+    session = await auth();
+  } catch {
+    session = undefined;
+  }
   const userRol = session?.user?.rol;
 
   // Leer tema desde cookie del servidor para aplicar data-theme antes de la hidratación
@@ -61,17 +67,20 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       data-theme={serverTheme}
     >
-      <script
-        id="theme-init"
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('mi-pyme-theme');if(!t){var m=document.cookie.match('(?:^|; )mi-pyme-theme=([^;]*)');t=m?m[1]:null}if(t==='light'||t==='dark'||t==='system'){var s=window.matchMedia('(prefers-color-scheme: dark)').matches?t==='system'?'dark':t:t;document.documentElement.setAttribute('data-theme',s);document.documentElement.style.colorScheme=s;}}catch(e){}})()`,
-        }}
-      />
+      <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('mi-pyme-theme');if(!t){var m=document.cookie.match('(?:^|; )mi-pyme-theme=([^;]*)');t=m?m[1]:null}if(t==='light'||t==='dark'||t==='system'){var s=window.matchMedia('(prefers-color-scheme: dark)').matches?t==='system'?'dark':t:t;document.documentElement.setAttribute('data-theme',s);document.documentElement.style.colorScheme=s;}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SessionProvider>
           <ThemeProvider>
             <AuthAwareNavbar userRol={userRol} />
             <Suspense fallback={null}>
+              <ScrollRestorationSetup />
               <ScrollRestoration />
             </Suspense>
             <DashboardChrome userRol={userRol}>{children}</DashboardChrome>

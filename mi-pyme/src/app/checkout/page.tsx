@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { markNextNavigationAsTop } from "@/hooks/useScrollRestoration";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -258,6 +259,7 @@ export default function CheckoutPage() {
 
       const result = await res.json();
       const pedidosParam = encodeURIComponent(JSON.stringify(result.pedidosCreados));
+      markNextNavigationAsTop();
       router.push(`/checkout/confirmacion?pedidos=${pedidosParam}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));

@@ -35,7 +35,12 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ sort?: string }>;
 }) {
-  const session = await auth();
+  let session;
+  try {
+    session = await auth();
+  } catch {
+    session = undefined;
+  }
   const isLoggedIn = !!session?.user;
   const userRol = session?.user?.rol;
   const dashboardUrl = userRol ? getDashboardPath(userRol) : "/cliente";

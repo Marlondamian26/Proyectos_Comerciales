@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { validarPassword } from "@/lib/auth/password-policy";
 import { registrarUsuario } from "@/lib/actions";
+import { markNextNavigationAsTop } from "@/hooks/useScrollRestoration";
 import {
   User,
   Eye,
@@ -124,6 +125,7 @@ export default function RegistroPage() {
         }
       }
 
+      markNextNavigationAsTop();
       const result = await registrarUsuario({
         nombre: form.nombre,
         username: form.username,

@@ -244,9 +244,9 @@ export default function ReservasPage({
                           <Calendar className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium">{reserva.servicio.nombre}</p>
+                          <p className="font-medium">{reserva.servicio?.nombre ?? "Servicio"}</p>
                           <p className="text-sm text-muted-foreground">
-                            {reserva.negocio.nombre}
+                            {reserva.negocio?.nombre ?? "Negocio"}
                           </p>
                           <div className="flex flex-wrap items-center gap-3 mt-1">
                             <span className="text-xs text-muted-foreground flex items-center gap-1">

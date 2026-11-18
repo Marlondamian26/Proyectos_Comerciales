@@ -6,6 +6,7 @@ import { signIn, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { getDashboardPath } from "@/lib/auth/dashboard-paths";
 import { getSafeCallbackPath } from "@/lib/auth/safe-callback-url";
+import { markNextNavigationAsTop } from "@/hooks/useScrollRestoration";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { Lock, Eye, EyeOff, AlertCircle, Hash, Check, Home } from "lucide-react";
@@ -60,6 +61,7 @@ export default function LoginPage() {
         redirectUrl = userRol ? getDashboardPath(userRol) : "/cliente";
       }
 
+      markNextNavigationAsTop();
       window.location.href = redirectUrl;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesion");
